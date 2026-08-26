@@ -19,6 +19,10 @@ async function bootstrap() {
     'http://localhost:6001',
     'http://localhost:6002',
     'http://localhost:6003',
+    'http://localhost:12000',
+    'http://localhost:12001',
+    'http://localhost:12002',
+    'http://localhost:12003',
   ];
 
   app.enableCors({

@@ -8,11 +8,11 @@ A modern, transparent humanitarian and blockchain-powered crowdfunding platform,
 
 | Domain / Subdomain | Service | Local Dev Port | Production Host Port | Container Port |
 | :--- | :--- | :--- | :--- | :--- |
-| **`aderafoundation.com`** | Frontend Portal | `3005` | **`6000`** | `3000` |
-| **`api.aderafoundation.com`** | NestJS Backend API | `5001` | **`6001`** | `5001` |
-| **`admin.aderafoundation.com`** | Admin Console | `3002` | **`6002`** | `3000` |
-| **`shop.aderafoundation.com`** | Impact Storefront | `3003` | **`6003`** | `3000` |
-| *Database* | PostgreSQL 16 | `5432` | **`6432`** | `5432` |
+| **`aderafoundation.com`** | Frontend Portal | `3005` | **`12000`** | `3000` |
+| **`api.aderafoundation.com`** | NestJS Backend API | `5001` | **`12001`** | `5001` |
+| **`admin.aderafoundation.com`** | Admin Console | `3002` | **`12002`** | `3000` |
+| **`shop.aderafoundation.com`** | Impact Storefront | `3003` | **`12003`** | `3000` |
+| *Database* | PostgreSQL 16 | `5432` | **`12432`** | `5432` |
 
 ---
 
@@ -43,19 +43,19 @@ Add 4 Proxy Hosts in NPM with SSL enabled (Request Let's Encrypt Certificate, Fo
 
 1. **`aderafoundation.com` & `www.aderafoundation.com`**
    - Forward Hostname / IP: `172.17.0.1` *(or `adera-frontend`)*
-   - Forward Port: `6000`
+   - Forward Port: `12000`
 
 2. **`api.aderafoundation.com`**
    - Forward Hostname / IP: `172.17.0.1` *(or `adera-backend`)*
-   - Forward Port: `6001`
+   - Forward Port: `12001`
 
 3. **`admin.aderafoundation.com`**
    - Forward Hostname / IP: `172.17.0.1` *(or `adera-admin`)*
-   - Forward Port: `6002`
+   - Forward Port: `12002`
 
 4. **`shop.aderafoundation.com`**
    - Forward Hostname / IP: `172.17.0.1` *(or `adera-store`)*
-   - Forward Port: `6003`
+   - Forward Port: `12003`
 
 ---
 
