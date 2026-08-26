@@ -1,7 +1,7 @@
-import { PrismaClient } from '@prisma/client';
-import * as bcrypt from 'bcryptjs';
-import * as fs from 'fs';
-import * as path from 'path';
+const { PrismaClient } = require('@prisma/client');
+const bcrypt = require('bcryptjs');
+const fs = require('fs');
+const path = require('path');
 
 const prisma = new PrismaClient();
 
@@ -170,7 +170,7 @@ const causesList = [
 ];
 
 async function main() {
-  console.log('--- Starting Adera Database Seeder ---');
+  console.log('--- Starting Adera Production Database Seeder ---');
 
   // 1. Admin User
   const adminPassword = await bcrypt.hash('12345678', 10);
@@ -190,7 +190,7 @@ async function main() {
       verified: true,
     },
   });
-  console.log('✅ Admin user ready:', admin.email);
+  console.log('✅ Admin user created/ready:', admin.email);
 
   // 2. Causes / Posts
   const existingPosts = await prisma.post.count();
@@ -286,44 +286,12 @@ async function main() {
     await prisma.resellerShop.upsert({
       where: { handle: s.handle },
       update: {},
-      create: s as any,
+      create: s,
     });
   }
   console.log(`✅ Seeded reseller shops.`);
 
-  // 6. Products from products.json if available
-  const existingProducts = await prisma.product.count();
-  if (existingProducts === 0) {
-    const dataPath = path.join(__dirname, '..', 'products.json');
-    if (fs.existsSync(dataPath)) {
-      try {
-        let fileData = fs.readFileSync(dataPath, 'utf8');
-        if (fileData.charCodeAt(0) === 0xfeff) fileData = fileData.slice(1);
-        const parsed = JSON.parse(fileData);
-        const products = parsed.products || [];
-        console.log(`Importing initial ${Math.min(products.length, 100)} products...`);
-        for (const p of products.slice(0, 100)) {
-          await prisma.product.create({
-            data: {
-              name: p.title || p.name || 'Impact Product',
-              description: p.description || 'Proceeds directly empower verified community programs.',
-              price: parseFloat(p.price || p.salePrice || 25.0),
-              originalPrice: p.originalPrice ? parseFloat(p.originalPrice) : null,
-              image: p.imgUrl || p.image || '/placeholder-product.jpg',
-              category: p.category || 'General',
-              rating: p.rating ? parseFloat(p.rating) : 4.8,
-              sold: p.sold ? parseInt(p.sold) : 12,
-            },
-          });
-        }
-        console.log('✅ Products imported successfully.');
-      } catch (err: any) {
-        console.warn('⚠️ Could not import products.json:', err.message);
-      }
-    }
-  }
-
-  console.log('--- Database Seed Complete! ---');
+  console.log('--- Production Database Seed Complete! ---');
 }
 
 main()
@@ -331,5 +299,6 @@ main()
     console.error('Seed Error:', e);
     process.exit(1);
   })
-  .finally(() => prisma.$disconnect());
-
+  .finally(async () => {
+    await prisma.$disconnect();
+  });
