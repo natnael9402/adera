@@ -8,7 +8,7 @@ services:
       POSTGRES_USER: ${DB_USER:-postgres}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
     ports:
-      - "${DB_PORT:-12432}:5432"
+      - "12432:5432"
     volumes:
       - adera-pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -26,7 +26,7 @@ services:
     container_name: adera-backend
     restart: unless-stopped
     ports:
-      - "${PORT_BACKEND:-12001}:5001"
+      - "12001:5001"
     environment:
       NODE_ENV: production
       PORT: 5001
@@ -64,7 +64,7 @@ services:
     container_name: adera-frontend
     restart: unless-stopped
     ports:
-      - "${PORT_FRONTEND:-12000}:3000"
+      - "12000:3000"
     environment:
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://api.aderafoundation.com/api}
       NEXT_PUBLIC_STORE_URL: ${NEXT_PUBLIC_STORE_URL:-https://shop.aderafoundation.com}
@@ -87,7 +87,7 @@ services:
     container_name: adera-admin
     restart: unless-stopped
     ports:
-      - "${PORT_ADMIN:-12002}:3000"
+      - "12002:3000"
     environment:
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://api.aderafoundation.com/api}
       NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-https://aderafoundation.com}
@@ -109,7 +109,7 @@ services:
     container_name: adera-store
     restart: unless-stopped
     ports:
-      - "${PORT_STORE:-12003}:3000"
+      - "12003:3000"
     environment:
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://api.aderafoundation.com/api}
       NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-https://aderafoundation.com}
