@@ -1,0 +1,279 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum PostStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  name      String
+  role      Role     @default(USER)
+  verified  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  posts  Post[]
+  tokens VerificationToken[]
+}
+
+model Post {
+  id                    Int              @id @default(autoincrement())
+  title                 String
+  description           String
+  image                 String           @default("")
+  goal                  Float
+  raised                Float            @default(0.0)
+  donationsCount        Int              @default(0)
+  category              String
+  urgency               String           @default("Featured")
+  status                PostStatus       @default(PENDING)
+  activationStatus      String           @default("PENDING_DEPOSIT") // "PENDING_DEPOSIT", "PENDING_REVIEW", "ACTIVE", "REJECTED"
+  activationDepositFee  Float            @default(5.0)
+  activationTxHash      String?
+  paymentProofImage     String?
+  paymentMethodSymbol   String?          @default("BTC")
+  cryptoPayoutAddress   String           @default("")
+  cryptoPayoutSymbol    String           @default("USDC")
+  beneficiary           String           @default("")
+  location              String           @default("Global")
+  verifiedBadge         Boolean          @default(true)
+  impactMilestones      Json?
+  updates               Json?
+  authorId              Int
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+
+  author                User             @relation(fields: [authorId], references: [id])
+  directDonations       DirectDonation[]
+}
+
+model DirectDonation {
+  id           Int      @id @default(autoincrement())
+  causeId      Int?
+  donorName    String   @default("Anonymous Hero")
+  donorEmail   String?
+  amountUsd    Float
+  cryptoAmount String
+  cryptoSymbol String
+  txHash       String
+  message      String?
+  isAnonymous  Boolean  @default(false)
+  status       String   @default("CONFIRMED")
+  createdAt    DateTime @default(now())
+
+  cause        Post?    @relation(fields: [causeId], references: [id], onDelete: SetNull)
+}
+
+model VerificationToken {
+  id        Int      @id @default(autoincrement())
+  token     String   @unique
+  userId    Int
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model Product {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String
+  price       Float
+  originalPrice Float?
+  image       String   @default("")
+  category    String
+  rating      Float    @default(0)
+  sold        Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  resellerListings ResellerProduct[]
+}
+
+model PaymentMethod {
+  id        Int      @id @default(autoincrement())
+  network   String
+  symbol    String
+  address   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Donor {
+  id        Int      @id @default(autoincrement())
+  name      String
+  amount    Float
+  date      String
+  avatar    String   @default("")
+  title     String   @default("")
+  badge     String   @default("")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model NewsletterSubscriber {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ContactInquiry {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String
+  topic     String
+  message   String
+  status    String   @default("UNREAD")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Order {
+  id                Int      @id @default(autoincrement())
+  orderNumber       String   @unique
+  trackingNumber    String   @unique
+  carrier           String   @default("Insured Global Air Express")
+  estimatedDelivery String   @default("3-5 Business Days")
+  customerEmail     String
+  customerName      String
+  shippingAddress   Json
+  shippingOption    String   @default("standard")
+  totalAmount       Float
+  cryptoAmount      String
+  cryptoSymbol      String
+  cryptoNetwork     String
+  txHash            String
+  causeId           String
+  causeTitle        String
+  items             Json
+  status            String   @default("CONFIRMED")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+enum ResellerTier {
+  BRONZE
+  SILVER
+  GOLD
+  PLATINUM
+}
+
+model ResellerShop {
+  id              Int              @id @default(autoincrement())
+  name            String
+  handle          String           @unique
+  email           String           @unique
+  password        String
+  tier            ResellerTier     @default(BRONZE)
+  maxProfitMargin Float            @default(20.0)
+  description     String           @default("")
+  logo            String           @default("preset:store_apex")
+  banner          String           @default("")
+  walletAddress   String           @default("")
+  balance         Float            @default(0.0)
+  walletBalance   Float            @default(0.0)
+  pendingEscrow   Float            @default(0.0)
+  totalSales      Int              @default(0)
+  totalRevenue    Float            @default(0.0)
+  visits          Int              @default(0)
+  creditScore     Float            @default(100.0)
+  rating          Float            @default(5.0)
+  productLimit    Int              @default(100)
+  phone           String           @default("")
+  address         String           @default("")
+  certificateType String           @default("Driver's License")
+  isVerified      Boolean          @default(true)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  products        ResellerProduct[]
+  withdrawals     ResellerWithdrawal[]
+  messages        ResellerMessage[]
+  orders          ResellerOrder[]
+}
+
+model ResellerProduct {
+  id           Int          @id @default(autoincrement())
+  shopId       Int
+  productId    Int
+  basePrice    Float
+  customPrice  Float
+  profitMargin Float
+  isActive     Boolean      @default(true)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  shop         ResellerShop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  product      Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([shopId, productId])
+}
+
+model ResellerOrder {
+  id             Int          @id @default(autoincrement())
+  shopId         Int
+  orderNumber    String
+  trackingNumber String
+  carrier        String       @default("Insured Global Air Express")
+  buyer          String
+  buyerEmail     String
+  productId      Int
+  productName    String
+  productImage   String
+  quantity       Int          @default(1)
+  wholesaleCost  Float
+  salePrice      Float
+  netProfit      Float
+  paymentToken   String       @default("USDC")
+  status         String       @default("IN_TRANSIT")
+  releaseAt      DateTime
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  shop           ResellerShop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+}
+
+model ResellerWithdrawal {
+  id            Int          @id @default(autoincrement())
+  shopId        Int
+  amount        Float
+  currency      String       @default("USDC")
+  walletAddress String
+  status        String       @default("COMPLETED")
+  txHash        String?
+  createdAt     DateTime     @default(now())
+
+  shop          ResellerShop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+}
+
+model ResellerMessage {
+  id           Int          @id @default(autoincrement())
+  shopId       Int
+  sender       String
+  senderAvatar String?
+  subject      String
+  content      String
+  isRead       Boolean      @default(false)
+  createdAt    DateTime     @default(now())
+
+  shop         ResellerShop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+}
+
