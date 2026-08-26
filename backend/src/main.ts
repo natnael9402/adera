@@ -5,48 +5,25 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  const allowedOrigins = [
-    'https://aderafoundation.com',
-    'https://www.aderafoundation.com',
-    'https://shop.aderafoundation.com',
-    'https://admin.aderafoundation.com',
-    'https://api.aderafoundation.com',
-    'http://localhost:3000',
-    'http://localhost:3002',
-    'http://localhost:3003',
-    'http://localhost:3005',
-    'http://localhost:6000',
-    'http://localhost:6001',
-    'http://localhost:6002',
-    'http://localhost:6003',
-    'http://localhost:12000',
-    'http://localhost:12001',
-    'http://localhost:12002',
-    'http://localhost:12003',
-  ];
+  app.use((req: any, res: any, next: any) => {
+    const origin = req.headers.origin;
+    if (origin) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+      res.setHeader('Access-Control-Allow-Credentials', 'true');
+      res.setHeader('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept, Authorization, X-Requested-With, *');
+    }
+    if (req.method === 'OPTIONS') {
+      return res.sendStatus(204);
+    }
+    next();
+  });
 
   app.enableCors({
-    origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
-      if (!origin) return callback(null, true);
-      try {
-        const hostname = new URL(origin).hostname;
-        if (
-          allowedOrigins.includes(origin) ||
-          hostname === 'aderafoundation.com' ||
-          hostname.endsWith('.aderafoundation.com') ||
-          hostname === 'localhost' ||
-          hostname === '127.0.0.1'
-        ) {
-          return callback(null, true);
-        }
-      } catch (e) {
-        // Fallback safely
-      }
-      return callback(null, true);
-    },
+    origin: true,
     credentials: true,
-    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Accept', 'Authorization', 'X-Requested-With'],
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    allowedHeaders: '*',
   });
 
   app.setGlobalPrefix('api');
