@@ -1,20 +1,129 @@
-﻿services:
-  postgres:
+services:
+  adera-db:
     image: postgres:16-alpine
-    ports:
-      - "5432:5432"
+    container_name: adera-db
+    restart: unless-stopped
     environment:
-      POSTGRES_DB: adera
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-
-  mailpit:
-    image: axllent/mailpit
+      POSTGRES_DB: ${DB_NAME:-adera_prod}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
     ports:
-      - "1025:1025"
-      - "8025:8025"
+      - "${DB_PORT:-6432}:5432"
+    volumes:
+      - adera-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-adera_prod}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - adera-net
+
+  adera-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: adera-backend
+    restart: unless-stopped
+    ports:
+      - "6001:5001"
+    environment:
+      NODE_ENV: production
+      PORT: 5001
+      DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@adera-db:5432/${DB_NAME:-adera_prod}
+      JWT_SECRET: ${JWT_SECRET:-supersecretkeychangeinproduction123}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-7d}
+      APP_URL: ${APP_URL:-https://aderafoundation.com}
+      STORE_URL: ${STORE_URL:-https://shop.aderafoundation.com}
+      ADMIN_URL: ${ADMIN_URL:-https://admin.aderafoundation.com}
+      SMTP_HOST: ${SMTP_HOST:-smtp.hostinger.com}
+      SMTP_PORT: ${SMTP_PORT:-465}
+      SMTP_SECURE: ${SMTP_SECURE:-true}
+      SMTP_USER: ${SMTP_USER:-Info@aderafoundation.com}
+      SMTP_PASS: ${SMTP_PASS:-}
+      FROM_EMAIL: ${FROM_EMAIL:-Adera Foundation}
+      STORE_FROM_EMAIL: ${STORE_FROM_EMAIL:-Adera Store}
+      ADMIN_NOTIFICATION_EMAIL: ${ADMIN_NOTIFICATION_EMAIL:-Info@aderafoundation.com}
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+    volumes:
+      - adera-uploads:/app/public/uploads
+    depends_on:
+      adera-db:
+        condition: service_healthy
+    networks:
+      - adera-net
+
+  adera-frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://api.aderafoundation.com/api}
+        NEXT_PUBLIC_STORE_URL: ${NEXT_PUBLIC_STORE_URL:-https://shop.aderafoundation.com}
+        NEXT_PUBLIC_ADMIN_URL: ${NEXT_PUBLIC_ADMIN_URL:-https://admin.aderafoundation.com}
+    container_name: adera-frontend
+    restart: unless-stopped
+    ports:
+      - "6000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://api.aderafoundation.com/api}
+      NEXT_PUBLIC_STORE_URL: ${NEXT_PUBLIC_STORE_URL:-https://shop.aderafoundation.com}
+      NEXT_PUBLIC_ADMIN_URL: ${NEXT_PUBLIC_ADMIN_URL:-https://admin.aderafoundation.com}
+    volumes:
+      - adera-uploads:/app/public/uploads
+    depends_on:
+      - adera-backend
+    networks:
+      - adera-net
+
+  adera-admin:
+    build:
+      context: .
+      dockerfile: Dockerfile.admin
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://api.aderafoundation.com/api}
+        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-https://aderafoundation.com}
+        NEXT_PUBLIC_STORE_URL: ${NEXT_PUBLIC_STORE_URL:-https://shop.aderafoundation.com}
+    container_name: adera-admin
+    restart: unless-stopped
+    ports:
+      - "6002:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://api.aderafoundation.com/api}
+      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-https://aderafoundation.com}
+      NEXT_PUBLIC_STORE_URL: ${NEXT_PUBLIC_STORE_URL:-https://shop.aderafoundation.com}
+    volumes:
+      - adera-uploads:/app/public/uploads
+    depends_on:
+      - adera-backend
+    networks:
+      - adera-net
+
+  adera-store:
+    build:
+      context: .
+      dockerfile: Dockerfile.store
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://api.aderafoundation.com/api}
+        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-https://aderafoundation.com}
+    container_name: adera-store
+    restart: unless-stopped
+    ports:
+      - "6003:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://api.aderafoundation.com/api}
+      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-https://aderafoundation.com}
+    volumes:
+      - adera-uploads:/app/public/uploads
+    depends_on:
+      - adera-backend
+    networks:
+      - adera-net
+
+networks:
+  adera-net:
+    driver: bridge
 
 volumes:
-  pgdata:
+  adera-pgdata:
+  adera-uploads:
