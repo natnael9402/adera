@@ -27,7 +27,7 @@ export default function DonorWall({ limit, minimal = false }: DonorWallProps) {
   useEffect(() => {
     async function fetchDonors() {
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "https://api.aderafoundation.com/api";
         const res = await fetch(`${apiUrl}/donors`);
         if (!res.ok) throw new Error("Failed to fetch donors");
         let data = await res.json();

@@ -313,7 +313,7 @@ function TrackOrderContent() {
                 Have questions regarding your shipment or on-chain escrow proof?
               </div>
               <a
-                href="http://localhost:3005/contact"
+                href={`${process.env.NEXT_PUBLIC_APP_URL || "https://aderafoundation.com"}/contact`}
                 className="inline-flex items-center gap-1 font-bold text-emerald-700 hover:text-emerald-800 shrink-0"
               >
                 <span>Contact Logistics Support</span>

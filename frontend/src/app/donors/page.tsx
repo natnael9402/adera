@@ -41,7 +41,7 @@ export default function DonorsPage() {
   useEffect(() => {
     async function loadDonors() {
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.aderafoundation.com/api';
         const res = await fetch(`${apiUrl}/donors`);
         if (res.ok) {
           const data = await res.json();

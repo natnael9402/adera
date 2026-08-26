@@ -279,7 +279,7 @@ export default function AdminDashboard() {
 
             {/* 6. Shipment & Order Logistics */}
             <a 
-              href="http://localhost:3003/track" 
+              href={`${process.env.NEXT_PUBLIC_STORE_URL || "https://shop.aderafoundation.com"}/track`} 
               target="_blank"
               rel="noreferrer"
               className="bg-white p-6 rounded-3xl border border-slate-200 hover:border-primary-500 hover:shadow-md transition-all flex flex-col justify-between group space-y-6"

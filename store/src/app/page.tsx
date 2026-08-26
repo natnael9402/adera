@@ -241,7 +241,7 @@ export default function StoreHome() {
 
   // Fetch backend products & reseller shops
   useEffect(() => {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.aderafoundation.com/api';
     fetch(`${apiUrl}/products`)
       .then(res => res.json())
       .then(data => {
@@ -370,7 +370,7 @@ export default function StoreHome() {
           <div className="flex items-center gap-4">
             <span className="text-primary-400 font-mono font-bold hidden sm:inline">⚡ Direct Web3 Crypto Checkout</span>
             <a 
-              href="http://localhost:3005" 
+              href={process.env.NEXT_PUBLIC_APP_URL || "https://aderafoundation.com"} 
               className="text-white hover:text-primary-400 font-semibold underline underline-offset-4 transition-colors inline-flex items-center gap-1"
             >
               Main Portal
@@ -433,7 +433,7 @@ export default function StoreHome() {
             {/* Actions: Wishlist, Return to Causes, Cart */}
             <div className="flex items-center gap-3">
               <a 
-                href="http://localhost:3005/causes" 
+                href={`${process.env.NEXT_PUBLIC_APP_URL || "https://aderafoundation.com"}/causes`} 
                 className="hidden lg:inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors border border-slate-200"
               >
                 <Compass className="w-3.5 h-3.5 text-primary-600" />
@@ -1286,10 +1286,10 @@ export default function StoreHome() {
             <div>
               <h4 className="text-slate-900 font-bold text-xs uppercase tracking-wider mb-4">Quick Links</h4>
               <ul className="space-y-2.5 text-xs text-slate-600 font-medium">
-                <li><a href="http://localhost:3005/causes" className="hover:text-primary-600">Active Causes Portal</a></li>
+                <li><a href={`${process.env.NEXT_PUBLIC_APP_URL || "https://aderafoundation.com"}/causes`} className="hover:text-primary-600">Active Causes Portal</a></li>
                 <li><Link href="/track" className="hover:text-primary-600">Order & Package Tracking</Link></li>
-                <li><a href="http://localhost:3005/how-it-works" className="hover:text-primary-600">How It Works</a></li>
-                <li><a href="http://localhost:3005/contact" className="hover:text-primary-600">Support Center</a></li>
+                <li><a href={`${process.env.NEXT_PUBLIC_APP_URL || "https://aderafoundation.com"}/how-it-works`} className="hover:text-primary-600">How It Works</a></li>
+                <li><a href={`${process.env.NEXT_PUBLIC_APP_URL || "https://aderafoundation.com"}/contact`} className="hover:text-primary-600">Support Center</a></li>
               </ul>
             </div>
 
@@ -1313,9 +1313,9 @@ export default function StoreHome() {
           <div className="pt-8 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
             <p>© {new Date().getFullYear()} Adera Foundation. All merchandise profits audited on-chain.</p>
             <div className="flex items-center gap-6 font-medium">
-              <a href="http://localhost:3005" className="hover:text-primary-600">Main Platform</a>
-              <a href="http://localhost:3005/contact" className="hover:text-primary-600">Support</a>
-              <a href="http://localhost:3005/trust-and-safety" className="hover:text-primary-600">Trust & Safety</a>
+              <a href={process.env.NEXT_PUBLIC_APP_URL || "https://aderafoundation.com"} className="hover:text-primary-600">Main Platform</a>
+              <a href={`${process.env.NEXT_PUBLIC_APP_URL || "https://aderafoundation.com"}/contact`} className="hover:text-primary-600">Support</a>
+              <a href={`${process.env.NEXT_PUBLIC_APP_URL || "https://aderafoundation.com"}/trust-and-safety`} className="hover:text-primary-600">Trust & Safety</a>
             </div>
           </div>
         </div>

@@ -24,7 +24,7 @@ export default function Hero() {
   useEffect(() => {
     async function fetchCrypto() {
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "https://api.aderafoundation.com/api";
         const res = await fetch(`${apiUrl}/crypto/prices`);
         if (!res.ok) throw new Error("Failed to fetch");
         const data = await res.json();

@@ -16,7 +16,7 @@ interface Product {
 
 async function getProducts(): Promise<Product[]> {
   try {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "https://api.aderafoundation.com/api";
     const res = await fetch(`${apiUrl}/products`, {
       next: { revalidate: 60 },
     });
@@ -67,7 +67,7 @@ export default async function FeaturedProducts() {
           </div>
 
           <a
-            href={`${process.env.NEXT_PUBLIC_STORE_URL || "http://localhost:3003"}/reseller/register`}
+            href={`${process.env.NEXT_PUBLIC_STORE_URL || "https://shop.aderafoundation.com"}/reseller/register`}
             target="_blank"
             rel="noreferrer"
             className="px-4 py-1.5 bg-white text-emerald-700 hover:bg-emerald-50 font-black text-xs uppercase tracking-wider rounded-full transition-colors shrink-0 shadow-xs"
@@ -92,7 +92,7 @@ export default async function FeaturedProducts() {
           </div>
           
           <a 
-            href={process.env.NEXT_PUBLIC_STORE_URL || "http://localhost:3003"}
+            href={process.env.NEXT_PUBLIC_STORE_URL || "https://shop.aderafoundation.com"}
             target="_blank"
             rel="noreferrer"
             className="inline-flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-700 text-white px-6 py-3.5 rounded-xl font-bold text-sm transition-all shadow-md shadow-primary-600/20 shrink-0 hover-lift"
@@ -105,9 +105,11 @@ export default async function FeaturedProducts() {
         {/* Product Cards Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {topProducts.map((product) => (
-            <Link 
+            <a 
               key={product.id} 
-              href="http://localhost:3003" 
+              href={process.env.NEXT_PUBLIC_STORE_URL || "https://shop.aderafoundation.com"} 
+              target="_blank"
+              rel="noreferrer"
               className="group flex flex-col bg-white rounded-2xl border border-slate-200 hover:border-primary-500 p-4 transition-all duration-200 hover:shadow-md"
             >
               {/* Product Image Container */}
@@ -160,7 +162,7 @@ export default async function FeaturedProducts() {
                   </span>
                 </div>
               </div>
-            </Link>
+            </a>
           ))}
         </div>
 

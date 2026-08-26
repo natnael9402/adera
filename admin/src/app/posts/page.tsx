@@ -459,7 +459,7 @@ export default function PostsPage() {
                           </Link>
 
                           <a
-                            href={`http://localhost:3005/causes/${post.id}`}
+                            href={`${process.env.NEXT_PUBLIC_APP_URL || 'https://aderafoundation.com'}/causes/${post.id}`}
                             target="_blank"
                             rel="noreferrer"
                             className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-slate-700"

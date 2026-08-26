@@ -306,7 +306,7 @@ export default function EditCausePage() {
 
           <div className="flex items-center gap-2.5 shrink-0">
             <a
-              href={`http://localhost:3005/causes/${causeId}`}
+              href={`${process.env.NEXT_PUBLIC_APP_URL || 'https://aderafoundation.com'}/causes/${causeId}`}
               target="_blank"
               rel="noreferrer"
               className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-all border border-slate-200"

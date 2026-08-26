@@ -1,4 +1,4 @@
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
+const API = process.env.NEXT_PUBLIC_API_URL || 'https://api.aderafoundation.com/api';
 
 async function request(path: string, options: RequestInit = {}) {
   const token = typeof window !== 'undefined' ? localStorage.getItem('admin_token') : null;

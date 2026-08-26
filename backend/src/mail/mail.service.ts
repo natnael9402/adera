@@ -89,11 +89,11 @@ export class MailService {
   }
 
   private getAppUrl(): string {
-    return this.config.get<string>('APP_URL', 'http://localhost:3005');
+    return this.config.get<string>('APP_URL', 'https://aderafoundation.com');
   }
 
   private getStoreUrl(): string {
-    return this.config.get<string>('STORE_URL', 'http://localhost:3003');
+    return this.config.get<string>('STORE_URL', 'https://shop.aderafoundation.com');
   }
 
   private getLogoAttachments(): any[] {

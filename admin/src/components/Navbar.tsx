@@ -80,7 +80,7 @@ export default function Navbar() {
           {/* Quick links to Main Portal and Store */}
           <div className="hidden md:flex items-center gap-2 border-r border-slate-200 pr-3 mr-1">
             <a 
-              href="http://localhost:3005" 
+              href={process.env.NEXT_PUBLIC_APP_URL || "https://aderafoundation.com"} 
               target="_blank" 
               rel="noreferrer"
               className="inline-flex items-center gap-1 text-xs font-semibold text-slate-600 hover:text-primary-600 px-2.5 py-1.5 rounded-lg hover:bg-slate-100 transition-colors"
@@ -90,7 +90,7 @@ export default function Navbar() {
             </a>
 
             <a 
-              href="http://localhost:3003" 
+              href={process.env.NEXT_PUBLIC_STORE_URL || "https://shop.aderafoundation.com"} 
               target="_blank" 
               rel="noreferrer"
               className="inline-flex items-center gap-1 text-xs font-semibold text-slate-600 hover:text-primary-600 px-2.5 py-1.5 rounded-lg hover:bg-slate-100 transition-colors"
@@ -144,7 +144,7 @@ export default function Navbar() {
         <div className="h-4 w-px bg-slate-200 shrink-0 mx-1" />
 
         <a
-          href="http://localhost:3005"
+          href={process.env.NEXT_PUBLIC_APP_URL || "https://aderafoundation.com"}
           target="_blank"
           rel="noreferrer"
           className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold text-slate-500 hover:text-slate-900 whitespace-nowrap"
@@ -154,7 +154,7 @@ export default function Navbar() {
         </a>
 
         <a
-          href="http://localhost:3003"
+          href={process.env.NEXT_PUBLIC_STORE_URL || "https://shop.aderafoundation.com"}
           target="_blank"
           rel="noreferrer"
           className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold text-slate-500 hover:text-slate-900 whitespace-nowrap"

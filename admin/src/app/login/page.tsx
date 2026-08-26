@@ -121,7 +121,7 @@ export default function LoginPage() {
               256-Bit Encrypted
             </span>
             <a 
-              href="http://localhost:3005" 
+              href={process.env.NEXT_PUBLIC_APP_URL || "https://aderafoundation.com"} 
               className="font-semibold text-primary-700 hover:underline"
             >
               Return to Main Portal →

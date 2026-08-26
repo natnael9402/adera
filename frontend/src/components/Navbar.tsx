@@ -64,7 +64,7 @@ export default function Navbar() {
             
             {/* Dedicated Shop Button */}
             <a
-              href={process.env.NEXT_PUBLIC_STORE_URL || "http://localhost:3003"}
+              href={process.env.NEXT_PUBLIC_STORE_URL || "https://shop.aderafoundation.com"}
               target="_blank"
               rel="noreferrer"
               className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-slate-700 hover:text-slate-950 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-xl transition-all"
@@ -171,7 +171,7 @@ export default function Navbar() {
               </button>
 
               <a
-                href={process.env.NEXT_PUBLIC_STORE_URL || "http://localhost:3003"}
+                href={process.env.NEXT_PUBLIC_STORE_URL || "https://shop.aderafoundation.com"}
                 target="_blank"
                 rel="noreferrer"
                 onClick={() => setMobileOpen(false)}

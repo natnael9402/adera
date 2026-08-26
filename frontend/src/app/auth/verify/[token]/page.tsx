@@ -19,7 +19,7 @@ export default function TokenVerifyPage() {
       setMessage('No verification token provided in URL');
       return;
     }
-    const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
+    const API = process.env.NEXT_PUBLIC_API_URL || 'https://api.aderafoundation.com/api';
     fetch(API + '/auth/verify/' + token)
       .then((r) => r.json())
       .then((data) => {
