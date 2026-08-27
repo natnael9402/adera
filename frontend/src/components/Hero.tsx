@@ -1,78 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import Link from "next/link";
-import { ArrowRight, Hexagon, ShieldCheck, Wallet, TrendingUp, TrendingDown, CheckCircle2, Lock, ArrowUpRight, Heart } from 'lucide-react';
+import { ArrowRight, ShieldCheck, Lock, Heart } from 'lucide-react';
 import { motion } from "framer-motion";
 import DonorWall from "./DonorWall";
 import { useDonate } from "@/context/DonateContext";
 
-export interface CryptoData {
-  id: string;
-  symbol: string;
-  name: string;
-  image: string;
-  current_price: number;
-  price_change_percentage_24h: number;
-}
-
 export default function Hero() {
   const { openDonateModal } = useDonate();
-  const [cryptoPrices, setCryptoPrices] = useState<CryptoData[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function fetchCrypto() {
-      try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "https://api.aderafoundation.com/api";
-        const res = await fetch(`${apiUrl}/crypto/prices`);
-        if (!res.ok) throw new Error("Failed to fetch");
-        const data = await res.json();
-        setCryptoPrices(data);
-      } catch (err) {
-        console.error("Error fetching crypto data:", err);
-        // Resilient fallback data
-        setCryptoPrices([
-          { 
-            id: "bitcoin", 
-            symbol: "btc", 
-            name: "Bitcoin", 
-            image: "https://coin-images.coingecko.com/coins/images/1/large/bitcoin.png", 
-            current_price: 67432, 
-            price_change_percentage_24h: 2.4 
-          },
-          { 
-            id: "ethereum", 
-            symbol: "eth", 
-            name: "Ethereum", 
-            image: "https://coin-images.coingecko.com/coins/images/279/large/ethereum.png", 
-            current_price: 3521, 
-            price_change_percentage_24h: 1.8 
-          },
-          { 
-            id: "usd-coin", 
-            symbol: "usdc", 
-            name: "USDC", 
-            image: "https://coin-images.coingecko.com/coins/images/6319/large/usdc.png", 
-            current_price: 1.00, 
-            price_change_percentage_24h: 0.01 
-          },
-        ]);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchCrypto();
-  }, []);
-
-  const formatPrice = (price: number) => {
-    if (price < 2) return `$${price.toFixed(2)}`;
-    return new Intl.NumberFormat('en-US', { 
-      style: 'currency', 
-      currency: 'USD',
-      maximumFractionDigits: 0 
-    }).format(price);
-  };
 
   return (
     <section className="relative min-h-[92vh] flex items-center justify-center overflow-hidden pt-28 pb-16 sm:pt-32 sm:pb-20 lg:pt-36 lg:pb-24">
@@ -95,7 +30,7 @@ export default function Hero() {
       <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
           
-          {/* Left Column: Headline, Description, CTAs, Market Rates */}
+          {/* Left Column: Headline, Description, CTAs, Accepted Channels */}
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -152,7 +87,7 @@ export default function Hero() {
             </div>
 
             {/* Accepted Payment Channels Ribbon */}
-            <div className="w-full max-w-xl bg-white/80 backdrop-blur-md rounded-2xl p-3 border border-slate-200/90 shadow-2xs space-y-2">
+            <div className="w-full max-w-xl bg-white/80 backdrop-blur-md rounded-2xl p-3.5 border border-slate-200/90 shadow-2xs space-y-2">
               <div className="flex items-center justify-between px-1">
                 <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
                   <Lock className="w-3.5 h-3.5 text-emerald-600" />
@@ -183,83 +118,6 @@ export default function Hero() {
                   <img src="/crypto/btc.svg" alt="Crypto" className="h-3.5 w-3.5 object-contain" />
                   <span className="text-[11px]">Crypto Native</span>
                 </div>
-              </div>
-            </div>
-
-            {/* Live Market Rates Tickers */}
-            <div className="w-full pt-1 max-w-xl">
-              <div className="flex items-center justify-between mb-2 px-0.5">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block animate-pulse" />
-                  Live Settlement Rates
-                </span>
-                <span className="text-[11px] font-medium text-slate-400">
-                  24/7 Liquidity
-                </span>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                {loading ? (
-                  Array(3).fill(0).map((_, i) => (
-                    <div 
-                      key={`skeleton-${i}`} 
-                      className="flex items-center justify-between bg-white/70 backdrop-blur-sm px-3.5 py-2.5 rounded-xl border border-slate-200/80 animate-pulse"
-                    >
-                      <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 bg-slate-200 rounded-full" />
-                        <div className="w-10 h-4 bg-slate-200 rounded" />
-                      </div>
-                      <div className="flex flex-col items-end gap-1">
-                        <div className="w-14 h-3 bg-slate-200 rounded" />
-                        <div className="w-8 h-2 bg-slate-200 rounded" />
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  cryptoPrices.map((c) => {
-                    const isPositive = c.price_change_percentage_24h >= 0;
-                    return (
-                      <div 
-                        key={c.id} 
-                        className="group flex items-center justify-between bg-white/80 hover:bg-white backdrop-blur-md px-3.5 py-2.5 rounded-xl border border-slate-200/80 hover:border-emerald-300 transition-all duration-200 shadow-xs hover:shadow-sm hover:-translate-y-0.5"
-                      >
-                        <div className="flex items-center gap-2">
-                          <img 
-                            src={c.image} 
-                            alt={c.name} 
-                            className="w-6 h-6 object-contain rounded-full bg-slate-50 p-0.5 shrink-0" 
-                          />
-                          <div className="flex flex-col text-left">
-                            <span className="text-xs font-bold text-slate-900 uppercase leading-none group-hover:text-emerald-700 transition-colors">
-                              {c.symbol}
-                            </span>
-                            <span className="text-[10px] text-slate-400 font-medium truncate max-w-[55px]">
-                              {c.name}
-                            </span>
-                          </div>
-                        </div>
-
-                        <div className="flex flex-col items-end text-right pl-2">
-                          <span className="text-xs font-bold text-slate-900 font-mono leading-none">
-                            {formatPrice(c.current_price)}
-                          </span>
-                          <span className={`text-[10px] font-semibold flex items-center mt-1 px-1.5 py-0.5 rounded ${
-                            isPositive 
-                              ? "text-emerald-700 bg-emerald-50" 
-                              : "text-rose-600 bg-rose-50"
-                          }`}>
-                            {isPositive ? (
-                              <TrendingUp className="w-2.5 h-2.5 mr-0.5" />
-                            ) : (
-                              <TrendingDown className="w-2.5 h-2.5 mr-0.5" />
-                            )}
-                            {Math.abs(c.price_change_percentage_24h).toFixed(1)}%
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
               </div>
             </div>
 
