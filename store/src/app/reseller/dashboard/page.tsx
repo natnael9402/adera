@@ -1055,7 +1055,7 @@ export default function ResellerDashboardPage() {
                     <span className="text-lg font-black text-white font-mono">${(walletData?.totalRevenue ?? 0.0).toFixed(2)}</span>
                   </div>
                   <div>
-                    <span className="text-slate-400 block">Connected Payout Wallet</span>
+                    <span className="text-slate-400 block">Connected Payout Method</span>
                     <span className="text-xs font-mono text-cyan-300 font-bold truncate block">
                       {shop?.walletAddress || 'Not configured (add in Settings)'}
                     </span>
@@ -1291,16 +1291,16 @@ export default function ResellerDashboardPage() {
                   </div>
                 </div>
 
-                {/* Crypto Payout Address */}
+                {/* Payout Method / Address */}
                 <div>
                   <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
-                    Settlement Payout Wallet Address (USDC / ETH / SOL)
+                    Payout Method / Settlement Address (USDC / USDT / Bank)
                   </label>
                   <input
                     type="text"
                     value={profileForm.walletAddress}
                     onChange={(e) => setProfileForm({ ...profileForm, walletAddress: e.target.value })}
-                    placeholder="0x... or Solana address"
+                    placeholder="e.g. USDC (ERC20/SPL), USDT, Bank account routing, or payout address"
                     className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono text-slate-900 focus:bg-white focus:outline-none focus:border-emerald-500"
                   />
                 </div>

@@ -22,30 +22,35 @@ export async function POST(request: Request): Promise<NextResponse> {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
     const ext = path.extname(file.name) || (file.type === 'image/png' ? '.png' : file.type === 'image/webp' ? '.webp' : '.jpg');
-    const sanitizedFileName = `cause_upload_${Date.now()}_${Math.random().toString(36).substring(2, 8)}${ext}`;
+    const sanitizedFileName = `store_upload_${Date.now()}_${Math.random().toString(36).substring(2, 8)}${ext}`;
 
-    // 1. Save locally to frontend/public/uploads
-    const frontendUploadsDir = path.join(process.cwd(), 'public', 'uploads');
-    if (!fs.existsSync(frontendUploadsDir)) {
-      fs.mkdirSync(frontendUploadsDir, { recursive: true });
+    // 1. Save locally to store/public/uploads
+    const storeUploadsDir = path.join(process.cwd(), 'public', 'uploads');
+    if (!fs.existsSync(storeUploadsDir)) {
+      fs.mkdirSync(storeUploadsDir, { recursive: true });
     }
-    const localFilePath = path.join(frontendUploadsDir, sanitizedFileName);
+    const localFilePath = path.join(storeUploadsDir, sanitizedFileName);
     fs.writeFileSync(localFilePath, buffer);
 
-    // Also sync to admin & store public/uploads if they exist
+    // Also sync to frontend & admin public/uploads if they exist locally
     try {
+      const frontendUploadsDir = path.join(process.cwd(), '..', 'frontend', 'public', 'uploads');
+      if (fs.existsSync(path.dirname(frontendUploadsDir))) {
+        if (!fs.existsSync(frontendUploadsDir)) fs.mkdirSync(frontendUploadsDir, { recursive: true });
+        fs.writeFileSync(path.join(frontendUploadsDir, sanitizedFileName), buffer);
+      }
+
       const adminUploadsDir = path.join(process.cwd(), '..', 'admin', 'public', 'uploads');
       if (fs.existsSync(path.dirname(adminUploadsDir))) {
         if (!fs.existsSync(adminUploadsDir)) fs.mkdirSync(adminUploadsDir, { recursive: true });
         fs.writeFileSync(path.join(adminUploadsDir, sanitizedFileName), buffer);
       }
     } catch (e) {
-      // non-blocking sync
+      // non-blocking local sync
     }
 
     const localUrl = `/uploads/${sanitizedFileName}`;
 
-    // Return the local URL immediately for fast, reliable loading
     return NextResponse.json({
       url: localUrl,
       fileName: sanitizedFileName,
@@ -53,7 +58,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       type: file.type,
     });
   } catch (error: any) {
-    console.error('Frontend upload error:', error);
+    console.error('Store upload error:', error);
     return NextResponse.json(
       { error: error.message || 'Failed to process image upload' },
       { status: 500 }

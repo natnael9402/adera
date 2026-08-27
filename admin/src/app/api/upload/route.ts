@@ -12,7 +12,11 @@ export async function POST(request: Request): Promise<NextResponse> {
     }
 
     if (!file.type.startsWith('image/')) {
-      return NextResponse.json({ error: 'Only image files (PNG, JPG, WEBP, SVG) are allowed' }, { status: 400 });
+      return NextResponse.json({ error: 'Only image files (PNG, JPG, WEBP, SVG, GIF) are allowed' }, { status: 400 });
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      return NextResponse.json({ error: 'Image size exceeds 10MB limit' }, { status: 400 });
     }
 
     const bytes = await file.arrayBuffer();

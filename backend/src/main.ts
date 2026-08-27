@@ -1,9 +1,23 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
+import { json, urlencoded, static as expressStatic } from 'express';
+import { join } from 'path';
+import { existsSync, mkdirSync } from 'fs';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  // Increase payload limit to 10MB across all endpoints
+  app.use(json({ limit: '10mb' }));
+  app.use(urlencoded({ limit: '10mb', extended: true }));
+
+  // Ensure public uploads directory exists and is statically served
+  const uploadsDir = join(process.cwd(), 'public', 'uploads');
+  if (!existsSync(uploadsDir)) {
+    mkdirSync(uploadsDir, { recursive: true });
+  }
+  app.use('/uploads', expressStatic(uploadsDir));
 
   app.use((req: any, res: any, next: any) => {
     const origin = req.headers.origin;

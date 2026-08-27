@@ -27,11 +27,41 @@ export default function ProfileImagePicker({
   const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileUpload = (file: File) => {
+  const [isUploading, setIsUploading] = useState(false);
+
+  const handleFileUpload = async (file: File) => {
     if (!file.type.startsWith('image/')) {
-      alert('Please upload a valid image file (PNG, JPG, WebP, SVG).');
+      alert('Please upload a valid image file (PNG, JPG, WebP, SVG, GIF).');
       return;
     }
+    if (file.size > 10 * 1024 * 1024) {
+      alert('File size exceeds the 10MB limit.');
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        onChange(data.url);
+        setUrlInput('');
+        return;
+      }
+    } catch (err) {
+      console.warn('API upload fallback to dataURL:', err);
+    } finally {
+      setIsUploading(false);
+    }
+
+    // Fallback to data URL
     const reader = new FileReader();
     reader.onload = (e) => {
       const result = e.target?.result as string;
@@ -176,9 +206,10 @@ export default function ProfileImagePicker({
 
             <button
               type="button"
-              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow-xs transition-colors"
+              disabled={isUploading}
+              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow-xs transition-colors disabled:opacity-50"
             >
-              Choose Image File
+              {isUploading ? 'Uploading...' : 'Choose Image File'}
             </button>
           </div>
         </div>

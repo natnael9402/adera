@@ -14,6 +14,7 @@ import { CryptoModule } from './crypto/crypto.module';
 import { DonorsModule } from './donors/donors.module';
 import { OrdersModule } from './orders/orders.module';
 import { ResellersModule } from './resellers/resellers.module';
+import { UploadModule } from './upload/upload.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { ResellersModule } from './resellers/resellers.module';
     DonorsModule,
     OrdersModule,
     ResellersModule,
+    UploadModule,
   ],
   controllers: [AppController],
   providers: [AppService],
