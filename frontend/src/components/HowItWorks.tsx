@@ -17,24 +17,24 @@ const steps = [
     number: "01",
     badge: "Step 01",
     icon: Wallet,
-    title: "Select Cause & Connect Wallet",
-    description: "Pick a verified initiative and donate directly from your Web3 wallet. Instant routing with zero intermediary deductions.",
-    actionTitle: "Direct Multi-Chain Support",
+    title: "Select Cause & Payment Method",
+    description: "Choose a verified initiative and give via your preferred method — Credit Card, PayPal, Apple Pay, or Instant Crypto.",
+    actionTitle: "Universal Multi-Payment Support",
     tokens: [
-      { name: "BTC", logo: "/crypto/btc.svg" },
-      { name: "ETH", logo: "/crypto/eth.svg" },
-      { name: "SOL", logo: "/crypto/sol.svg" },
-      { name: "USDC", logo: "/crypto/usdc.svg" },
+      { name: "Visa", logo: "/payments/visa.svg" },
+      { name: "Mastercard", logo: "/payments/mastercard.svg" },
+      { name: "PayPal", logo: "/payments/paypal.svg" },
+      { name: "Crypto", logo: "/crypto/btc.svg" },
     ],
   },
   {
     number: "02",
     badge: "Step 02",
     icon: ShieldCheck,
-    title: "Milestone-Escrow Settlement",
-    description: "Donations lock in audited smart contracts. Capital is disbursed exclusively as verifiable on-ground milestone proofs are validated.",
-    actionTitle: "Protocol Guarantee",
-    meta: "100% Non-Custodial Multi-Sig Escrow",
+    title: "Transparent Milestone Escrow",
+    description: "Donations are allocated directly into verified project escrows and disbursed only when verified field milestones are achieved.",
+    actionTitle: "Accountability Guarantee",
+    meta: "100% Milestone-Gated Disbursements",
     metaIcon: FileCheck2,
   },
   {
@@ -42,7 +42,7 @@ const steps = [
     badge: "Step 03",
     icon: BarChart3,
     title: "Track Real-Time Verified Impact",
-    description: "Receive transparent contribution receipts. Follow real-time photo proofs, financial accounting, and community field reports.",
+    description: "Receive instant confirmation receipts. Follow real-time photo proofs, financial accounting, and community field reports.",
     actionTitle: "Live Verification",
     meta: "Transparent Impact Audit Trail",
     metaIcon: SearchCheck,
@@ -58,7 +58,7 @@ export default function HowItWorks() {
         <div className="max-w-3xl mx-auto text-center space-y-4 mb-16 sm:mb-20">
           <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-md bg-primary-50 text-primary-700 text-xs font-bold uppercase tracking-wider border border-primary-200">
             <Coins className="w-3.5 h-3.5 text-primary-600" />
-            Simple 3-Step Protocol
+            Simple 3-Step Process
           </span>
           
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-slate-900 tracking-tight">
@@ -66,7 +66,7 @@ export default function HowItWorks() {
           </h2>
           
           <p className="text-base sm:text-lg text-slate-600 font-normal leading-relaxed">
-            Giving crypto shouldn&apos;t be complicated. Experience direct, blockchain-verified philanthropy with complete transparency from transfer to real-world impact.
+            Giving should be effortless and completely transparent. Experience direct, milestone-verified philanthropy from payment to community impact.
           </p>
         </div>
 

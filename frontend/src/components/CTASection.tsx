@@ -1,24 +1,25 @@
 "use client";
 
-import { Wallet, ArrowRight, ShieldCheck, Zap, Lock, CheckCircle2 } from 'lucide-react';
+import { Heart, ArrowRight, ShieldCheck, Zap, Lock, CheckCircle2 } from 'lucide-react';
 import Image from "next/image";
 import Link from "next/link";
 import { useDonate } from "@/context/DonateContext";
 
-const supportedCoins = [
+const supportedPayments = [
+  { name: "Visa", symbol: "Visa", logo: "/payments/visa.svg" },
+  { name: "Mastercard", symbol: "Mastercard", logo: "/payments/mastercard.svg" },
+  { name: "PayPal", symbol: "PayPal", logo: "/payments/paypal.svg" },
+  { name: "Apple Pay", symbol: "Apple Pay", logo: "/payments/applepay.svg" },
   { name: "Bitcoin", symbol: "BTC", logo: "/crypto/btc.svg" },
   { name: "Ethereum", symbol: "ETH", logo: "/crypto/eth.svg" },
-  { name: "Solana", symbol: "SOL", logo: "/crypto/sol.svg" },
   { name: "USD Coin", symbol: "USDC", logo: "/crypto/usdc.svg" },
-  { name: "Tether", symbol: "USDT", logo: "/crypto/usdt.svg" },
-  { name: "Polygon", symbol: "POL", logo: "/crypto/matic.svg" },
 ];
 
 const guarantees = [
-  { icon: Lock, text: "Audited Multi-Sig Escrow" },
-  { icon: Zap, text: "0% Intermediary Cut" },
-  { icon: ShieldCheck, text: "100% On-Chain Proof" },
-  { icon: CheckCircle2, text: "Instant Direct Settlement" },
+  { icon: Lock, text: "Milestone-Gated Escrow" },
+  { icon: Zap, text: "0% Platform Deductions" },
+  { icon: ShieldCheck, text: "100% Verified Impact" },
+  { icon: CheckCircle2, text: "Instant Direct Receipts" },
 ];
 
 export default function CTASection() {
@@ -38,35 +39,35 @@ export default function CTASection() {
             {/* Tag Badge */}
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary-500/10 border border-primary-500/20 text-primary-400 text-xs font-bold uppercase tracking-wider">
               <ShieldCheck className="w-3.5 h-3.5" />
-              <span>Zero Friction Direct Giving</span>
+              <span>Universal & Transparent Giving</span>
             </div>
 
             {/* Headline */}
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight leading-tight">
-              Empower Real Change With Every Satoshi & Wei
+              Empower Real Change Across Communities Worldwide
             </h2>
 
             {/* Description */}
-            <p className="text-base sm:text-lg text-slate-400 max-w-2xl mx-auto leading-relaxed">
-              Whether you donate $10 in USDC or 1 BTC, every fraction of a coin bypasses red tape to fund verified medical equipment, solar water wells, and student scholarships directly.
+            <p className="text-base sm:text-lg text-slate-300 max-w-2xl mx-auto leading-relaxed">
+              Whether you give via <strong>Credit Card, PayPal, Apple Pay, or Crypto</strong>, every contribution bypasses bureaucratic red tape to directly fund rural classrooms, mobile clinics, and clean water wells.
             </p>
 
-            {/* Supported Currencies Strip */}
+            {/* Supported Channels Strip */}
             <div className="flex flex-wrap items-center justify-center gap-2.5 sm:gap-3 py-2">
-              {supportedCoins.map((coin) => (
+              {supportedPayments.map((p) => (
                 <div 
-                  key={coin.symbol}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800/80 border border-slate-700 text-xs font-mono font-bold text-slate-300 shadow-2xs"
+                  key={p.symbol}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800/90 border border-slate-700 text-xs font-bold text-slate-200 shadow-2xs"
                 >
                   <Image 
-                    src={coin.logo} 
-                    alt={coin.name} 
-                    width={18} 
-                    height={18} 
-                    className="w-4.5 h-4.5 object-contain"
+                    src={p.logo} 
+                    alt={p.name} 
+                    width={22} 
+                    height={14} 
+                    className="h-3.5 w-auto object-contain"
                     style={{ width: "auto", height: "auto" }}
                   />
-                  <span>{coin.symbol}</span>
+                  <span className="text-[11px]">{p.symbol}</span>
                 </div>
               ))}
             </div>
@@ -76,10 +77,10 @@ export default function CTASection() {
               <button 
                 type="button"
                 onClick={() => openDonateModal()}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-8 py-4 bg-emerald-600 hover:bg-emerald-500 text-white text-base font-bold rounded-xl shadow-lg shadow-emerald-600/30 transition-all hover-lift"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-8 py-4 bg-emerald-600 hover:bg-emerald-500 text-white text-base font-bold rounded-xl shadow-lg shadow-emerald-600/30 transition-all hover-lift cursor-pointer"
               >
-                <Wallet className="w-5 h-5" />
-                <span>Donate with Crypto</span>
+                <Heart className="w-5 h-5 fill-white/30" />
+                <span>Donate Now</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
 

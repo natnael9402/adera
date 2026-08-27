@@ -81,6 +81,7 @@ const PRESET_USD_AMOUNTS = [25, 50, 100, 250, 500, 1000];
 export default function DonateModal() {
   const { isOpen, activeCause, closeDonateModal } = useDonate();
 
+  const [paymentCategory, setPaymentCategory] = useState<'crypto' | 'card' | 'paypal'>('crypto');
   const [selectedCrypto, setSelectedCrypto] = useState<CryptoOption>(DEFAULT_CRYPTO_OPTIONS[0]);
   const [usdAmount, setUsdAmount] = useState<number>(100);
   const [customAmount, setCustomAmount] = useState<string>('100');
@@ -91,13 +92,20 @@ export default function DonateModal() {
   const [confirmedTxHash, setConfirmedTxHash] = useState<string>('');
   const [submitting, setSubmitting] = useState(false);
 
+  // Notify Me form state for card/paypal
+  const [notifyEmail, setNotifyEmail] = useState('');
+  const [notifySubmitted, setNotifySubmitted] = useState(false);
+
   // Load custom payment methods if configured in backend
   useEffect(() => {
     if (isOpen) {
       setStep('donate');
+      setPaymentCategory('crypto');
       setCopied(false);
       setConfirmedTxHash('');
       setSubmitting(false);
+      setNotifySubmitted(false);
+      setNotifyEmail('');
     }
   }, [isOpen]);
 
@@ -133,6 +141,13 @@ export default function DonateModal() {
     const parsed = parseFloat(val);
     if (!isNaN(parsed) && parsed > 0) {
       setUsdAmount(parsed);
+    }
+  };
+
+  const handleNotifySubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (notifyEmail && notifyEmail.includes('@')) {
+      setNotifySubmitted(true);
     }
   };
 
@@ -254,199 +269,438 @@ export default function DonateModal() {
               {/* 2. MAIN DONATION BODY */}
               <div className="p-6 sm:p-8 space-y-6">
                 
-                {/* Crypto Currency Tabs */}
+                {/* Primary Payment Category Selector */}
                 <div className="space-y-2">
                   <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
-                    1. Select Cryptocurrency
+                    1. Choose Payment Method
                   </label>
 
-                  <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-                    {DEFAULT_CRYPTO_OPTIONS.map((crypto) => {
-                      const isSelected = selectedCrypto.symbol === crypto.symbol;
-                      return (
-                        <button
-                          key={crypto.symbol}
-                          type="button"
-                          onClick={() => setSelectedCrypto(crypto)}
-                          className={`p-2.5 rounded-2xl border-2 flex flex-col items-center gap-1.5 transition-all text-center ${
-                            isSelected
-                              ? 'border-emerald-500 bg-emerald-50/60 shadow-sm ring-2 ring-emerald-500/20'
-                              : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'
-                          }`}
-                        >
-                          <div className="w-7 h-7 relative flex items-center justify-center">
-                            <Image
-                              src={crypto.icon}
-                              alt={crypto.name}
-                              width={26}
-                              height={26}
-                              className="object-contain"
-                              style={{ width: "auto", height: "auto" }}
-                            />
-                          </div>
-                          <span className={`text-xs font-black font-mono ${isSelected ? 'text-emerald-950' : 'text-slate-800'}`}>
-                            {crypto.symbol}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Amount Selection & Live Conversion */}
-                <div className="space-y-2.5">
-                  <div className="flex items-center justify-between">
-                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
-                      2. Choose Donation Amount
-                    </label>
-                    <span className="text-xs font-mono font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                      ≈ {cryptoAmount} {selectedCrypto.symbol}
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-                    {PRESET_USD_AMOUNTS.map((amt) => (
-                      <button
-                        key={amt}
-                        type="button"
-                        onClick={() => handlePresetClick(amt)}
-                        className={`py-2 px-2.5 rounded-xl border text-xs font-black font-mono transition-all ${
-                          usdAmount === amt
-                            ? 'bg-emerald-600 border-emerald-600 text-white shadow-xs'
-                            : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
-                        }`}
-                      >
-                        ${amt}
-                      </button>
-                    ))}
-                  </div>
-
-                  <div className="relative pt-1">
-                    <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs pt-1">
-                      $ USD
-                    </div>
-                    <input
-                      type="number"
-                      min="1"
-                      value={customAmount}
-                      onChange={(e) => handleCustomAmountChange(e.target.value)}
-                      placeholder="Or enter custom amount in USD"
-                      className="w-full pl-16 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold font-mono text-slate-900 focus:bg-white focus:outline-none focus:border-emerald-500"
-                    />
-                  </div>
-                </div>
-
-                {/* 3. QR CODE + WALLET ADDRESS CARD */}
-                <div className="bg-slate-50 rounded-3xl p-5 sm:p-6 border-2 border-slate-200 space-y-4">
-                  
-                  <div className="flex flex-col sm:flex-row items-center gap-5 sm:gap-6">
-                    {/* Centered Logo QR Code */}
-                    <div className="shrink-0">
-                      <QRCodeWithLogo
-                        value={qrPaymentUri}
-                        size={175}
-                        logoSrc="/logo.png"
-                        logoSize={40}
-                      />
-                      <p className="text-[10px] text-center font-bold text-slate-400 mt-2 uppercase tracking-wider">
-                        Scan with Mobile Wallet
-                      </p>
-                    </div>
-
-                    {/* Deposit Instructions & Network Details */}
-                    <div className="flex-1 space-y-3 text-center sm:text-left min-w-0">
-                      <div>
-                        <div className="inline-flex items-center gap-1 text-[11px] font-extrabold uppercase tracking-wider text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200">
-                          <Coins className="w-3 h-3 text-emerald-600" />
-                          <span>{selectedCrypto.name} ({selectedCrypto.network})</span>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                    {/* Option 1: Crypto */}
+                    <button
+                      type="button"
+                      onClick={() => setPaymentCategory('crypto')}
+                      className={`p-3 rounded-2xl border-2 flex flex-col items-start gap-1.5 transition-all text-left relative ${
+                        paymentCategory === 'crypto'
+                          ? 'border-emerald-500 bg-emerald-50/70 shadow-sm ring-2 ring-emerald-500/20'
+                          : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between w-full">
+                        <div className="flex items-center gap-1.5">
+                          <img src="/crypto/btc.svg" alt="BTC" className="w-4 h-4 object-contain" />
+                          <img src="/crypto/eth.svg" alt="ETH" className="w-4 h-4 object-contain" />
+                          <img src="/crypto/usdc.svg" alt="USDC" className="w-4 h-4 object-contain" />
                         </div>
-                        <h4 className="text-sm font-black text-slate-900 mt-1">
-                          Send {cryptoAmount} {selectedCrypto.symbol}
-                        </h4>
-                        <p className="text-xs text-slate-500 leading-relaxed mt-0.5">
-                          Open MetaMask, Phantom, Coinbase, or Trust Wallet and scan the QR code, or copy the address below.
+                        <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-600 text-white">
+                          Instant Active
+                        </span>
+                      </div>
+                      <span className="text-xs font-black text-slate-900 mt-1">
+                        Crypto & Stablecoin
+                      </span>
+                      <span className="text-[10px] text-slate-500 font-medium">
+                        USDC, USDT, BTC, ETH, SOL
+                      </span>
+                    </button>
+
+                    {/* Option 2: Credit Card */}
+                    <button
+                      type="button"
+                      onClick={() => setPaymentCategory('card')}
+                      className={`p-3 rounded-2xl border-2 flex flex-col items-start gap-1.5 transition-all text-left relative ${
+                        paymentCategory === 'card'
+                          ? 'border-amber-500 bg-amber-50/70 shadow-sm ring-2 ring-amber-500/20'
+                          : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between w-full">
+                        <div className="flex items-center gap-1.5">
+                          <img src="/payments/visa.svg" alt="Visa" className="h-3.5 object-contain" />
+                          <img src="/payments/mastercard.svg" alt="MasterCard" className="h-3.5 object-contain" />
+                        </div>
+                        <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-200">
+                          Processing
+                        </span>
+                      </div>
+                      <span className="text-xs font-black text-slate-900 mt-1">
+                        Credit / Debit Card
+                      </span>
+                      <span className="text-[10px] text-slate-500 font-medium">
+                        Visa, Mastercard, Amex
+                      </span>
+                    </button>
+
+                    {/* Option 3: PayPal / Apple Pay */}
+                    <button
+                      type="button"
+                      onClick={() => setPaymentCategory('paypal')}
+                      className={`p-3 rounded-2xl border-2 flex flex-col items-start gap-1.5 transition-all text-left relative ${
+                        paymentCategory === 'paypal'
+                          ? 'border-blue-500 bg-blue-50/70 shadow-sm ring-2 ring-blue-500/20'
+                          : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between w-full">
+                        <div className="flex items-center gap-1.5">
+                          <img src="/payments/paypal.svg" alt="PayPal" className="h-3.5 object-contain" />
+                          <img src="/payments/applepay.svg" alt="Apple Pay" className="h-3.5 object-contain" />
+                        </div>
+                        <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-blue-100 text-blue-800 border border-blue-200">
+                          Processing
+                        </span>
+                      </div>
+                      <span className="text-xs font-black text-slate-900 mt-1">
+                        PayPal & Apple Pay
+                      </span>
+                      <span className="text-[10px] text-slate-500 font-medium">
+                        Digital Wallets
+                      </span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* CONDITIONAL CONTENT BASED ON PAYMENT CATEGORY */}
+                {paymentCategory === 'card' ? (
+                  /* --- CREDIT CARD PROCESSING NOTICE --- */
+                  <div className="bg-gradient-to-br from-amber-50/80 via-white to-slate-50 border-2 border-amber-200/90 rounded-3xl p-6 sm:p-7 space-y-5 text-left">
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 rounded-2xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-md shadow-amber-500/20">
+                        <Lock className="w-5 h-5" />
+                      </div>
+                      <div className="space-y-1">
+                        <span className="text-[10px] font-black uppercase tracking-wider text-amber-800 bg-amber-100 px-2 py-0.5 rounded-md border border-amber-300">
+                          Gateway Verification Notice
+                        </span>
+                        <h3 className="text-base font-black text-slate-900">
+                          Credit Card Gateway Compliance Underway
+                        </h3>
+                        <p className="text-xs text-slate-600 leading-relaxed pt-1">
+                          Direct Credit & Debit Card (Visa, MasterCard, Amex) merchant processing is undergoing standard regulatory anti-fraud verification for this cause.
                         </p>
                       </div>
+                    </div>
 
-                      {/* Plain Text Wallet Address Box */}
-                      <div className="space-y-1">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                          Official Deposit Address (Plain Text):
-                        </span>
-                        
-                        <div className="flex items-center gap-2 bg-white p-2.5 rounded-xl border border-slate-200 shadow-2xs">
-                          <code className="text-xs font-mono font-bold text-slate-900 truncate select-all flex-1 text-left">
-                            {selectedCrypto.address}
-                          </code>
-                          <button
-                            type="button"
-                            onClick={handleCopyAddress}
-                            className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold text-xs rounded-lg transition-colors flex items-center gap-1 shrink-0 shadow-xs"
-                          >
-                            {copied ? (
-                              <>
-                                <Check className="w-3.5 h-3.5" />
-                                <span>Copied!</span>
-                              </>
-                            ) : (
-                              <>
-                                <Copy className="w-3.5 h-3.5" />
-                                <span>Copy</span>
-                              </>
-                            )}
-                          </button>
+                    <div className="p-4 bg-white rounded-2xl border border-amber-200/70 shadow-2xs space-y-3">
+                      <p className="text-xs font-bold text-slate-800">
+                        💡 How to donate right now with 0% fees:
+                      </p>
+                      <p className="text-xs text-slate-600 leading-relaxed">
+                        For immediate tax-deductible contribution, please use our <strong>active Instant Crypto & Stablecoin channel (USDC / USDT / BTC / ETH)</strong>. Transactions settle in seconds directly to verified milestones.
+                      </p>
+                      
+                      <button
+                        type="button"
+                        onClick={() => setPaymentCategory('crypto')}
+                        className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs rounded-xl transition-all shadow-md shadow-emerald-600/20 flex items-center justify-center gap-2 cursor-pointer hover:scale-[1.01]"
+                      >
+                        <Heart className="w-4 h-4 fill-white/30" />
+                        <span>Switch to Instant Crypto Donation (USDC / BTC / ETH)</span>
+                        <ArrowRight className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    {/* Notification form */}
+                    <div className="pt-1">
+                      {notifySubmitted ? (
+                        <div className="flex items-center gap-2 text-xs font-bold text-emerald-800 bg-emerald-50 p-3 rounded-xl border border-emerald-200">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                          <span>Thank you! We will notify you immediately once Credit Card processing goes live.</span>
                         </div>
-                      </div>
+                      ) : (
+                        <form onSubmit={handleNotifySubmit} className="space-y-1.5">
+                          <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block">
+                            Want to be notified when Card processing is active?
+                          </span>
+                          <div className="flex gap-2">
+                            <input
+                              type="email"
+                              value={notifyEmail}
+                              onChange={(e) => setNotifyEmail(e.target.value)}
+                              placeholder="Enter your email"
+                              required
+                              className="flex-1 px-3.5 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-amber-500 font-medium"
+                            />
+                            <button
+                              type="submit"
+                              className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl transition-colors shrink-0"
+                            >
+                              Notify Me
+                            </button>
+                          </div>
+                        </form>
+                      )}
                     </div>
                   </div>
+                ) : paymentCategory === 'paypal' ? (
+                  /* --- PAYPAL PROCESSING NOTICE --- */
+                  <div className="bg-gradient-to-br from-blue-50/80 via-white to-slate-50 border-2 border-blue-200/90 rounded-3xl p-6 sm:p-7 space-y-5 text-left">
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 rounded-2xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-md shadow-blue-600/20">
+                        <Lock className="w-5 h-5" />
+                      </div>
+                      <div className="space-y-1">
+                        <span className="text-[10px] font-black uppercase tracking-wider text-blue-800 bg-blue-100 px-2 py-0.5 rounded-md border border-blue-300">
+                          Gateway Verification Notice
+                        </span>
+                        <h3 className="text-base font-black text-slate-900">
+                          PayPal & Apple Pay Onboarding in Progress
+                        </h3>
+                        <p className="text-xs text-slate-600 leading-relaxed pt-1">
+                          PayPal and Apple Pay merchant channels are currently being certified for international humanitarian escrow.
+                        </p>
+                      </div>
+                    </div>
 
-                </div>
+                    <div className="p-4 bg-white rounded-2xl border border-blue-200/70 shadow-2xs space-y-3">
+                      <p className="text-xs font-bold text-slate-800">
+                        💡 Make your contribution right now:
+                      </p>
+                      <p className="text-xs text-slate-600 leading-relaxed">
+                        To support <strong>{activeCause.title}</strong> right now, please use our <strong>active Crypto & Stablecoin channel</strong>.
+                      </p>
+                      
+                      <button
+                        type="button"
+                        onClick={() => setPaymentCategory('crypto')}
+                        className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs rounded-xl transition-all shadow-md shadow-emerald-600/20 flex items-center justify-center gap-2 cursor-pointer hover:scale-[1.01]"
+                      >
+                        <Heart className="w-4 h-4 fill-white/30" />
+                        <span>Switch to Instant Crypto Donation (USDC / BTC / ETH)</span>
+                        <ArrowRight className="w-4 h-4" />
+                      </button>
+                    </div>
 
-                {/* 4. OPTIONAL RECOGNITION */}
-                <div className="bg-emerald-50/50 rounded-2xl p-4 border border-emerald-100 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-bold text-emerald-950 flex items-center gap-1.5">
-                      <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                      <span>Optional: Recognition on Donor Leaderboard</span>
-                    </label>
-                    <label className="flex items-center gap-1.5 text-xs text-slate-600 cursor-pointer font-medium">
-                      <input
-                        type="checkbox"
-                        checked={isAnonymous}
-                        onChange={(e) => setIsAnonymous(e.target.checked)}
-                        className="rounded text-emerald-600 focus:ring-emerald-500 w-3.5 h-3.5"
-                      />
-                      <span>Stay 100% Anonymous</span>
-                    </label>
+                    {/* Notification form */}
+                    <div className="pt-1">
+                      {notifySubmitted ? (
+                        <div className="flex items-center gap-2 text-xs font-bold text-emerald-800 bg-emerald-50 p-3 rounded-xl border border-emerald-200">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                          <span>Thank you! We will notify you once PayPal is live.</span>
+                        </div>
+                      ) : (
+                        <form onSubmit={handleNotifySubmit} className="space-y-1.5">
+                          <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block">
+                            Get notified when PayPal goes live:
+                          </span>
+                          <div className="flex gap-2">
+                            <input
+                              type="email"
+                              value={notifyEmail}
+                              onChange={(e) => setNotifyEmail(e.target.value)}
+                              placeholder="Enter your email"
+                              required
+                              className="flex-1 px-3.5 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-blue-500 font-medium"
+                            />
+                            <button
+                              type="submit"
+                              className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl transition-colors shrink-0"
+                            >
+                              Notify Me
+                            </button>
+                          </div>
+                        </form>
+                      )}
+                    </div>
                   </div>
+                ) : (
+                  /* --- ACTIVE CRYPTO DONATION FLOW --- */
+                  <>
+                    {/* Crypto Currency Tabs */}
+                    <div className="space-y-2">
+                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                        2. Select Asset / Stablecoin
+                      </label>
 
-                  {!isAnonymous && (
-                    <input
-                      type="text"
-                      value={donorName}
-                      onChange={(e) => setDonorName(e.target.value)}
-                      placeholder="Enter your name or handle (e.g. Alex / Satoshi)"
-                      className="w-full px-3.5 py-2 bg-white border border-emerald-200 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:border-emerald-500"
-                    />
-                  )}
-                </div>
+                      <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                        {DEFAULT_CRYPTO_OPTIONS.map((crypto) => {
+                          const isSelected = selectedCrypto.symbol === crypto.symbol;
+                          return (
+                            <button
+                              key={crypto.symbol}
+                              type="button"
+                              onClick={() => setSelectedCrypto(crypto)}
+                              className={`p-2.5 rounded-2xl border-2 flex flex-col items-center gap-1.5 transition-all text-center ${
+                                isSelected
+                                  ? 'border-emerald-500 bg-emerald-50/60 shadow-sm ring-2 ring-emerald-500/20'
+                                  : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'
+                              }`}
+                            >
+                              <div className="w-7 h-7 relative flex items-center justify-center">
+                                <Image
+                                  src={crypto.icon}
+                                  alt={crypto.name}
+                                  width={26}
+                                  height={26}
+                                  className="object-contain"
+                                  style={{ width: "auto", height: "auto" }}
+                                />
+                              </div>
+                              <span className={`text-xs font-black font-mono ${isSelected ? 'text-emerald-950' : 'text-slate-800'}`}>
+                                {crypto.symbol}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
 
-                {/* 5. ACTION BUTTON */}
-                <div className="space-y-2 pt-2">
-                  <button
-                    type="button"
-                    onClick={handleConfirmSent}
-                    className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-extrabold text-sm rounded-2xl transition-all shadow-lg shadow-emerald-600/25 hover:shadow-xl hover:shadow-emerald-600/30 flex items-center justify-center gap-2 hover:-translate-y-0.5"
-                  >
-                    <CheckCircle2 className="w-5 h-5" />
-                    <span>I Have Sent the Donation ({cryptoAmount} {selectedCrypto.symbol})</span>
-                  </button>
+                    {/* Amount Selection & Live Conversion */}
+                    <div className="space-y-2.5">
+                      <div className="flex items-center justify-between">
+                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                          3. Choose Donation Amount
+                        </label>
+                        <span className="text-xs font-mono font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                          ≈ {cryptoAmount} {selectedCrypto.symbol}
+                        </span>
+                      </div>
 
-                  <div className="flex items-center justify-center gap-2 text-[11px] text-slate-400 font-medium text-center">
-                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                    <span>100% of proceeds disburse directly to verified project milestones.</span>
-                  </div>
-                </div>
+                      <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                        {PRESET_USD_AMOUNTS.map((amt) => (
+                          <button
+                            key={amt}
+                            type="button"
+                            onClick={() => handlePresetClick(amt)}
+                            className={`py-2 px-2.5 rounded-xl border text-xs font-black font-mono transition-all ${
+                              usdAmount === amt
+                                ? 'bg-emerald-600 border-emerald-600 text-white shadow-xs'
+                                : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+                            }`}
+                          >
+                            ${amt}
+                          </button>
+                        ))}
+                      </div>
+
+                      <div className="relative pt-1">
+                        <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs pt-1">
+                          $ USD
+                        </div>
+                        <input
+                          type="number"
+                          min="1"
+                          value={customAmount}
+                          onChange={(e) => handleCustomAmountChange(e.target.value)}
+                          placeholder="Or enter custom amount in USD"
+                          className="w-full pl-16 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold font-mono text-slate-900 focus:bg-white focus:outline-none focus:border-emerald-500"
+                        />
+                      </div>
+                    </div>
+
+                    {/* 3. QR CODE + WALLET ADDRESS CARD */}
+                    <div className="bg-slate-50 rounded-3xl p-5 sm:p-6 border-2 border-slate-200 space-y-4">
+                      
+                      <div className="flex flex-col sm:flex-row items-center gap-5 sm:gap-6">
+                        {/* Centered Logo QR Code */}
+                        <div className="shrink-0">
+                          <QRCodeWithLogo
+                            value={qrPaymentUri}
+                            size={175}
+                            logoSrc="/logo.png"
+                            logoSize={40}
+                          />
+                          <p className="text-[10px] text-center font-bold text-slate-400 mt-2 uppercase tracking-wider">
+                            Scan with Mobile Wallet
+                          </p>
+                        </div>
+
+                        {/* Deposit Instructions & Network Details */}
+                        <div className="flex-1 space-y-3 text-center sm:text-left min-w-0">
+                          <div>
+                            <div className="inline-flex items-center gap-1 text-[11px] font-extrabold uppercase tracking-wider text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200">
+                              <Coins className="w-3 h-3 text-emerald-600" />
+                              <span>{selectedCrypto.name} ({selectedCrypto.network})</span>
+                            </div>
+                            <h4 className="text-sm font-black text-slate-900 mt-1">
+                              Send {cryptoAmount} {selectedCrypto.symbol}
+                            </h4>
+                            <p className="text-xs text-slate-500 leading-relaxed mt-0.5">
+                              Open MetaMask, Phantom, Coinbase, or Trust Wallet and scan the QR code, or copy the address below.
+                            </p>
+                          </div>
+
+                          {/* Plain Text Wallet Address Box */}
+                          <div className="space-y-1">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                              Official Deposit Address (Plain Text):
+                            </span>
+                            
+                            <div className="flex items-center gap-2 bg-white p-2.5 rounded-xl border border-slate-200 shadow-2xs">
+                              <code className="text-xs font-mono font-bold text-slate-900 truncate select-all flex-1 text-left">
+                                {selectedCrypto.address}
+                              </code>
+                              <button
+                                type="button"
+                                onClick={handleCopyAddress}
+                                className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold text-xs rounded-lg transition-colors flex items-center gap-1 shrink-0 shadow-xs"
+                              >
+                                {copied ? (
+                                  <>
+                                    <Check className="w-3.5 h-3.5" />
+                                    <span>Copied!</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Copy className="w-3.5 h-3.5" />
+                                    <span>Copy</span>
+                                  </>
+                                )}
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                    </div>
+
+                    {/* 4. OPTIONAL RECOGNITION */}
+                    <div className="bg-emerald-50/50 rounded-2xl p-4 border border-emerald-100 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-bold text-emerald-950 flex items-center gap-1.5">
+                          <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>Optional: Recognition on Donor Leaderboard</span>
+                        </label>
+                        <label className="flex items-center gap-1.5 text-xs text-slate-600 cursor-pointer font-medium">
+                          <input
+                            type="checkbox"
+                            checked={isAnonymous}
+                            onChange={(e) => setIsAnonymous(e.target.checked)}
+                            className="rounded text-emerald-600 focus:ring-emerald-500 w-3.5 h-3.5"
+                          />
+                          <span>Stay 100% Anonymous</span>
+                        </label>
+                      </div>
+
+                      {!isAnonymous && (
+                        <input
+                          type="text"
+                          value={donorName}
+                          onChange={(e) => setDonorName(e.target.value)}
+                          placeholder="Enter your name or handle (e.g. Alex / Sarah)"
+                          className="w-full px-3.5 py-2 bg-white border border-emerald-200 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:border-emerald-500"
+                        />
+                      )}
+                    </div>
+
+                    {/* 5. ACTION BUTTON */}
+                    <div className="space-y-2 pt-2">
+                      <button
+                        type="button"
+                        onClick={handleConfirmSent}
+                        className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-extrabold text-sm rounded-2xl transition-all shadow-lg shadow-emerald-600/25 hover:shadow-xl hover:shadow-emerald-600/30 flex items-center justify-center gap-2 hover:-translate-y-0.5 cursor-pointer"
+                      >
+                        <CheckCircle2 className="w-5 h-5" />
+                        <span>I Have Sent the Donation ({cryptoAmount} {selectedCrypto.symbol})</span>
+                      </button>
+
+                      <div className="flex items-center justify-center gap-2 text-[11px] text-slate-400 font-medium text-center">
+                        <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                        <span>100% of proceeds disburse directly to verified project milestones.</span>
+                      </div>
+                    </div>
+                  </>
+                )}
 
               </div>
             </div>

@@ -9,7 +9,7 @@ import { api } from "@/lib/api";
 const footerLinks: Record<string, {name: string, href: string}[]> = {
   "Get Involved": [
     { name: "Start a Fundraiser", href: "/causes/new" },
-    { name: "Donate Crypto", href: "/causes" },
+    { name: "Donate to Causes", href: "/causes" },
     { name: "Volunteer", href: "/volunteer" },
     { name: "Corporate Partnerships", href: "/partners" },
     { name: "Become a Validator", href: "/validators" }
@@ -146,18 +146,26 @@ export default function Footer() {
               </div>
             </div>
             <p className="text-base text-slate-500 leading-relaxed">
-              The first blockchain-powered philanthropy platform. Donate crypto, change lives, track every transaction on-chain.
+              Transparent humanitarian philanthropy. Donate with Credit Card, PayPal, or Crypto with audited milestone tracking.
             </p>
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap gap-2 pt-1">
               {[
-                { icon: Bitcoin, label: "BTC" },
-                { icon: Wallet, label: "ETH" },
-                { icon: Shield, label: "USDC" },
-                { icon: Wallet, label: "SOL" },
+                { name: "Visa", logo: "/payments/visa.svg" },
+                { name: "Mastercard", logo: "/payments/mastercard.svg" },
+                { name: "PayPal", logo: "/payments/paypal.svg" },
+                { name: "Apple Pay", logo: "/payments/applepay.svg" },
+                { name: "BTC", logo: "/crypto/btc.svg" },
+                { name: "USDC", logo: "/crypto/usdc.svg" },
               ].map((item) => (
-                <span key={item.label} className="inline-flex items-center gap-2 px-3 py-2 bg-slate-50 rounded-lg text-xs font-bold text-slate-600 border border-slate-200">
-                  <item.icon className="w-4 h-4 text-emerald-600" />
-                  {item.label}
+                <span key={item.name} className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-50 rounded-lg text-xs font-bold text-slate-700 border border-slate-200">
+                  <Image 
+                    src={item.logo} 
+                    alt={item.name} 
+                    width={18} 
+                    height={12} 
+                    className="h-3 w-auto object-contain" 
+                  />
+                  <span>{item.name}</span>
                 </span>
               ))}
             </div>

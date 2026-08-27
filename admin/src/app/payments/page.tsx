@@ -83,10 +83,10 @@ export default function PaymentsPage() {
           <div>
             <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight flex items-center gap-3">
               <Wallet className="w-8 h-8 text-primary-600" />
-              Settlement Crypto Wallets
+              Payment Channels & Settlement Wallets
             </h1>
             <p className="text-xs sm:text-sm text-slate-500 mt-1">
-              Configure multi-chain deposit addresses for transparent crypto donations & store orders.
+              Configure multi-channel payment acceptance (Credit Card, PayPal) and manage active multi-chain deposit addresses.
             </p>
           </div>
 
@@ -95,15 +95,54 @@ export default function PaymentsPage() {
             className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-primary-600 hover:bg-primary-700 text-white font-bold rounded-xl transition-all shadow-md shadow-primary-600/20 text-xs hover-lift"
           >
             <Plus className="w-4 h-4" />
-            <span>Add Wallet Address</span>
+            <span>Add Crypto Wallet</span>
           </Link>
         </div>
 
+        {/* Traditional Payment Gateway Integration Status */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Card 1: Credit Card Gateway */}
+          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-start gap-4">
+            <div className="w-12 h-12 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center p-2 shrink-0">
+              <Image src="/payments/credit-card.svg" alt="Card" width={28} height={28} className="object-contain" />
+            </div>
+            <div className="flex-1 space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-sm text-slate-900">Credit / Debit Cards (Visa & Mastercard)</span>
+                <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200">
+                  Compliance In Progress
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                Merchant gateway onboarding and 3DS compliance certification underway. Donors choosing card will see status notices and 1-click fallback to zero-fee crypto.
+              </p>
+            </div>
+          </div>
+
+          {/* Card 2: PayPal & Digital Wallets */}
+          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-start gap-4">
+            <div className="w-12 h-12 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center p-2 shrink-0">
+              <Image src="/payments/paypal.svg" alt="PayPal" width={28} height={28} className="object-contain" />
+            </div>
+            <div className="flex-1 space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-sm text-slate-900">PayPal & Apple Pay</span>
+                <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 border border-blue-200">
+                  Gateway Integration In Progress
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                International humanitarian merchant account setup in review. Modal directs donors seamlessly to instant crypto settlement.
+              </p>
+            </div>
+          </div>
+        </div>
+
         {/* Security Info Card */}
-        <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-sm flex items-center gap-3 text-xs text-slate-600">
-          <ShieldCheck className="w-5 h-5 text-primary-600 shrink-0" />
+        <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 shadow-sm flex items-center gap-3 text-xs text-emerald-900 font-medium">
+          <ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0" />
           <span>
-            Addresses added here are displayed in the donor donation modal and store checkout. Ensure these are multi-sig or verified treasury addresses.
+            Active Settlement Wallets: All crypto deposit addresses below are live in the foundation donation modal and merchandise store checkout.
           </span>
         </div>
 

@@ -7,31 +7,31 @@ import { ShieldCheck, Globe2, Clock, CheckCircle2, ArrowRight, Lock, Zap, Activi
 const features = [
   { 
     icon: ShieldCheck, 
-    title: "Smart Contract Escrow", 
-    description: "Donations are protected by multi-sig smart contracts and disbursed exclusively when milestone proofs are verified." 
+    title: "Milestone-Verified Escrow", 
+    description: "Donations are allocated to audited escrow accounts and disbursed exclusively as on-ground milestone proofs are validated." 
   },
   { 
     icon: Globe2, 
-    title: "Multi-Chain Native", 
-    description: "Direct zero-slippage settlement across Bitcoin, Ethereum, Solana, Polygon, and major USD stablecoins." 
+    title: "Universal Payment Channels", 
+    description: "Contribute seamlessly via Credit Card, PayPal, Apple Pay, or Multi-Chain Crypto (BTC, ETH, SOL, USDC) with zero extra fees." 
   },
   { 
     icon: Clock, 
     title: "Real-Time Proof of Impact", 
-    description: "Every satoshi and wei is tracked on public block explorers from the moment it leaves your wallet." 
+    description: "Every dollar and satoshi is tracked transparently with photographic field reports, community audits, and milestone updates." 
   },
   { 
     icon: Zap, 
-    title: "Zero Intermediary Deductions", 
-    description: "Decentralized architecture eliminates bureaucratic fees, ensuring up to 98% of donor capital directly reaches beneficiaries." 
+    title: "Direct Beneficiary Delivery", 
+    description: "Modern architecture eliminates bureaucratic overhead, ensuring funds reach verified schools, clinics, and clean water wells." 
   },
 ];
 
 const impactStats = [
-  { label: "Total Donated", val: "₿ 1,842+", sub: "$124M+ USD", logo: "/crypto/btc.svg" },
+  { label: "Total Donated", val: "$124M+", sub: "Verified Global Aid", logo: "/payments/credit-card.svg" },
   { label: "Audit Rating", val: "100%", sub: "Formally Verified", icon: ShieldCheck },
-  { label: "Active Donors", val: "52,400+", sub: "142 Countries", logo: "/crypto/sol.svg" },
-  { label: "Settlement Speed", val: "< 3.2s", sub: "Instant Settlement", icon: Activity },
+  { label: "Active Donors", val: "52,400+", sub: "142 Countries", logo: "/payments/paypal.svg" },
+  { label: "Settlement Speed", val: "< 3.2s", sub: "Instant Processing", icon: Activity },
 ];
 
 export default function WhyAdera() {
@@ -53,10 +53,10 @@ export default function WhyAdera() {
                   </div>
                   <div>
                     <h3 className="font-bold text-slate-900 text-sm">
-                      Adera Protocol Standard
+                      Adera Foundation Standard
                     </h3>
                     <p className="text-xs text-primary-700 font-mono font-medium">
-                      v2.4.0 • Mainnet Active
+                      Audited Infrastructure Active
                     </p>
                   </div>
                 </div>
@@ -82,9 +82,9 @@ export default function WhyAdera() {
                         <Image 
                           src={item.logo} 
                           alt={item.label} 
-                          width={18} 
-                          height={18} 
-                          className="w-4.5 h-4.5 object-contain"
+                          width={22} 
+                          height={14} 
+                          className="h-3.5 w-auto object-contain"
                           style={{ width: "auto", height: "auto" }}
                         />
                       ) : item.icon ? (
@@ -101,42 +101,43 @@ export default function WhyAdera() {
                 ))}
               </div>
 
-              {/* Supported Assets Dark Strip */}
+              {/* Supported Payment Channels Dark Strip */}
               <div className="p-4 rounded-2xl bg-slate-900 text-white space-y-3">
                 <div className="flex items-center justify-between text-xs">
                   <span className="font-bold text-slate-200 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-primary-400" />
-                    Supported Settlement Assets
+                    Accepted Payment Channels
                   </span>
                   <span className="text-primary-400 font-mono text-[11px] font-bold bg-primary-950/60 border border-primary-500/30 px-2 py-0.5 rounded">
-                    0% Intermediary Fee
+                    0% Platform Fees
                   </span>
                 </div>
                 
-                <div className="flex items-center gap-2 pt-1">
+                <div className="grid grid-cols-4 sm:grid-cols-7 gap-1.5 pt-1">
                   {[
+                    { name: "Visa", logo: "/payments/visa.svg" },
+                    { name: "Mastercard", logo: "/payments/mastercard.svg" },
+                    { name: "PayPal", logo: "/payments/paypal.svg" },
+                    { name: "Apple Pay", logo: "/payments/applepay.svg" },
                     { name: "BTC", logo: "/crypto/btc.svg" },
                     { name: "ETH", logo: "/crypto/eth.svg" },
-                    { name: "SOL", logo: "/crypto/sol.svg" },
                     { name: "USDC", logo: "/crypto/usdc.svg" },
-                    { name: "USDT", logo: "/crypto/usdt.svg" },
-                    { name: "POL", logo: "/crypto/matic.svg" },
-                  ].map((coin) => (
+                  ].map((p) => (
                     <div 
-                      key={coin.name}
-                      className="flex-1 flex flex-col items-center justify-center p-2 rounded-xl bg-white/5 border border-white/10 hover:border-primary-500/50 hover:bg-primary-950/40 transition-all"
-                      title={coin.name}
+                      key={p.name}
+                      className="flex flex-col items-center justify-center p-1.5 rounded-xl bg-white/5 border border-white/10 hover:border-primary-500/50 hover:bg-primary-950/40 transition-all"
+                      title={p.name}
                     >
                       <Image 
-                        src={coin.logo} 
-                        alt={coin.name} 
-                        width={20} 
-                        height={20} 
-                        className="w-5 h-5 object-contain mb-1"
+                        src={p.logo} 
+                        alt={p.name} 
+                        width={24} 
+                        height={16} 
+                        className="h-4 w-auto object-contain mb-1"
                         style={{ width: "auto", height: "auto" }}
                       />
-                      <span className="text-[10px] font-bold text-slate-300 font-mono">
-                        {coin.name}
+                      <span className="text-[9px] font-bold text-slate-300 font-mono truncate max-w-full">
+                        {p.name}
                       </span>
                     </div>
                   ))}
@@ -204,7 +205,7 @@ export default function WhyAdera() {
               
               <div className="flex items-center gap-2 text-xs font-semibold text-slate-600 px-2">
                 <Check className="w-4 h-4 text-primary-600 shrink-0" />
-                <span>Direct on-chain transparent giving</span>
+                <span>Card, PayPal & Crypto accepted with 0% platform fees</span>
               </div>
             </div>
 

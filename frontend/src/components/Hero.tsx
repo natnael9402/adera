@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { ArrowRight, Hexagon, ShieldCheck, Wallet, TrendingUp, TrendingDown, CheckCircle2, Lock, ArrowUpRight } from 'lucide-react';
+import { ArrowRight, Hexagon, ShieldCheck, Wallet, TrendingUp, TrendingDown, CheckCircle2, Lock, ArrowUpRight, Heart } from 'lucide-react';
 import { motion } from "framer-motion";
 import DonorWall from "./DonorWall";
 import { useDonate } from "@/context/DonateContext";
@@ -109,11 +109,11 @@ export default function Hero() {
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
               </span>
               <span className="text-xs font-bold text-emerald-800 uppercase tracking-wider">
-                The Future of Philanthropy
+                Transparent Global Philanthropy
               </span>
               <span className="hidden sm:inline-block w-1 h-1 rounded-full bg-slate-300" />
               <span className="hidden sm:inline-flex items-center gap-1 text-[11px] font-semibold text-slate-500">
-                <ShieldCheck className="w-3 h-3 text-emerald-600" /> 100% On-Chain
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" /> Verified Real-World Milestones
               </span>
             </div>
 
@@ -121,13 +121,13 @@ export default function Hero() {
             <h1 className="text-3xl xs:text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-slate-900 leading-[1.12] max-w-2xl">
               Transform Lives With{" "}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-600">
-                Crypto Philanthropy
+                Direct Giving
               </span>
             </h1>
 
             {/* Sub-headline */}
             <p className="text-base sm:text-lg text-slate-600 max-w-xl font-normal leading-relaxed">
-              Experience transparent, blockchain-verified humanitarian giving. Donate Bitcoin, Ethereum, or USDC directly to global causes with zero intermediaries and instantaneous verification.
+              Support verified humanitarian causes using <strong>Credit Card, PayPal, and Crypto</strong>. Direct, audited disbursements with 100% transparent milestone tracking.
             </p>
 
             {/* Action Buttons: Instant Giving & Campaign Launch */}
@@ -137,8 +137,8 @@ export default function Hero() {
                 onClick={() => openDonateModal()}
                 className="group inline-flex items-center justify-center gap-2.5 px-7 py-3.5 text-sm sm:text-base font-extrabold text-white bg-emerald-600 hover:bg-emerald-700 active:scale-95 rounded-xl transition-all shadow-md shadow-emerald-600/25 hover:shadow-lg hover:shadow-emerald-600/35 hover:-translate-y-0.5 cursor-pointer"
               >
-                <Wallet className="w-4 h-4 sm:w-5 sm:h-5 transition-transform group-hover:scale-110" />
-                <span>Instant Donate</span>
+                <Heart className="w-4 h-4 sm:w-5 sm:h-5 transition-transform group-hover:scale-110 fill-white/30" />
+                <span>Donate Now</span>
                 <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 transition-transform group-hover:translate-x-1" />
               </button>
               
@@ -151,28 +151,50 @@ export default function Hero() {
               </Link>
             </div>
 
-            {/* Trust Badges Strip */}
-            <div className="flex flex-wrap items-center justify-center lg:justify-start gap-x-6 gap-y-2 pt-1 text-xs text-slate-500 font-medium">
-              <span className="flex items-center gap-1.5">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Zero Platform Fees
-              </span>
-              <span className="flex items-center gap-1.5">
-                <Lock className="w-3.5 h-3.5 text-emerald-600" /> Audited Smart Contracts
-              </span>
-              <span className="flex items-center gap-1.5">
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" /> Instant Receipts
-              </span>
+            {/* Accepted Payment Channels Ribbon */}
+            <div className="w-full max-w-xl bg-white/80 backdrop-blur-md rounded-2xl p-3 border border-slate-200/90 shadow-2xs space-y-2">
+              <div className="flex items-center justify-between px-1">
+                <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
+                  <Lock className="w-3.5 h-3.5 text-emerald-600" />
+                  Accepted Payment Channels
+                </span>
+                <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                  Zero Platform Fees
+                </span>
+              </div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-700">
+                  <img src="/payments/visa.svg" alt="Visa" className="h-4 object-contain" />
+                  <span className="text-[11px] font-bold text-slate-800">Visa</span>
+                </div>
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-700">
+                  <img src="/payments/mastercard.svg" alt="MasterCard" className="h-4 object-contain" />
+                  <span className="text-[11px] font-bold text-slate-800">Mastercard</span>
+                </div>
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-700">
+                  <img src="/payments/paypal.svg" alt="PayPal" className="h-4 object-contain" />
+                  <span className="text-[11px] font-bold text-slate-800">PayPal</span>
+                </div>
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-700">
+                  <img src="/payments/applepay.svg" alt="Apple Pay" className="h-4 object-contain" />
+                  <span className="text-[11px] font-bold text-slate-800">Apple Pay</span>
+                </div>
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 border border-emerald-200 text-xs font-bold text-emerald-900">
+                  <img src="/crypto/btc.svg" alt="Crypto" className="h-3.5 w-3.5 object-contain" />
+                  <span className="text-[11px]">Crypto Native</span>
+                </div>
+              </div>
             </div>
 
-            {/* Live Crypto Price Tickers */}
-            <div className="w-full pt-4 max-w-xl">
-              <div className="flex items-center justify-between mb-2.5 px-0.5">
+            {/* Live Market Rates Tickers */}
+            <div className="w-full pt-1 max-w-xl">
+              <div className="flex items-center justify-between mb-2 px-0.5">
                 <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block animate-pulse" />
-                  Live Market Rates
+                  Live Settlement Rates
                 </span>
                 <span className="text-[11px] font-medium text-slate-400">
-                  Auto-updated 24/7
+                  24/7 Liquidity
                 </span>
               </div>
 

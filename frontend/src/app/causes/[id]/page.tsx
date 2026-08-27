@@ -381,20 +381,33 @@ export default function CauseDetailPage() {
                 <button
                   type="button"
                   onClick={() => openDonateModal(post)}
-                  className="w-full py-3.5 px-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 active:scale-[0.99] text-white font-extrabold text-xs sm:text-sm rounded-2xl transition-all shadow-md shadow-emerald-600/20 hover:shadow-lg hover:shadow-emerald-600/25 flex items-center justify-center gap-2"
+                  className="w-full py-4 px-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 active:scale-[0.99] text-white font-extrabold text-xs sm:text-sm rounded-2xl transition-all shadow-md shadow-emerald-600/20 hover:shadow-lg hover:shadow-emerald-600/25 flex items-center justify-center gap-2 cursor-pointer"
                 >
-                  <ShieldCheck className="w-4 h-4 text-emerald-200" />
-                  <span>Donate Crypto (Interactive QR & Calculator)</span>
+                  <Heart className="w-4 h-4 fill-white/30" />
+                  <span>Donate with Card, PayPal, or Crypto</span>
                 </button>
 
-                {/* Crypto Payment Wallets */}
+                {/* Accepted Payment Badges */}
+                <div className="flex items-center justify-center gap-2 py-1 flex-wrap border-b border-slate-100 pb-3">
+                  <img src="/payments/visa.svg" alt="Visa" className="h-4 object-contain" />
+                  <img src="/payments/mastercard.svg" alt="MasterCard" className="h-4 object-contain" />
+                  <img src="/payments/paypal.svg" alt="PayPal" className="h-4 object-contain" />
+                  <img src="/payments/applepay.svg" alt="Apple Pay" className="h-4 object-contain" />
+                  <span className="text-[10px] font-bold text-slate-400">|</span>
+                  <div className="flex items-center gap-1 text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded">
+                    <img src="/crypto/btc.svg" alt="Crypto" className="h-3 w-3 object-contain" />
+                    <span>Instant Crypto</span>
+                  </div>
+                </div>
+
+                {/* Direct Deposit Wallets */}
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <h3 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                      <Heart className="w-4 h-4 text-emerald-600" />
-                      Deposit Directly via Crypto
+                      <Lock className="w-4 h-4 text-emerald-600" />
+                      Direct Multi-Chain Wallets
                     </h3>
-                    <span className="text-[11px] text-slate-400 font-medium">Instant Verification</span>
+                    <span className="text-[11px] text-slate-400 font-medium">Instant Indexing</span>
                   </div>
 
                   {paymentMethods.length === 0 ? (

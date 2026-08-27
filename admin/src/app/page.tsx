@@ -252,7 +252,7 @@ export default function AdminDashboard() {
               </div>
             </Link>
 
-            {/* 5. Crypto Payment Methods */}
+            {/* 5. Payment Gateways & Wallets */}
             <Link 
               href="/payments" 
               className="bg-white p-6 rounded-3xl border border-slate-200 hover:border-primary-500 hover:shadow-md transition-all flex flex-col justify-between group space-y-6"
@@ -263,16 +263,16 @@ export default function AdminDashboard() {
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-slate-900 group-hover:text-primary-700 transition-colors">
-                    Settlement Wallets
+                    Payment Gateways & Wallets
                   </h3>
                   <p className="text-xs text-slate-500 leading-relaxed mt-1">
-                    Configure multi-chain escrow wallet addresses for receiving Bitcoin, Ethereum, Solana, USDC, and Polygon deposits.
+                    Manage multi-channel payment options, monitor Credit Card & PayPal onboarding, and configure active crypto deposit addresses.
                   </p>
                 </div>
               </div>
 
               <div className="flex items-center justify-between pt-4 border-t border-slate-100 text-xs font-bold text-primary-700">
-                <span>Manage Payment Wallets</span>
+                <span>Configure Gateways & Wallets</span>
                 <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </div>
             </Link>

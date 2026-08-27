@@ -112,6 +112,7 @@ export default function CheckoutPage() {
   const [shippingOption, setShippingOption] = useState<"standard" | "express">("standard");
   const [selectedCause, setSelectedCause] = useState(IMPACT_CAUSES[0].id);
   const [selectedCrypto, setSelectedCrypto] = useState(CRYPTO_OPTIONS[0]);
+  const [checkoutPaymentCategory, setCheckoutPaymentCategory] = useState<'crypto' | 'card' | 'paypal'>('crypto');
 
   // UI state
   const [currentStep, setCurrentStep] = useState<number>(1);
@@ -442,7 +443,7 @@ export default function CheckoutPage() {
                 <span className={`w-6 h-6 rounded-full flex items-center justify-center font-mono ${currentStep >= 3 ? 'bg-primary-600 text-white' : 'bg-slate-200 text-slate-600'}`}>
                   3
                 </span>
-                <span>Crypto Settlement</span>
+                <span>Payment & Settlement</span>
               </div>
             </div>
 
@@ -725,7 +726,7 @@ export default function CheckoutPage() {
               </div>
             </div>
 
-            {/* Step 3: Multi-Chain Crypto Settlement */}
+            {/* Step 3: Payment Method & Settlement */}
             <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-sm space-y-6">
               
               <div className="flex items-center justify-between pb-4 border-b border-slate-100">
@@ -735,53 +736,183 @@ export default function CheckoutPage() {
                   </div>
                   <div>
                     <h2 className="text-lg font-bold text-slate-900">
-                      Select Cryptocurrency & Settle
+                      Payment Method & Settlement
                     </h2>
                     <p className="text-xs text-slate-500">
-                      Direct non-custodial transfer • Zero intermediary deduction
+                      Credit Card, PayPal, or Instant Multi-Chain Crypto
                     </p>
                   </div>
                 </div>
 
                 <span className="text-xs font-bold text-primary-700 bg-primary-50 border border-primary-200 px-2.5 py-1 rounded-md">
-                  Web3 Direct
+                  0% Processing Fee
                 </span>
               </div>
 
-              {/* Crypto Selector Grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-                {CRYPTO_OPTIONS.map((coin) => {
-                  const isSelected = selectedCrypto.symbol === coin.symbol;
-                  return (
-                    <button
-                      key={coin.symbol}
-                      onClick={() => setSelectedCrypto(coin)}
-                      className={`p-3 rounded-2xl border text-left transition-all flex items-center gap-3 ${
-                        isSelected 
-                          ? "bg-slate-900 text-white border-slate-900 shadow-md" 
-                          : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
-                      }`}
-                    >
-                      <Image 
-                        src={coin.logo} 
-                        alt={coin.name} 
-                        width={24} 
-                        height={24} 
-                        className="w-6 h-6 object-contain shrink-0"
-                        style={{ width: "auto", height: "auto" }}
-                      />
-                      <div className="truncate">
-                        <span className="text-xs font-bold block truncate">
-                          {coin.name}
-                        </span>
-                        <span className={`text-[10px] font-mono ${isSelected ? 'text-primary-400' : 'text-slate-500'}`}>
-                          {coin.symbol}
-                        </span>
-                      </div>
-                    </button>
-                  );
-                })}
+              {/* 3 Payment Category Tabs */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setCheckoutPaymentCategory('crypto')}
+                  className={`p-3 rounded-2xl border-2 flex flex-col items-start gap-1.5 transition-all text-left ${
+                    checkoutPaymentCategory === 'crypto'
+                      ? 'border-emerald-500 bg-emerald-50/70 ring-2 ring-emerald-500/20'
+                      : 'border-slate-200 bg-slate-50 hover:bg-slate-100'
+                  }`}
+                >
+                  <div className="flex items-center justify-between w-full">
+                    <div className="flex items-center gap-1.5">
+                      <img src="/crypto/btc.svg" alt="BTC" className="w-4 h-4 object-contain" />
+                      <img src="/crypto/eth.svg" alt="ETH" className="w-4 h-4 object-contain" />
+                      <img src="/crypto/usdc.svg" alt="USDC" className="w-4 h-4 object-contain" />
+                    </div>
+                    <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-600 text-white">
+                      Instant Active
+                    </span>
+                  </div>
+                  <span className="text-xs font-black text-slate-900 mt-1">Crypto & Stablecoin</span>
+                  <span className="text-[10px] text-slate-500">USDC, USDT, BTC, ETH, SOL</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setCheckoutPaymentCategory('card')}
+                  className={`p-3 rounded-2xl border-2 flex flex-col items-start gap-1.5 transition-all text-left ${
+                    checkoutPaymentCategory === 'card'
+                      ? 'border-amber-500 bg-amber-50/70 ring-2 ring-amber-500/20'
+                      : 'border-slate-200 bg-slate-50 hover:bg-slate-100'
+                  }`}
+                >
+                  <div className="flex items-center justify-between w-full">
+                    <div className="flex items-center gap-1.5">
+                      <img src="/payments/visa.svg" alt="Visa" className="h-3.5 object-contain" />
+                      <img src="/payments/mastercard.svg" alt="MasterCard" className="h-3.5 object-contain" />
+                    </div>
+                    <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-200">
+                      Processing
+                    </span>
+                  </div>
+                  <span className="text-xs font-black text-slate-900 mt-1">Credit / Debit Card</span>
+                  <span className="text-[10px] text-slate-500">Visa, Mastercard, Amex</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setCheckoutPaymentCategory('paypal')}
+                  className={`p-3 rounded-2xl border-2 flex flex-col items-start gap-1.5 transition-all text-left ${
+                    checkoutPaymentCategory === 'paypal'
+                      ? 'border-blue-500 bg-blue-50/70 ring-2 ring-blue-500/20'
+                      : 'border-slate-200 bg-slate-50 hover:bg-slate-100'
+                  }`}
+                >
+                  <div className="flex items-center justify-between w-full">
+                    <div className="flex items-center gap-1.5">
+                      <img src="/payments/paypal.svg" alt="PayPal" className="h-3.5 object-contain" />
+                      <img src="/payments/applepay.svg" alt="Apple Pay" className="h-3.5 object-contain" />
+                    </div>
+                    <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-blue-100 text-blue-800 border border-blue-200">
+                      Processing
+                    </span>
+                  </div>
+                  <span className="text-xs font-black text-slate-900 mt-1">PayPal & Apple Pay</span>
+                  <span className="text-[10px] text-slate-500">Digital Wallets</span>
+                </button>
               </div>
+
+              {checkoutPaymentCategory === 'card' ? (
+                <div className="bg-amber-50/80 border-2 border-amber-200 rounded-3xl p-6 space-y-4 text-left">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-2xl bg-amber-500 text-white flex items-center justify-center shrink-0">
+                      <Lock className="w-5 h-5" />
+                    </div>
+                    <div className="space-y-1">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-amber-800 bg-amber-100 px-2 py-0.5 rounded border border-amber-300">
+                        Merchant Compliance Onboarding
+                      </span>
+                      <h4 className="text-sm font-black text-slate-900">
+                        Credit Card Processing Under Verification
+                      </h4>
+                      <p className="text-xs text-slate-600 leading-relaxed pt-0.5">
+                        Credit & Debit Card gateways are being certified for zero-slippage escrow routing. To complete your order immediately, please use our <strong>active instant Crypto channel</strong> with zero processing fees.
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setCheckoutPaymentCategory('crypto')}
+                    className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition-all shadow-md shadow-emerald-600/20 flex items-center justify-center gap-2"
+                  >
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>Switch to Instant Crypto Checkout (USDC / BTC / ETH)</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : checkoutPaymentCategory === 'paypal' ? (
+                <div className="bg-blue-50/80 border-2 border-blue-200 rounded-3xl p-6 space-y-4 text-left">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-2xl bg-blue-600 text-white flex items-center justify-center shrink-0">
+                      <Lock className="w-5 h-5" />
+                    </div>
+                    <div className="space-y-1">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-blue-800 bg-blue-100 px-2 py-0.5 rounded border border-blue-300">
+                        Merchant Compliance Onboarding
+                      </span>
+                      <h4 className="text-sm font-black text-slate-900">
+                        PayPal & Apple Pay Integration Underway
+                      </h4>
+                      <p className="text-xs text-slate-600 leading-relaxed pt-0.5">
+                        PayPal checkout is undergoing standard verification. Please complete your order using our <strong>active Crypto channel</strong>.
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setCheckoutPaymentCategory('crypto')}
+                    className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition-all shadow-md shadow-emerald-600/20 flex items-center justify-center gap-2"
+                  >
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>Switch to Instant Crypto Checkout (USDC / BTC / ETH)</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <>
+                  {/* Crypto Selector Grid */}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                    {CRYPTO_OPTIONS.map((coin) => {
+                      const isSelected = selectedCrypto.symbol === coin.symbol;
+                      return (
+                        <button
+                          key={coin.symbol}
+                          onClick={() => setSelectedCrypto(coin)}
+                          className={`p-3 rounded-2xl border text-left transition-all flex items-center gap-3 ${
+                            isSelected 
+                              ? "bg-slate-900 text-white border-slate-900 shadow-md" 
+                              : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
+                          }`}
+                        >
+                          <Image 
+                            src={coin.logo} 
+                            alt={coin.name} 
+                            width={24} 
+                            height={24} 
+                            className="w-6 h-6 object-contain shrink-0"
+                            style={{ width: "auto", height: "auto" }}
+                          />
+                          <div className="truncate">
+                            <span className="text-xs font-bold block truncate">
+                              {coin.name}
+                            </span>
+                            <span className={`text-[10px] font-mono ${isSelected ? 'text-primary-400' : 'text-slate-500'}`}>
+                              {coin.symbol}
+                            </span>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
 
               {/* Deposit Address Box */}
               <div className="p-5 rounded-2xl bg-slate-900 text-white space-y-4 border border-slate-800">
@@ -841,6 +972,8 @@ export default function CheckoutPage() {
                   </>
                 )}
               </button>
+                </>
+              )}
 
             </div>
 

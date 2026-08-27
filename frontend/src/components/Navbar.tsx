@@ -90,7 +90,7 @@ export default function Navbar() {
               className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-extrabold text-white bg-emerald-600 hover:bg-emerald-700 active:scale-95 rounded-xl transition-all shadow-md shadow-emerald-600/20 cursor-pointer"
             >
               <Heart className="w-3.5 h-3.5 fill-white/30" />
-              <span>Instant Donate</span>
+              <span>Donate Now</span>
             </button>
 
             {/* Creator / User Session Profile */}
@@ -167,7 +167,7 @@ export default function Navbar() {
                 className="w-full py-2.5 bg-emerald-600 text-white font-extrabold text-xs rounded-xl shadow-xs flex items-center justify-center gap-2"
               >
                 <Heart className="w-4 h-4 fill-white/30" />
-                <span>Instant Crypto Donation</span>
+                <span>Donate Now (Card, PayPal, Crypto)</span>
               </button>
 
               <a
