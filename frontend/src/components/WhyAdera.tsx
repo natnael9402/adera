@@ -18,7 +18,7 @@ const features = [
   { 
     icon: Clock, 
     title: "Real-Time Proof of Impact", 
-    description: "Every dollar and satoshi is tracked transparently with photographic field reports, community audits, and milestone updates." 
+    description: "Every dollar donated is tracked transparently with photographic field reports, community audits, and milestone updates." 
   },
   { 
     icon: Zap, 
@@ -167,7 +167,7 @@ export default function WhyAdera() {
               </h2>
               
               <p className="text-base sm:text-lg text-slate-600 leading-relaxed font-normal">
-                Traditional charities lose up to 30% of donations to administrative bloat, foreign exchange fees, and opaque reporting. Adera replaces friction with trustless cryptographic transparency.
+                Traditional charities lose up to 30% of donations to administrative bloat, transaction markups, and opaque reporting. Adera replaces friction with direct, auditable transparency and 100% verified impact.
               </p>
             </div>
 

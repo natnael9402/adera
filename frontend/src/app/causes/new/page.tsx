@@ -531,8 +531,8 @@ export default function NewCausePage() {
                       <MapPin className="w-5 h-5" />
                     </div>
                     <div>
-                      <h2 className="text-base font-black text-slate-900">Step 2: Beneficiary & Payout Rails</h2>
-                      <p className="text-xs text-slate-500">Specify community location, cover image, and Bitcoin/crypto payout wallet.</p>
+                      <h2 className="text-base font-black text-slate-900">Step 2: Beneficiary & Payout Method</h2>
+                      <p className="text-xs text-slate-500">Specify community location, cover image, and target disbursement payout method.</p>
                     </div>
                   </div>
                   <span className="text-xs font-bold text-slate-400">2 of 3</span>
@@ -574,17 +574,17 @@ export default function NewCausePage() {
                   label="Campaign Cover Image (16:9 Aspect Ratio)"
                 />
 
-                {/* Payout Crypto Rails Setup */}
+                {/* Target Payout Method Setup */}
                 <div className="p-5 bg-slate-50 border border-slate-200 rounded-2xl space-y-4">
                   <div className="flex items-center gap-2">
                     <Wallet className="w-4 h-4 text-emerald-600" />
                     <h3 className="text-xs font-black uppercase tracking-wider text-slate-900">
-                      Campaign Target Payout Wallet (Disbursement)
+                      Campaign Target Payout Method (Disbursements)
                     </h3>
                   </div>
 
                   <p className="text-xs text-slate-500">
-                    When funds are disbursed upon verified milestones, they will be sent directly to this address.
+                    When funds are disbursed upon verified milestones, they will be disbursed to this destination account/address.
                   </p>
 
                   <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
@@ -597,9 +597,9 @@ export default function NewCausePage() {
                         onChange={(e) => setCryptoPayoutSymbol(e.target.value)}
                         className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-extrabold text-slate-900 focus:outline-none focus:border-emerald-500"
                       >
-                        <option value="BTC">Bitcoin (BTC)</option>
                         <option value="USDC">USD Coin (USDC)</option>
                         <option value="USDT">Tether (USDT)</option>
+                        <option value="BTC">Bitcoin (BTC)</option>
                         <option value="ETH">Ethereum (ETH)</option>
                         <option value="SOL">Solana (SOL)</option>
                       </select>
@@ -607,17 +607,11 @@ export default function NewCausePage() {
 
                     <div className="sm:col-span-3">
                       <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-1">
-                        Destination Wallet Address
+                        Payout Account / Destination Address
                       </label>
                       <input
                         type="text"
-                        placeholder={
-                          cryptoPayoutSymbol === 'BTC'
-                            ? 'bc1q... (Native SegWit/Taproot)'
-                            : cryptoPayoutSymbol === 'SOL'
-                            ? 'Solana address...'
-                            : '0x... (EVM Address)'
-                        }
+                        placeholder="e.g. USDC (ERC20/SPL), USDT, Bank account routing, or payout address"
                         value={cryptoPayoutAddress}
                         onChange={(e) => setCryptoPayoutAddress(e.target.value)}
                         className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500"

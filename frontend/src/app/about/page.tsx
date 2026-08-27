@@ -12,7 +12,7 @@ const values = [
   {
     icon: Target,
     title: "Radical Transparency",
-    desc: "Every single donation is cryptographically signed and publicly verifiable on-chain with zero hidden balance sheets.",
+    desc: "Every single donation is publicly verifiable with transparent ledger auditing and zero hidden balance sheets.",
     color: "bg-emerald-50 text-emerald-600 border-emerald-200"
   },
   {
@@ -24,7 +24,7 @@ const values = [
   {
     icon: ShieldCheck,
     title: "Zero Intermediary Deductions",
-    desc: "100% of crypto donated goes straight to cause smart contracts without administrative cuts or broker fees.",
+    desc: "100% of donated funds go straight to verified project vaults without administrative cuts or broker fees.",
     color: "bg-blue-50 text-blue-600 border-blue-200"
   },
   {
@@ -81,7 +81,7 @@ export default function AboutPage() {
               </div>
 
               <h2 className="text-2xl sm:text-4xl font-extrabold text-slate-900 tracking-tight leading-snug">
-                Eliminating the 30% Non-Profit Waste with Smart Contracts
+                Eliminating Non-Profit Overhead with Direct Disbursements
               </h2>
 
               <div className="text-sm sm:text-base text-slate-600 leading-relaxed space-y-4 font-normal">
@@ -89,14 +89,14 @@ export default function AboutPage() {
                   For decades, international humanitarian giving has been plagued by opaque financial channels, exorbitant administrative overhead, and currency conversion losses.
                 </p>
                 <p>
-                  Adera solves this by routing crypto capital directly into multi-signature smart contracts. Funds are disbursed in milestones verified by on-the-ground proof, ensuring complete accountability.
+                  Adera solves this by routing capital directly into verified milestone vaults via Credit Card, PayPal, and digital currencies. Funds are disbursed exclusively upon validated on-the-ground proof, ensuring complete accountability.
                 </p>
               </div>
 
               <div className="grid grid-cols-2 gap-4 pt-2">
                 <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-2xs">
-                  <span className="text-2xl font-black text-slate-900 font-mono">$124M+</span>
-                  <p className="text-xs text-slate-500 mt-0.5">Crypto Raised</p>
+                  <span className="text-2xl font-black text-slate-900 font-mono">$124.5M+</span>
+                  <p className="text-xs text-slate-500 mt-0.5">Total Aid Raised (USD)</p>
                 </div>
                 <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-2xs">
                   <span className="text-2xl font-black text-emerald-700 font-mono">18,500+</span>

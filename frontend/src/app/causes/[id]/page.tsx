@@ -235,9 +235,9 @@ export default function CauseDetailPage() {
                   </div>
                   {(post as any).cryptoPayoutAddress && (
                     <div className="text-right">
-                      <span className="text-[10px] font-bold uppercase text-slate-400 block">Target Payout Wallet</span>
+                      <span className="text-[10px] font-bold uppercase text-slate-400 block">Target Payout Method</span>
                       <span className="font-mono text-xs font-bold text-emerald-700 bg-white px-2.5 py-1 rounded border border-emerald-200 inline-block mt-0.5">
-                        {(post as any).cryptoPayoutSymbol || 'USDC'} Wallet
+                        {(post as any).cryptoPayoutSymbol || 'USD'} Settlement
                       </span>
                     </div>
                   )}
@@ -396,16 +396,16 @@ export default function CauseDetailPage() {
                   <span className="text-[10px] font-bold text-slate-400">|</span>
                   <div className="flex items-center gap-1 text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded">
                     <img src="/crypto/btc.svg" alt="Crypto" className="h-3 w-3 object-contain" />
-                    <span>Instant Crypto</span>
+                    <span>Multi-Currency</span>
                   </div>
                 </div>
 
-                {/* Direct Deposit Wallets */}
+                {/* Direct Giving Channels */}
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <h3 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-2">
                       <Lock className="w-4 h-4 text-emerald-600" />
-                      Direct Multi-Chain Wallets
+                      Direct Giving Channels & Addresses
                     </h3>
                     <span className="text-[11px] text-slate-400 font-medium">Instant Indexing</span>
                   </div>

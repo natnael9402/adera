@@ -5,15 +5,15 @@ import Image from "next/image";
 
 const testimonials = [
   {
-    name: "0xSarah.eth",
-    role: "Verified Web3 Donor",
-    avatar: "0xS",
-    avatarBg: "bg-primary-600 text-white",
+    name: "Sarah Jenkins",
+    role: "Verified Philanthropist",
+    avatar: "SJ",
+    avatarBg: "bg-emerald-600 text-white",
     rating: 5,
-    quote: "Finally, a philanthropy platform that respects blockchain transparency. I can track every satoshi of my donations on-chain. This is how giving should work in Web3.",
+    quote: "Finally, a philanthropy platform that respects total transparency. I can track every single dollar of my donations with photographic milestone proof. This is how direct giving should work.",
     cause: "Clean Water Initiative",
-    cryptoGiven: "0.45 BTC Donated",
-    cryptoLogo: "/crypto/btc.svg",
+    amountGiven: "$32,500 Donated",
+    paymentLogo: "/payments/visa.svg",
     badge: "Verified Donor",
   },
   {
@@ -22,22 +22,22 @@ const testimonials = [
     avatar: "JO",
     avatarBg: "bg-slate-900 text-white",
     rating: 5,
-    quote: "We funded a full computer lab and solar power for our school in 3 weeks. The global crypto community gave with zero bureaucracy, and smart contracts guaranteed our milestones.",
+    quote: "We funded a full computer lab and solar power for our school in 3 weeks. Global donors contributed with zero bureaucracy, and verified milestones guaranteed our progress.",
     cause: "Solar for Rural Schools",
-    cryptoGiven: "1.25 BTC Raised",
-    cryptoLogo: "/crypto/btc.svg",
+    amountGiven: "$85,000 Raised",
+    paymentLogo: "/payments/paypal.svg",
     badge: "Verified Campaign",
   },
   {
     name: "Amara Tesfaye",
     role: "Community Director",
     avatar: "AT",
-    avatarBg: "bg-primary-700 text-white",
+    avatarBg: "bg-emerald-700 text-white",
     rating: 5,
-    quote: "Donors worldwide sent USDC and Solana to construct our solar well. Now 1,200 villagers have fresh water without walking hours each day. Cryptographic proof made it accountable.",
+    quote: "Donors worldwide contributed to construct our solar water well. Now 1,200 villagers have fresh water without walking hours each day. Field proof and receipts made it completely accountable.",
     cause: "Clean Water Infrastructure",
-    cryptoGiven: "34,000 USDC Delivered",
-    cryptoLogo: "/crypto/usdc.svg",
+    amountGiven: "$34,000 Delivered",
+    paymentLogo: "/payments/mastercard.svg",
     badge: "Verified Impact",
   },
 ];
@@ -49,17 +49,17 @@ export default function Testimonials() {
         
         {/* Section Header */}
         <div className="max-w-3xl mx-auto text-center space-y-4 mb-16 sm:mb-20">
-          <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-md bg-primary-50 text-primary-700 text-xs font-bold uppercase tracking-wider border border-primary-200">
-            <Heart className="w-3.5 h-3.5 text-primary-600" />
+          <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-md bg-emerald-50 text-emerald-800 text-xs font-bold uppercase tracking-wider border border-emerald-200">
+            <Heart className="w-3.5 h-3.5 text-emerald-600" />
             Real Impact Stories
           </span>
           
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-slate-900 tracking-tight">
-            Voices of <span className="text-primary-600">Change</span>
+            Voices of <span className="text-emerald-700">Change</span>
           </h2>
           
           <p className="text-base sm:text-lg text-slate-600 font-normal leading-relaxed">
-            Real people, verifiable on-chain impact. Hear from our global community of crypto donors, campaign creators, and beneficiaries.
+            Real people, verifiable direct impact. Hear from our global community of donors, campaign organizers, and verified beneficiaries.
           </p>
         </div>
 
@@ -68,7 +68,7 @@ export default function Testimonials() {
           {testimonials.map((t) => (
             <div 
               key={t.name} 
-              className="bg-white rounded-2xl p-7 sm:p-8 border border-slate-200 hover:border-primary-500 transition-all duration-200 hover:shadow-md flex flex-col justify-between group relative"
+              className="bg-white rounded-2xl p-7 sm:p-8 border border-slate-200 hover:border-emerald-500 transition-all duration-200 hover:shadow-md flex flex-col justify-between group relative"
             >
               <div>
                 {/* Header: Stars & Verification Badge */}
@@ -79,8 +79,8 @@ export default function Testimonials() {
                     ))}
                   </div>
 
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-primary-50 text-primary-700 border border-primary-200 text-xs font-bold">
-                    <ShieldCheck className="w-3.5 h-3.5 text-primary-600" />
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold">
+                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
                     {t.badge}
                   </span>
                 </div>
@@ -91,7 +91,7 @@ export default function Testimonials() {
                 </p>
               </div>
 
-              {/* Cause and Crypto Tag */}
+              {/* Cause and Amount Tag */}
               <div>
                 <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100 mb-6">
                   <div>
@@ -105,14 +105,14 @@ export default function Testimonials() {
                   
                   <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-xs font-bold text-slate-900 font-mono">
                     <Image 
-                      src={t.cryptoLogo} 
-                      alt="crypto" 
-                      width={14} 
-                      height={14} 
-                      className="w-3.5 h-3.5 object-contain"
+                      src={t.paymentLogo} 
+                      alt="Payment" 
+                      width={16} 
+                      height={12} 
+                      className="h-3 w-auto object-contain"
                       style={{ width: "auto", height: "auto" }}
                     />
-                    <span className="text-[11px]">{t.cryptoGiven}</span>
+                    <span className="text-[11px]">{t.amountGiven}</span>
                   </div>
                 </div>
 
@@ -122,7 +122,7 @@ export default function Testimonials() {
                     {t.avatar}
                   </div>
                   <div className="truncate">
-                    <p className="font-bold text-sm text-slate-900 group-hover:text-primary-700 transition-colors truncate">
+                    <p className="font-bold text-sm text-slate-900 group-hover:text-emerald-700 transition-colors truncate">
                       {t.name}
                     </p>
                     <p className="text-xs text-slate-500 font-medium truncate">

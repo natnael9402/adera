@@ -94,13 +94,13 @@ export default function CausesPage() {
             <div className="max-w-2xl space-y-3">
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold uppercase tracking-wider">
                 <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                <span>100% On-Chain Verified Philanthropy</span>
+                <span>100% Verified Impact & Real-Time Tracking</span>
               </div>
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight">
                 Verified Global <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-600">Causes</span>
               </h1>
               <p className="text-base text-slate-600 font-normal leading-relaxed">
-                Donate crypto directly to humanitarian and community initiatives worldwide. Every dollar is tracked on-chain with zero middleman cuts.
+                Donate directly to humanitarian and community initiatives worldwide using Credit Card, PayPal, or Crypto. Every dollar is tracked transparently with verified milestone proof.
               </p>
             </div>
 
