@@ -4,7 +4,11 @@ import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Heart, Copy, Check, ShieldCheck, ArrowRight, ExternalLink, Layers, RefreshCw, Lock, Coins, CheckCircle2, DollarSign, Wallet, QrCode } from 'lucide-react';
+import { 
+  X, Heart, Copy, Check, ShieldCheck, ArrowRight, ExternalLink, 
+  Layers, RefreshCw, Lock, Coins, CheckCircle2, DollarSign, Wallet, 
+  QrCode, User, Mail, Eye, EyeOff, Loader2, Sparkles, LogOut, AlertCircle
+} from 'lucide-react';
 import { useDonate } from '@/context/DonateContext';
 import QRCodeWithLogo from './QRCodeWithLogo';
 import { api } from '@/lib/api';
@@ -92,11 +96,22 @@ export default function DonateModal() {
   const [confirmedTxHash, setConfirmedTxHash] = useState<string>('');
   const [submitting, setSubmitting] = useState(false);
 
+  // Authenticated User State
+  const [currentUser, setCurrentUser] = useState<{ id?: number; name?: string; email?: string } | null>(null);
+  const [authMode, setAuthMode] = useState<'register' | 'login'>('register');
+  const [authName, setAuthName] = useState('');
+  const [authEmail, setAuthEmail] = useState('');
+  const [authPassword, setAuthPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [authLoading, setAuthLoading] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [authSuccess, setAuthSuccess] = useState<string | null>(null);
+
   // Notify Me form state for card/paypal
   const [notifyEmail, setNotifyEmail] = useState('');
   const [notifySubmitted, setNotifySubmitted] = useState(false);
 
-  // Load custom payment methods if configured in backend
+  // Check authenticated state on mount or when modal opens
   useEffect(() => {
     if (isOpen) {
       setStep('donate');
@@ -106,6 +121,23 @@ export default function DonateModal() {
       setSubmitting(false);
       setNotifySubmitted(false);
       setNotifyEmail('');
+      setAuthError(null);
+      setAuthSuccess(null);
+
+      // Check if user is logged in
+      try {
+        const storedUser = localStorage.getItem('user');
+        const storedToken = localStorage.getItem('token');
+        if (storedUser && storedToken) {
+          const parsed = JSON.parse(storedUser);
+          setCurrentUser(parsed);
+          setDonorName(parsed.name || '');
+        } else {
+          setCurrentUser(null);
+        }
+      } catch (e) {
+        setCurrentUser(null);
+      }
     }
   }, [isOpen]);
 
@@ -151,7 +183,56 @@ export default function DonateModal() {
     }
   };
 
+  // Instant In-Modal Authentication & Account Creation
+  const handleQuickAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthError(null);
+    setAuthSuccess(null);
+
+    if (!authEmail || !authEmail.includes('@')) {
+      setAuthError('Please enter a valid email address.');
+      return;
+    }
+    if (authPassword.length < 6) {
+      setAuthError('Password must be at least 6 characters.');
+      return;
+    }
+
+    setAuthLoading(true);
+    try {
+      const res = await api.auth.quickDonorAuth({
+        email: authEmail.trim(),
+        name: authName.trim() || authEmail.split('@')[0],
+        password: authPassword,
+      });
+
+      if (res.token && res.user) {
+        localStorage.setItem('token', res.token);
+        localStorage.setItem('user', JSON.stringify(res.user));
+        setCurrentUser(res.user);
+        setDonorName(res.user.name || '');
+        setAuthSuccess(authMode === 'register' ? 'Account created! You can now proceed with your donation.' : 'Signed in successfully!');
+      }
+    } catch (err: any) {
+      setAuthError(err.message || 'Authentication failed. Please check your credentials.');
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const handleSignOut = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setCurrentUser(null);
+    setAuthSuccess(null);
+  };
+
   const handleConfirmSent = async () => {
+    if (!currentUser) {
+      setAuthError('Please create a donor account or sign in to confirm and record your donation.');
+      return;
+    }
+
     setSubmitting(true);
     const mockTxHash = `0x${Array.from({length: 64}, () => Math.floor(Math.random()*16).toString(16)).join('')}`;
     setConfirmedTxHash(mockTxHash);
@@ -159,7 +240,8 @@ export default function DonateModal() {
     try {
       if (activeCause?.id) {
         await api.posts.donate(Number(activeCause.id), {
-          donorName: isAnonymous ? 'Anonymous Supporter' : (donorName.trim() || 'Generous Donor'),
+          donorName: isAnonymous ? 'Anonymous Supporter' : (donorName.trim() || currentUser.name || 'Generous Donor'),
+          donorEmail: currentUser.email,
           amountUsd: usdAmount,
           cryptoAmount,
           cryptoSymbol: selectedCrypto.symbol,
@@ -269,10 +351,162 @@ export default function DonateModal() {
               {/* 2. MAIN DONATION BODY */}
               <div className="p-6 sm:p-8 space-y-6">
                 
+                {/* ------------------------------------------------------------- */}
+                {/* DONOR ACCOUNT SECTION (IN-MODAL FAST AUTHENTICATION) */}
+                {/* ------------------------------------------------------------- */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                      <User className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>1. Donor Account</span>
+                    </label>
+                    {currentUser && (
+                      <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full flex items-center gap-1">
+                        <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                        <span>Verified Donor</span>
+                      </span>
+                    )}
+                  </div>
+
+                  {currentUser ? (
+                    /* Authenticated State Display */
+                    <div className="p-4 bg-gradient-to-r from-emerald-50/80 via-white to-slate-50 border border-emerald-200 rounded-2xl flex items-center justify-between shadow-2xs">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-full bg-emerald-600 text-white font-black text-xs flex items-center justify-center shadow-xs uppercase">
+                          {currentUser.name?.[0] || 'D'}
+                        </div>
+                        <div>
+                          <div className="text-xs font-black text-slate-900">
+                            {currentUser.name}
+                          </div>
+                          <div className="text-[11px] text-slate-500 font-medium">
+                            {currentUser.email}
+                          </div>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={handleSignOut}
+                        className="text-xs font-bold text-slate-400 hover:text-slate-700 flex items-center gap-1 transition-colors px-2 py-1 rounded-lg hover:bg-slate-100"
+                        title="Sign Out / Switch Account"
+                      >
+                        <LogOut className="w-3.5 h-3.5" />
+                        <span>Switch</span>
+                      </button>
+                    </div>
+                  ) : (
+                    /* Inline Fast Account Creation Form */
+                    <div className="bg-slate-50/80 border border-slate-200 rounded-2xl p-4 sm:p-5 space-y-4 shadow-2xs">
+                      <div className="flex items-center justify-between border-b border-slate-200/80 pb-3">
+                        <div className="flex bg-slate-200/70 p-0.5 rounded-lg">
+                          <button
+                            type="button"
+                            onClick={() => { setAuthMode('register'); setAuthError(null); }}
+                            className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${
+                              authMode === 'register' ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-600 hover:text-slate-900'
+                            }`}
+                          >
+                            ⚡ Quick Sign Up
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => { setAuthMode('login'); setAuthError(null); }}
+                            className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${
+                              authMode === 'login' ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-600 hover:text-slate-900'
+                            }`}
+                          >
+                            Sign In
+                          </button>
+                        </div>
+                        <span className="text-[11px] font-semibold text-slate-500 hidden sm:inline">
+                          Required for verified impact receipt
+                        </span>
+                      </div>
+
+                      {authError && (
+                        <div className="p-3 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl text-xs font-bold flex items-center gap-2">
+                          <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
+                          <span>{authError}</span>
+                        </div>
+                      )}
+
+                      {authSuccess && (
+                        <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs font-bold flex items-center gap-2">
+                          <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
+                          <span>{authSuccess}</span>
+                        </div>
+                      )}
+
+                      <form onSubmit={handleQuickAuth} className="space-y-3">
+                        {authMode === 'register' && (
+                          <div>
+                            <input
+                              type="text"
+                              value={authName}
+                              onChange={(e) => setAuthName(e.target.value)}
+                              placeholder="Your Name (e.g. Sarah Jenkins)"
+                              className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-emerald-500"
+                            />
+                          </div>
+                        )}
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                          <input
+                            required
+                            type="email"
+                            value={authEmail}
+                            onChange={(e) => setAuthEmail(e.target.value)}
+                            placeholder="Email address"
+                            className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-emerald-500"
+                          />
+                          
+                          <div className="relative">
+                            <input
+                              required
+                              type={showPassword ? 'text' : 'password'}
+                              value={authPassword}
+                              onChange={(e) => setAuthPassword(e.target.value)}
+                              placeholder="Password (min 6 chars)"
+                              className="w-full px-3.5 py-2.5 pr-8 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-emerald-500"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowPassword(!showPassword)}
+                              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                            >
+                              {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                            </button>
+                          </div>
+                        </div>
+
+                        <button
+                          type="submit"
+                          disabled={authLoading}
+                          className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs rounded-xl transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                        >
+                          {authLoading ? (
+                            <>
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              <span>Authenticating...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+                              <span>{authMode === 'register' ? 'Create Donor Account & Continue' : 'Sign In & Continue'}</span>
+                              <ArrowRight className="w-3.5 h-3.5" />
+                            </>
+                          )}
+                        </button>
+                      </form>
+                    </div>
+                  )}
+                </div>
+
                 {/* Primary Payment Category Selector */}
                 <div className="space-y-2">
                   <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
-                    1. Choose Payment Method
+                    2. Choose Payment Method
                   </label>
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
@@ -509,7 +743,7 @@ export default function DonateModal() {
                     {/* Crypto Currency Tabs */}
                     <div className="space-y-2">
                       <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
-                        2. Select Asset / Stablecoin
+                        3. Select Asset / Stablecoin
                       </label>
 
                       <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
@@ -549,7 +783,7 @@ export default function DonateModal() {
                     <div className="space-y-2.5">
                       <div className="flex items-center justify-between">
                         <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
-                          3. Choose Donation Amount
+                          4. Choose Donation Amount
                         </label>
                         <span className="text-xs font-mono font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
                           ≈ {cryptoAmount} {selectedCrypto.symbol}
@@ -688,10 +922,20 @@ export default function DonateModal() {
                       <button
                         type="button"
                         onClick={handleConfirmSent}
-                        className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-extrabold text-sm rounded-2xl transition-all shadow-lg shadow-emerald-600/25 hover:shadow-xl hover:shadow-emerald-600/30 flex items-center justify-center gap-2 hover:-translate-y-0.5 cursor-pointer"
+                        disabled={submitting}
+                        className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-extrabold text-sm rounded-2xl transition-all shadow-lg shadow-emerald-600/25 hover:shadow-xl hover:shadow-emerald-600/30 flex items-center justify-center gap-2 hover:-translate-y-0.5 cursor-pointer disabled:opacity-50"
                       >
-                        <CheckCircle2 className="w-5 h-5" />
-                        <span>I Have Sent the Donation ({cryptoAmount} {selectedCrypto.symbol})</span>
+                        {submitting ? (
+                          <>
+                            <Loader2 className="w-5 h-5 animate-spin" />
+                            <span>Verifying & Recording Donation...</span>
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle2 className="w-5 h-5" />
+                            <span>I Have Sent the Donation ({cryptoAmount} {selectedCrypto.symbol})</span>
+                          </>
+                        )}
                       </button>
 
                       <div className="flex items-center justify-center gap-2 text-[11px] text-slate-400 font-medium text-center">
@@ -737,6 +981,12 @@ export default function DonateModal() {
                   <span>Contributor:</span>
                   <span className="font-bold text-slate-900">{isAnonymous || !donorName ? 'Anonymous Supporter' : donorName}</span>
                 </div>
+                {currentUser?.email && (
+                  <div className="flex justify-between text-slate-500">
+                    <span>Verified Account:</span>
+                    <span className="font-bold text-slate-900 font-mono">{currentUser.email}</span>
+                  </div>
+                )}
                 {confirmedTxHash && (
                   <div className="pt-2 border-t border-slate-200/80">
                     <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">On-Chain Receipt Hash:</span>

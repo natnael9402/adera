@@ -25,6 +25,8 @@ export const api = {
       request('/auth/verify-code', { method: 'POST', body: JSON.stringify(body) }),
     login: (body: { email: string; password: string }) =>
       request('/auth/login', { method: 'POST', body: JSON.stringify(body) }),
+    quickDonorAuth: (body: { email: string; name?: string; password?: string }) =>
+      request('/auth/quick-donor', { method: 'POST', body: JSON.stringify(body) }),
     resendVerification: (email: string) =>
       request('/auth/resend-verification', { method: 'POST', body: JSON.stringify({ email }) }),
     me: () => request('/auth/me'),

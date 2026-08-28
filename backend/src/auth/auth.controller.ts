@@ -24,6 +24,11 @@ export class AuthController {
     return this.auth.login(dto);
   }
 
+  @Post('quick-donor')
+  quickDonorAuth(@Body() dto: { email: string; name?: string; password?: string }) {
+    return this.auth.quickDonorAuth(dto);
+  }
+
   @Get('verify/:token')
   verify(@Param('token') token: string) {
     return this.auth.verifyEmail(token);

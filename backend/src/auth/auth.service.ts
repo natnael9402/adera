@@ -181,6 +181,41 @@ export class AuthService {
     };
   }
 
+  async quickDonorAuth(dto: { email: string; name?: string; password?: string }) {
+    const normalizedEmail = dto.email.toLowerCase().trim();
+    let user = await this.prisma.user.findUnique({ where: { email: normalizedEmail } });
+
+    if (user) {
+      if (dto.password && user.password) {
+        const valid = await bcrypt.compare(dto.password, user.password);
+        if (!valid) {
+          throw new BadRequestException('Incorrect password for this donor account. Please sign in with the correct password.');
+        }
+      }
+    } else {
+      const passwordToHash = dto.password || (Math.random().toString(36).slice(-8) + 'A1!');
+      const hashed = await bcrypt.hash(passwordToHash, 10);
+      const donorName = dto.name && dto.name.trim() ? dto.name.trim() : normalizedEmail.split('@')[0];
+
+      user = await this.prisma.user.create({
+        data: {
+          email: normalizedEmail,
+          name: donorName,
+          password: hashed,
+          verified: true,
+          role: 'USER',
+        },
+      });
+    }
+
+    const token = this.jwt.sign({ sub: user.id, role: user.role });
+    return {
+      message: 'Donor authenticated successfully!',
+      token,
+      user: { id: user.id, email: user.email, name: user.name, role: user.role },
+    };
+  }
+
   getProfile(user: any) {
     return { id: user.id, email: user.email, name: user.name, role: user.role };
   }
