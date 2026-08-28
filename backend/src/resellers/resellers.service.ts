@@ -56,37 +56,42 @@ export class ResellersService {
 
   async register(dto: RegisterResellerDto) {
     const email = dto.email.toLowerCase().trim();
-    const handle = this.cleanHandle(dto.handle);
 
     const existingEmail = await this.prisma.resellerShop.findUnique({
       where: { email },
     });
     if (existingEmail) {
-      throw new BadRequestException('A shop with this email address already exists. Please log in.');
+      throw new BadRequestException('An account with this email already exists. Please log in.');
     }
 
-    const existingHandle = await this.prisma.resellerShop.findUnique({
-      where: { handle },
-    });
-    if (existingHandle) {
-      throw new BadRequestException(`Shop handle "@${handle}" is already taken. Please choose another.`);
+    const baseName = dto.name && dto.name.trim() ? dto.name.trim() : email.split('@')[0];
+    let handle = dto.handle && dto.handle.trim() ? this.cleanHandle(dto.handle) : this.cleanHandle(email.split('@')[0]);
+
+    if (!handle || handle.length < 2) {
+      handle = `shop-${Math.floor(1000 + Math.random() * 9000)}`;
     }
 
-    const tier = dto.tier || 'BRONZE';
-    const maxProfitMargin = TIER_PROFIT_LIMITS[tier] || 20.0;
+    let finalHandle = handle;
+    let counter = 1;
+    while (await this.prisma.resellerShop.findUnique({ where: { handle: finalHandle } })) {
+      finalHandle = `${handle}-${counter++}`;
+    }
+
+    const tier = dto.tier || 'GOLD';
+    const maxProfitMargin = TIER_PROFIT_LIMITS[tier] || 30.0;
     const hashedPassword = await bcrypt.hash(dto.password, 10);
 
     const shop = await this.prisma.resellerShop.create({
       data: {
-        name: dto.name.trim(),
-        handle,
+        name: baseName,
+        handle: finalHandle,
         email,
         password: hashedPassword,
         tier,
         maxProfitMargin,
         description: dto.description || `Official ${tier} verified reseller shop on Adera Store.`,
         walletAddress: dto.walletAddress || '',
-        logo: dto.logo || '',
+        logo: dto.logo || 'preset:store_apex',
         isVerified: true,
       },
     });
@@ -105,6 +110,7 @@ export class ResellersService {
         maxProfitMargin: shop.maxProfitMargin,
         description: shop.description,
         walletAddress: shop.walletAddress,
+        logo: shop.logo,
         balance: shop.balance,
         totalSales: shop.totalSales,
       },
@@ -167,13 +173,34 @@ export class ResellersService {
     return safeShop;
   }
 
-  async updateProfile(shopId: number, data: { name?: string; description?: string; walletAddress?: string; logo?: string; banner?: string }) {
+  async updateProfile(shopId: number, data: { name?: string; handle?: string; description?: string; walletAddress?: string; logo?: string; banner?: string; tier?: string }) {
     const shop = await this.prisma.resellerShop.findUnique({ where: { id: shopId } });
     if (!shop) throw new NotFoundException('Shop not found');
 
+    const updateData: any = {};
+    if (data.name !== undefined && data.name.trim()) {
+      updateData.name = data.name.trim();
+    }
+    if (data.handle !== undefined && data.handle.trim()) {
+      const handle = this.cleanHandle(data.handle);
+      const existing = await this.prisma.resellerShop.findUnique({ where: { handle } });
+      if (existing && existing.id !== shopId) {
+        throw new BadRequestException(`Shop handle "@${handle}" is already taken by another store.`);
+      }
+      updateData.handle = handle;
+    }
+    if (data.description !== undefined) updateData.description = data.description;
+    if (data.walletAddress !== undefined) updateData.walletAddress = data.walletAddress;
+    if (data.logo !== undefined) updateData.logo = data.logo;
+    if (data.banner !== undefined) updateData.banner = data.banner;
+    if (data.tier !== undefined) {
+      updateData.tier = data.tier;
+      updateData.maxProfitMargin = TIER_PROFIT_LIMITS[data.tier] || 20.0;
+    }
+
     const updated = await this.prisma.resellerShop.update({
       where: { id: shopId },
-      data,
+      data: updateData,
     });
 
     const { password, ...safe } = updated;

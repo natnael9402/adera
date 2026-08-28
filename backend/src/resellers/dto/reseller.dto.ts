@@ -2,12 +2,12 @@ import { IsString, IsEmail, IsNotEmpty, IsOptional, IsIn } from 'class-validator
 
 export class RegisterResellerDto {
   @IsString()
-  @IsNotEmpty()
-  name: string;
+  @IsOptional()
+  name?: string;
 
   @IsString()
-  @IsNotEmpty()
-  handle: string;
+  @IsOptional()
+  handle?: string;
 
   @IsEmail()
   email: string;
