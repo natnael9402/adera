@@ -57,15 +57,15 @@ export default function FeaturedCauses() {
         
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-12">
           <div>
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold mb-3">
-              <ShieldCheck className="w-3.5 h-3.5" />
-              <span>Direct Crypto Philanthropy</span>
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold mb-3">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Direct Transparent Philanthropy</span>
             </div>
             <h2 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight">
               Featured Causes
             </h2>
             <p className="text-slate-500 mt-2 text-sm sm:text-base max-w-xl">
-              Transparent, verified initiatives you can fund instantly with Bitcoin, Ethereum, Solana, and USDC.
+              Transparent, verified initiatives you can fund directly with Credit Card, PayPal, or Crypto.
             </p>
           </div>
           <Link 
@@ -151,7 +151,7 @@ export default function FeaturedCauses() {
                         className="flex-1 py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white text-xs font-extrabold rounded-xl transition-all shadow-sm shadow-emerald-600/20 flex items-center justify-center gap-1.5"
                       >
                         <Heart className="w-3.5 h-3.5 fill-white/20" />
-                        <span>Donate Crypto</span>
+                        <span>Donate Now</span>
                       </button>
 
                       <Link 

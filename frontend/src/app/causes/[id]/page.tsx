@@ -203,12 +203,10 @@ export default function CauseDetailPage() {
                 </h1>
 
                 <div className="flex items-center gap-3 text-xs sm:text-sm text-slate-500 pt-1">
-                  <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-800 font-bold flex items-center justify-center text-xs border border-emerald-200 uppercase">
-                    {post.author?.name?.[0] || 'A'}
+                  <div className="w-8 h-8 rounded-full overflow-hidden border border-slate-200 bg-white p-1 shadow-2xs flex items-center justify-center shrink-0">
+                    <Image src="/logo.png" alt="Adera" width={22} height={22} className="object-contain" />
                   </div>
                   <div>
-                    <span className="font-bold text-slate-800">{post.author?.name || 'Adera Foundation Team'}</span>
-                    <span className="mx-2">•</span>
                     <span>Created {new Date(post.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</span>
                   </div>
                 </div>

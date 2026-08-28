@@ -295,8 +295,10 @@ export default function CausesPage() {
 
                       {/* Card Footer Actions */}
                       <div className="pt-4 border-t border-slate-100 flex items-center justify-between gap-3">
-                        <div className="text-xs text-slate-500 truncate max-w-[120px]">
-                          By <span className="font-semibold text-slate-800">{cause.author?.name || 'Adera Foundation'}</span>
+                        <div className="flex items-center">
+                          <div className="w-7 h-7 relative rounded-full overflow-hidden border border-slate-200 bg-slate-50 p-1 flex items-center justify-center shrink-0 shadow-2xs">
+                            <Image src="/logo.png" alt="Adera Logo" width={20} height={20} className="object-contain" />
+                          </div>
                         </div>
 
                         <div className="flex items-center gap-2">
