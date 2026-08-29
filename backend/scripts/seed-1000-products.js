@@ -1,37 +1,9 @@
-import { PrismaClient } from '@prisma/client';
+const { PrismaClient } = require('@prisma/client');
 
 const prisma = new PrismaClient();
 
-interface SeedProductDef {
-  name: string;
-  brand: string;
-  category: string;
-  source: 'Amazon Prime' | 'eBay Top Rated Plus' | 'Verified Wholesaler';
-  skuPrefix: string;
-  price: number;
-  originalPrice: number;
-  image: string;
-  description: string;
-  specs: Record<string, string>;
-  rating: number;
-  sold: number;
-}
-
 // 12 Category Model Catalogs
-const CATEGORIES_DATA: {
-  category: string;
-  defaultSource: 'Amazon Prime' | 'eBay Top Rated Plus';
-  brandPool: string[];
-  imagePool: string[];
-  templates: {
-    titlePrefix: string;
-    variants: string[];
-    description: string;
-    specsBase: Record<string, string>;
-    priceRange: [number, number];
-    discountRange: [number, number]; // Percentage off original
-  }[];
-}[] = [
+const CATEGORIES_DATA = [
   // 1. Laptops & Computers
   {
     category: 'Laptops & Computers',
@@ -588,14 +560,12 @@ const CATEGORIES_DATA: {
   },
 ];
 
-// Deterministic Generation of 1,000+ Products
-export function generate1000Products(): SeedProductDef[] {
-  const products: SeedProductDef[] = [];
+function generate1000Products() {
+  const products = [];
   let globalCounter = 1000;
 
-  // Target: ~85 to 90 unique products per category = 1,020+ items
   for (const catData of CATEGORIES_DATA) {
-    const targetPerCategory = 88; // 12 * 88 = 1,056 products
+    const targetPerCategory = 88;
     let catCount = 0;
 
     while (catCount < targetPerCategory) {
@@ -608,11 +578,10 @@ export function generate1000Products(): SeedProductDef[] {
 
           const brand = catData.brandPool[catCount % catData.brandPool.length];
           const isAmazon = catCount % 3 !== 0;
-          const source: 'Amazon Prime' | 'eBay Top Rated Plus' = isAmazon ? 'Amazon Prime' : 'eBay Top Rated Plus';
+          const source = isAmazon ? 'Amazon Prime' : 'eBay Top Rated Plus';
           const skuPrefix = isAmazon ? 'AMZ' : 'EBY';
           const skuCode = `${skuPrefix}-${brand.slice(0, 3).toUpperCase()}${globalCounter}`;
 
-          // Price Calculation
           const minP = tpl.priceRange[0];
           const maxP = tpl.priceRange[1];
           const stepPrice = minP + ((catCount * 37) % (maxP - minP + 1));
@@ -620,10 +589,7 @@ export function generate1000Products(): SeedProductDef[] {
           const originalPrice = Math.round(stepPrice / (1 - discountPct / 100));
           const price = parseFloat(stepPrice.toFixed(2));
 
-          // Image selection
           const image = catData.imagePool[catCount % catData.imagePool.length];
-
-          // Rating: 4.3 to 5.0
           const rating = parseFloat((4.3 + ((catCount * 13) % 8) / 10).toFixed(1));
           const sold = 45 + ((catCount * 97) % 850);
 
@@ -657,21 +623,19 @@ export function generate1000Products(): SeedProductDef[] {
   return products;
 }
 
-export async function runProductMigration() {
-  console.log('🚀 Starting 1,000+ Products Migration & Seed Runner...');
+async function runProductMigration() {
+  console.log('🚀 Starting 1,000+ Products Migration & Seed Runner (Node.js Native)...');
   const items = generate1000Products();
   console.log(`📦 Generated ${items.length} top-selling products across 12 categories.`);
 
   let insertedCount = 0;
   let updatedCount = 0;
 
-  // Batch insert/upsert in chunks of 50 for optimal PostgreSQL transaction throughput
   const CHUNK_SIZE = 50;
   for (let i = 0; i < items.length; i += CHUNK_SIZE) {
     const chunk = items.slice(i, i + CHUNK_SIZE);
     
     for (const item of chunk) {
-      // Find existing product by SKU or name
       const existing = await prisma.product.findFirst({
         where: {
           OR: [
@@ -739,15 +703,11 @@ export async function runProductMigration() {
   };
 }
 
-// Auto-run migration
-if (process.env.NODE_ENV !== 'test' && !process.env.NEST_APP) {
-  runProductMigration()
-    .catch((err) => {
-      console.error('❌ Migration Error:', err);
-      process.exit(1);
-    })
-    .finally(async () => {
-      await prisma.$disconnect();
-    });
-}
-
+runProductMigration()
+  .catch((err) => {
+    console.error('❌ Migration Error:', err);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });
