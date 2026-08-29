@@ -621,7 +621,8 @@ export function generate1000Products(): SeedProductDef[] {
           const price = parseFloat(stepPrice.toFixed(2));
 
           // Image selection
-          const image = catData.imagePool[catCount % catData.imagePool.length];
+          const baseImage = catData.imagePool[catCount % catData.imagePool.length];
+          const image = `${baseImage}&item=${globalCounter}&crop=entropy&cs=tinysrgb`;
 
           // Rating: 4.3 to 5.0
           const rating = parseFloat((4.3 + ((catCount * 13) % 8) / 10).toFixed(1));
