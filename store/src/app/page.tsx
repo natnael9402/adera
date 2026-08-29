@@ -248,15 +248,22 @@ export default function StoreHome() {
   // Fetch backend products & reseller shops
   useEffect(() => {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.aderafoundation.com/api';
-    fetch(`${apiUrl}/products`)
+    fetch(`${apiUrl}/products`, { cache: 'no-store' })
       .then(res => res.json())
       .then(data => {
-        if (Array.isArray(data) && data.length > 0) {
-          setProducts(data);
+        const items = Array.isArray(data) ? data : data?.items || [];
+        if (items.length > 0) {
+          setProducts(items);
         }
       })
-      .catch(() => {
-        setProducts(FALLBACK_PRODUCTS);
+      .catch((err) => {
+        console.warn('Direct fetch failed, trying api.products.list():', err);
+        api.products.list()
+          .then(data => {
+            const items = Array.isArray(data) ? data : (data as any)?.items || [];
+            if (items.length > 0) setProducts(items);
+          })
+          .catch(() => {});
       });
 
     api.resellers.getPublicShops()
