@@ -364,11 +364,11 @@ export default function StoreHome() {
           <div className="flex items-center gap-2 font-medium">
             <span className="w-2 h-2 rounded-full bg-primary-500 animate-pulse" />
             <span className="text-white font-semibold">100% of Store Proceeds</span>
-            <span className="hidden md:inline text-slate-400">directly fund on-chain verified humanitarian causes</span>
+            <span className="hidden md:inline text-slate-400">directly fund verified humanitarian causes</span>
           </div>
           
           <div className="flex items-center gap-4">
-            <span className="text-primary-400 font-mono font-bold hidden sm:inline">⚡ Direct Web3 Crypto Checkout</span>
+            <span className="text-primary-400 font-mono font-bold hidden sm:inline">⚡ Direct Multi-Currency Checkout</span>
             <a 
               href={process.env.NEXT_PUBLIC_APP_URL || "https://aderafoundation.com"} 
               className="text-white hover:text-primary-400 font-semibold underline underline-offset-4 transition-colors inline-flex items-center gap-1"
@@ -552,27 +552,28 @@ export default function StoreHome() {
                 </Link>
               </div>
 
-              {/* Compact Crypto Badges */}
+              {/* Accepted Payment Channels */}
               <div className="pt-2 flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
                 <span className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider shrink-0 mr-1">
-                  Pay with:
+                  Accepted Payments:
                 </span>
-                {CRYPTO_PAYMENT_OPTIONS.slice(0, 5).map((c) => (
-                  <div 
-                    key={c.symbol}
-                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-[11px] font-bold text-slate-300 shrink-0"
-                  >
-                    <Image 
-                      src={c.logo} 
-                      alt={c.name} 
-                      width={14} 
-                      height={14} 
-                      className="w-3.5 h-3.5 object-contain"
-                      style={{ width: "auto", height: "auto" }}
-                    />
-                    <span>{c.symbol}</span>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-white/10 border border-white/10">
+                    <img src="/payments/visa.svg" alt="Visa" className="h-3.5 object-contain" />
                   </div>
-                ))}
+                  <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-white/10 border border-white/10">
+                    <img src="/payments/mastercard.svg" alt="MasterCard" className="h-3.5 object-contain" />
+                  </div>
+                  <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-white/10 border border-white/10">
+                    <img src="/payments/paypal.svg" alt="PayPal" className="h-3.5 object-contain" />
+                  </div>
+                  <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-white/10 border border-white/10">
+                    <img src="/payments/applepay.svg" alt="Apple Pay" className="h-3.5 object-contain" />
+                  </div>
+                  <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/10 border border-white/10 text-[11px] font-bold text-slate-200">
+                    <span>Multi-Currency</span>
+                  </div>
+                </div>
               </div>
 
             </div>
@@ -728,7 +729,7 @@ export default function StoreHome() {
               {selectedCategory === "All" ? "All Catalog Goods" : selectedCategory}
             </h2>
             <p className="text-xs text-slate-500 mt-1">
-              Showing {filteredProducts.length} verified items available for instant crypto delivery
+              Showing {filteredProducts.length} verified items available for direct delivery
             </p>
           </div>
 
@@ -897,10 +898,10 @@ export default function StoreHome() {
               </div>
               <div>
                 <h4 className="font-bold text-base text-slate-900 mb-1">
-                  100% On-Chain Impact
+                  100% Direct Impact
                 </h4>
                 <p className="text-xs text-slate-600 leading-relaxed">
-                  Every cent of store profit is routed directly to verified public blockchain escrow initiatives.
+                  Every cent of store profit is routed directly to verified humanitarian and community initiatives.
                 </p>
               </div>
             </div>
@@ -911,10 +912,10 @@ export default function StoreHome() {
               </div>
               <div>
                 <h4 className="font-bold text-base text-slate-900 mb-1">
-                  Zero Intermediary Fees
+                  Secure Direct Checkout
                 </h4>
                 <p className="text-xs text-slate-600 leading-relaxed">
-                  Direct peer-to-peer crypto transactions with BTC, ETH, Solana, and USD stablecoins.
+                  Fast, encrypted payments with Credit Card, PayPal, Apple Pay, and digital currencies.
                 </p>
               </div>
             </div>
@@ -984,7 +985,7 @@ export default function StoreHome() {
 
                 <div className="p-3 bg-primary-50 rounded-xl border border-primary-200 text-xs text-primary-800 font-semibold flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-primary-600 shrink-0" />
-                  <span>Purchasing this funds on-chain clean water & education projects.</span>
+                  <span>Purchasing this directly funds verified clean water & education projects.</span>
                 </div>
 
                 <div className="pt-2 flex gap-3">
@@ -1005,7 +1006,7 @@ export default function StoreHome() {
                     }}
                     className="flex-1 py-3 bg-primary-600 hover:bg-primary-700 text-white font-bold text-sm rounded-xl transition-all shadow-md shadow-primary-600/20 flex items-center justify-center gap-2"
                   >
-                    Buy with Crypto <ArrowRight className="w-4 h-4" />
+                    Proceed to Checkout <ArrowRight className="w-4 h-4" />
                   </Link>
                 </div>
               </div>
@@ -1117,7 +1118,7 @@ export default function StoreHome() {
                     <span className="font-mono">${estimatedImpactDonation} USD</span>
                   </div>
                   <p className="text-[11px] text-primary-700 font-normal leading-snug">
-                    ✓ 100% of profit funds verified humanitarian projects with public tx hash.
+                    ✓ 100% of profit funds verified humanitarian projects with transparent delivery proof.
                   </p>
                 </div>
 
@@ -1126,10 +1127,10 @@ export default function StoreHome() {
                   <span className="text-2xl font-black text-slate-900 font-mono">${cartSubtotal.toFixed(2)}</span>
                 </div>
 
-                {/* Crypto Payment Selector */}
+                {/* Direct Checkout Selector */}
                 <div className="space-y-3 pt-2">
                   <span className="text-xs font-bold text-slate-900 uppercase tracking-wider block">
-                    Pay with Cryptocurrency:
+                    Choose Payment Channel:
                   </span>
                   
                   <div className="grid grid-cols-3 gap-2">
@@ -1216,17 +1217,17 @@ export default function StoreHome() {
             </h3>
 
             <p className="text-xs text-slate-600 leading-relaxed">
-              Your transaction is being verified on the blockchain. An on-chain proof receipt and tracking updates will be dispatched to your registered address.
+              Your transaction is being processed. A verified receipt and tracking updates will be dispatched to your registered address.
             </p>
 
             <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 text-xs text-slate-700 font-mono text-left space-y-1">
               <div className="flex justify-between">
-                <span>Payment Asset:</span>
+                <span>Payment Method:</span>
                 <span className="font-bold text-slate-900">{selectedCrypto.name} ({selectedCrypto.symbol})</span>
               </div>
               <div className="flex justify-between">
-                <span>Protocol Settlement:</span>
-                <span className="text-primary-700 font-bold">100% Escrow Allocated</span>
+                <span>Order Status:</span>
+                <span className="text-primary-700 font-bold">100% Direct Escrow Allocated</span>
               </div>
             </div>
 

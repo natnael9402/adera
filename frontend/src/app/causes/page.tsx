@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { api } from '@/lib/api';
-import { Heart, Bitcoin, Hexagon, Search, TrendingUp, ShieldCheck, Copy, Check, SlidersHorizontal, X, Layers, ArrowRight } from 'lucide-react';
+import { Heart, Hexagon, Search, TrendingUp, ShieldCheck, Copy, Check, SlidersHorizontal, X, Layers, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -211,7 +211,6 @@ export default function CausesPage() {
                 const img = cause.image && (cause.image.startsWith('http') || cause.image.startsWith('/')) ? cause.image : fallbackImages[idx % fallbackImages.length];
                 const raisedUsd = cause.raised !== undefined ? cause.raised : (cause.goal * 0.45);
                 const pct = Math.min(Math.round((raisedUsd / cause.goal) * 100), 100);
-                const btcApprox = ((cause.goal / 65000) * 0.045).toFixed(2);
                 const urgencyBadge = urgencyStyles[cause.urgency] || "bg-slate-100 text-slate-700 border-slate-200";
 
                 return (
@@ -252,9 +251,8 @@ export default function CausesPage() {
                           <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
                             Verified Cause #{cause.id}
                           </span>
-                          <span className="inline-flex items-center gap-1 text-xs font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 font-mono">
-                            <Bitcoin className="w-3 h-3 text-amber-600" />
-                            {btcApprox} BTC
+                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                            100% Direct Aid
                           </span>
                         </div>
 
