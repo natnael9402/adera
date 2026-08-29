@@ -56,11 +56,19 @@ export const api = {
     },
   },
   products: {
-    list: () => request('/products'),
+    list: (query?: Record<string, any>) => {
+      const qs = query ? '?' + new URLSearchParams(Object.entries(query).filter(([_, v]) => v !== undefined && v !== '').map(([k, v]) => [k, String(v)])).toString() : '';
+      return request('/products' + qs);
+    },
+    get: (id: number) => request('/products/' + id),
     create: (body: any) =>
       request('/products', { method: 'POST', body: JSON.stringify(body) }),
+    update: (id: number, body: any) =>
+      request('/products/' + id, { method: 'PATCH', body: JSON.stringify(body) }),
     remove: (id: number) =>
       request('/products/' + id, { method: 'DELETE' }),
+    seed1000: () =>
+      request('/products/seed-1000', { method: 'POST' }),
   },
   paymentMethods: {
     list: () => request('/payment-methods'),

@@ -17,6 +17,11 @@ interface Product {
   originalPrice?: number;
   image: string;
   category: string;
+  brand?: string;
+  sku?: string;
+  source?: string;
+  specs?: Record<string, string>;
+  stock?: number;
   rating?: number;
   sold?: number;
 }
@@ -208,6 +213,7 @@ const CRYPTO_PAYMENT_OPTIONS = [
 export default function StoreHome() {
   const [products, setProducts] = useState<Product[]>(FALLBACK_PRODUCTS);
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
+  const [selectedSource, setSelectedSource] = useState<string>("All");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [sortBy, setSortBy] = useState<string>("featured");
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -262,32 +268,46 @@ export default function StoreHome() {
       .catch(() => {});
   }, []);
 
-  // Extract unique categories
-  const categories = useMemo(() => {
+  // Extract unique categories and counts
+  const { categories, categoryCounts } = useMemo(() => {
+    const counts: Record<string, number> = { All: products.length };
     const set = new Set<string>();
     products.forEach(p => {
-      if (p.category) set.add(p.category);
+      if (p.category) {
+        set.add(p.category);
+        counts[p.category] = (counts[p.category] || 0) + 1;
+      }
     });
-    return ["All", ...Array.from(set)];
+    return {
+      categories: ["All", ...Array.from(set)],
+      categoryCounts: counts,
+    };
   }, [products]);
 
   // Filter and sort products
   const filteredProducts = useMemo(() => {
+    const q = searchQuery.toLowerCase().trim();
     return products
       .filter(p => {
         const matchesCategory = selectedCategory === "All" || p.category === selectedCategory;
-        const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                              p.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                              p.category.toLowerCase().includes(searchQuery.toLowerCase());
-        return matchesCategory && matchesSearch;
+        const matchesSource = selectedSource === "All" || p.source === selectedSource;
+        const matchesSearch = !q || 
+          p.name.toLowerCase().includes(q) || 
+          p.description.toLowerCase().includes(q) ||
+          p.category.toLowerCase().includes(q) ||
+          (p.brand && p.brand.toLowerCase().includes(q)) ||
+          (p.sku && p.sku.toLowerCase().includes(q));
+
+        return matchesCategory && matchesSource && matchesSearch;
       })
       .sort((a, b) => {
         if (sortBy === "price-low") return a.price - b.price;
         if (sortBy === "price-high") return b.price - a.price;
         if (sortBy === "rating") return (b.rating || 0) - (a.rating || 0);
+        if (sortBy === "popular") return (b.sold || 0) - (a.sold || 0);
         return 0;
       });
-  }, [products, selectedCategory, searchQuery, sortBy]);
+  }, [products, selectedCategory, selectedSource, searchQuery, sortBy]);
 
   // Cart operations
   const addToCart = (product: Product, quantity = 1) => {
@@ -482,17 +502,23 @@ export default function StoreHome() {
             <div className="flex items-center gap-2 py-3 overflow-x-auto no-scrollbar">
               {categories.map((cat) => {
                 const isActive = selectedCategory === cat;
+                const count = categoryCounts[cat] || 0;
                 return (
                   <button
                     key={cat}
                     onClick={() => setSelectedCategory(cat)}
-                    className={`px-4 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all ${
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 ${
                       isActive 
-                        ? "bg-primary-600 text-white shadow-sm" 
-                        : "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900 border border-slate-200"
+                        ? "bg-slate-900 text-white shadow-sm" 
+                        : "bg-slate-50 text-slate-700 hover:bg-slate-100 hover:text-slate-900 border border-slate-200/90"
                     }`}
                   >
-                    {cat === "All" ? "All Products" : cat}
+                    <span>{cat === "All" ? "All Products" : cat}</span>
+                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono font-bold ${
+                      isActive ? "bg-white/20 text-white" : "bg-slate-200/70 text-slate-600"
+                    }`}>
+                      {count}
+                    </span>
                   </button>
                 );
               })}
@@ -723,18 +749,34 @@ export default function StoreHome() {
         )}
 
         {/* Controls Toolbar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-200">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-slate-200">
           <div>
             <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">
               {selectedCategory === "All" ? "All Catalog Goods" : selectedCategory}
             </h2>
             <p className="text-xs text-slate-500 mt-1">
-              Showing {filteredProducts.length} verified items available for direct delivery
+              Showing <span className="font-bold text-slate-900">{filteredProducts.length.toLocaleString()}</span> verified items available for direct delivery
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-700">
+          <div className="flex items-center gap-3 flex-wrap">
+            {/* Source Filter */}
+            <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 shadow-2xs">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Channel:</span>
+              <select
+                value={selectedSource}
+                onChange={(e) => setSelectedSource(e.target.value)}
+                className="bg-transparent text-slate-900 font-bold focus:outline-none cursor-pointer"
+              >
+                <option value="All">All Channels</option>
+                <option value="Amazon Prime">Amazon Prime</option>
+                <option value="eBay Top Rated Plus">eBay Top Rated</option>
+              </select>
+            </div>
+
+            {/* Sort Filter */}
+            <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 shadow-2xs">
               <Filter className="w-3.5 h-3.5 text-primary-600" />
               <span>Sort by:</span>
               <select 
@@ -743,9 +785,10 @@ export default function StoreHome() {
                 className="bg-transparent text-slate-900 font-bold focus:outline-none cursor-pointer"
               >
                 <option value="featured">Featured First</option>
+                <option value="popular">Best Selling</option>
+                <option value="rating">Highest Rated</option>
                 <option value="price-low">Price: Low to High</option>
                 <option value="price-high">Price: High to Low</option>
-                <option value="rating">Highest Rated</option>
               </select>
             </div>
           </div>
@@ -760,8 +803,8 @@ export default function StoreHome() {
               No products match &ldquo;{searchQuery}&rdquo; in category &ldquo;{selectedCategory}&rdquo;. Try clearing filters.
             </p>
             <button 
-              onClick={() => { setSelectedCategory("All"); setSearchQuery(""); }}
-              className="mt-4 px-4 py-2 bg-primary-600 text-white rounded-xl text-xs font-bold hover:bg-primary-700"
+              onClick={() => { setSelectedCategory("All"); setSelectedSource("All"); setSearchQuery(""); }}
+              className="mt-4 px-4 py-2 bg-primary-600 text-white rounded-xl text-xs font-bold hover:bg-primary-700 cursor-pointer"
             >
               Reset Filters
             </button>
@@ -791,23 +834,34 @@ export default function StoreHome() {
                         </div>
                       )}
 
-                      {/* Wishlist Button */}
-                      <button 
-                        onClick={() => toggleWishlist(product.id)}
-                        className={`absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center transition-all ${
-                          wishlist.includes(product.id)
-                            ? "bg-rose-50 text-rose-600 border border-rose-200"
-                            : "bg-white/80 text-slate-600 hover:text-rose-600 hover:bg-white shadow-sm"
-                        }`}
-                      >
-                        <Heart className={`w-4 h-4 ${wishlist.includes(product.id) ? "fill-rose-600" : ""}`} />
-                      </button>
+                      {/* Channel Pill Top Right */}
+                      <div className="absolute top-3 right-3 flex items-center gap-1.5">
+                        <span className={`text-[9px] font-extrabold px-2 py-0.5 rounded-md shadow-2xs backdrop-blur-md ${
+                          product.source?.includes('Amazon')
+                            ? 'bg-amber-500/90 text-slate-950 font-sans'
+                            : 'bg-blue-600/90 text-white font-sans'
+                        }`}>
+                          {product.source?.includes('Amazon') ? 'Amazon Prime' : 'eBay Top Rated'}
+                        </span>
+                        
+                        {/* Wishlist Button */}
+                        <button 
+                          onClick={() => toggleWishlist(product.id)}
+                          className={`w-7 h-7 rounded-full flex items-center justify-center transition-all ${
+                            wishlist.includes(product.id)
+                              ? "bg-rose-50 text-rose-600 border border-rose-200"
+                              : "bg-white/90 text-slate-600 hover:text-rose-600 shadow-sm"
+                          }`}
+                        >
+                          <Heart className={`w-3.5 h-3.5 ${wishlist.includes(product.id) ? "fill-rose-600" : ""}`} />
+                        </button>
+                      </div>
 
                       {/* Quick View Button on Hover */}
                       <div className="absolute inset-x-3 bottom-3 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button 
                           onClick={() => setSelectedProduct(product)}
-                          className="w-full py-2 bg-slate-900/90 hover:bg-slate-900 text-white text-xs font-bold rounded-lg backdrop-blur-sm flex items-center justify-center gap-1.5 shadow-md"
+                          className="w-full py-2 bg-slate-900/90 hover:bg-slate-900 text-white text-xs font-bold rounded-lg backdrop-blur-sm flex items-center justify-center gap-1.5 shadow-md cursor-pointer"
                         >
                           <Eye className="w-3.5 h-3.5" /> Quick Preview
                         </button>
@@ -817,13 +871,14 @@ export default function StoreHome() {
                     {/* Metadata */}
                     <div className="space-y-1.5">
                       <div className="flex items-center justify-between text-[11px]">
-                        <span className="font-bold text-primary-700 bg-primary-50 px-2 py-0.5 rounded border border-primary-200 uppercase tracking-wider">
+                        <span className="font-bold text-primary-700 bg-primary-50 px-2 py-0.5 rounded border border-primary-200 uppercase tracking-wider text-[10px]">
                           {product.category}
                         </span>
                         
                         <div className="flex items-center gap-1 text-amber-500 font-bold font-mono">
                           <Star className="w-3.5 h-3.5 fill-amber-500" />
                           <span>{product.rating || 4.8}</span>
+                          {product.sold && <span className="text-slate-400 text-[10px] font-sans">({product.sold})</span>}
                         </div>
                       </div>
 
@@ -833,6 +888,12 @@ export default function StoreHome() {
                       >
                         {product.name}
                       </h3>
+
+                      {product.brand && (
+                        <p className="text-[11px] text-slate-400 font-medium">
+                          by <span className="text-slate-600 font-semibold">{product.brand}</span>
+                        </p>
+                      )}
                     </div>
                   </div>
 
@@ -960,19 +1021,64 @@ export default function StoreHome() {
               </div>
 
               <div className="space-y-4">
-                <span className="text-xs font-bold text-primary-700 bg-primary-50 px-2.5 py-1 rounded border border-primary-200 uppercase tracking-wider">
-                  {selectedProduct.category}
-                </span>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs font-bold text-primary-700 bg-primary-50 px-2.5 py-0.5 rounded border border-primary-200 uppercase tracking-wider text-[10px]">
+                    {selectedProduct.category}
+                  </span>
+                  
+                  <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full inline-flex items-center gap-1 ${
+                    selectedProduct.source?.includes('Amazon')
+                      ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                      : 'bg-blue-100 text-blue-900 border border-blue-300'
+                  }`}>
+                    <ShieldCheck className="w-3 h-3" />
+                    {selectedProduct.source || 'Amazon Prime'}
+                  </span>
 
-                <h3 className="text-xl font-bold text-slate-900 leading-snug">
-                  {selectedProduct.name}
-                </h3>
+                  {selectedProduct.sku && (
+                    <span className="text-[10px] font-mono text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">
+                      {selectedProduct.sku}
+                    </span>
+                  )}
+                </div>
 
-                <p className="text-xs text-slate-600 leading-relaxed">
+                <div>
+                  <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 leading-snug">
+                    {selectedProduct.name}
+                  </h3>
+                  {selectedProduct.brand && (
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Brand: <strong className="text-slate-800">{selectedProduct.brand}</strong>
+                    </p>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2 text-xs">
+                  <div className="flex items-center gap-1 text-amber-500 font-bold font-mono">
+                    <Star className="w-4 h-4 fill-amber-500" />
+                    <span>{selectedProduct.rating || 4.8} / 5.0</span>
+                  </div>
+                  <span className="text-slate-400">•</span>
+                  <span className="text-slate-600 font-medium">({selectedProduct.sold || 120} units sold)</span>
+                </div>
+
+                <p className="text-xs text-slate-600 leading-relaxed line-clamp-3">
                   {selectedProduct.description}
                 </p>
 
-                <div className="flex items-baseline gap-3 pt-2">
+                {/* Specs Highlights */}
+                {selectedProduct.specs && typeof selectedProduct.specs === 'object' && (
+                  <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 text-[11px] space-y-1 font-mono">
+                    {Object.entries(selectedProduct.specs).slice(0, 3).map(([key, val]) => (
+                      <div key={key} className="flex justify-between">
+                        <span className="text-slate-500">{key}:</span>
+                        <span className="font-bold text-slate-800 text-right truncate max-w-[200px]">{String(val)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="flex items-baseline gap-3 pt-1">
                   <span className="text-2xl font-black text-slate-900 font-mono">
                     ${selectedProduct.price.toFixed(2)}
                   </span>
@@ -981,11 +1087,9 @@ export default function StoreHome() {
                       ${selectedProduct.originalPrice.toFixed(2)}
                     </span>
                   )}
-                </div>
-
-                <div className="p-3 bg-primary-50 rounded-xl border border-primary-200 text-xs text-primary-800 font-semibold flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-primary-600 shrink-0" />
-                  <span>Purchasing this directly funds verified clean water & education projects.</span>
+                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                    100% Impact Proceeds
+                  </span>
                 </div>
 
                 <div className="pt-2 flex gap-3">
@@ -993,8 +1097,9 @@ export default function StoreHome() {
                     onClick={() => {
                       addToCart(selectedProduct);
                       setSelectedProduct(null);
+                      showToast(`${selectedProduct.name} added to cart!`);
                     }}
-                    className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-sm rounded-xl transition-all flex items-center justify-center gap-2 border border-slate-200"
+                    className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs sm:text-sm rounded-xl transition-all flex items-center justify-center gap-2 border border-slate-200 cursor-pointer"
                   >
                     <ShoppingCart className="w-4 h-4" /> Add to Cart
                   </button>
@@ -1004,7 +1109,7 @@ export default function StoreHome() {
                       addToCart(selectedProduct);
                       setSelectedProduct(null);
                     }}
-                    className="flex-1 py-3 bg-primary-600 hover:bg-primary-700 text-white font-bold text-sm rounded-xl transition-all shadow-md shadow-primary-600/20 flex items-center justify-center gap-2"
+                    className="flex-1 py-3 bg-primary-600 hover:bg-primary-700 text-white font-bold text-xs sm:text-sm rounded-xl transition-all shadow-md shadow-primary-600/20 flex items-center justify-center gap-2 cursor-pointer"
                   >
                     Proceed to Checkout <ArrowRight className="w-4 h-4" />
                   </Link>

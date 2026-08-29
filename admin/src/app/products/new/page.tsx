@@ -9,6 +9,21 @@ import { ShoppingBag, ArrowLeft, Plus, CheckCircle2 } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import ImageUpload from '@/components/ImageUpload';
 
+const CATEGORIES = [
+  'Laptops & Computers',
+  'Smartphones & Tablets',
+  'Audio & Headphones',
+  'Cameras & Drones',
+  'Gaming & VR',
+  'Home & Kitchen',
+  'Watches & Wearables',
+  'Fashion & Footwear',
+  'Outdoor & Sports',
+  'Health & Fitness',
+  'Office & Workspace',
+  'Power & Tech Gear',
+];
+
 export default function NewProductPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
@@ -18,8 +33,12 @@ export default function NewProductPage() {
     description: '',
     price: '',
     originalPrice: '',
-    category: 'Computers & Accessories',
-    image: ''
+    category: 'Laptops & Computers',
+    brand: '',
+    sku: '',
+    source: 'Amazon Prime',
+    image: '',
+    stock: '999',
   });
   const [submitting, setSubmitting] = useState(false);
 
@@ -35,7 +54,8 @@ export default function NewProductPage() {
       await api.products.create({
         ...formData,
         price: parseFloat(formData.price),
-        originalPrice: formData.originalPrice ? parseFloat(formData.originalPrice) : undefined
+        originalPrice: formData.originalPrice ? parseFloat(formData.originalPrice) : undefined,
+        stock: parseInt(formData.stock, 10) || 999,
       });
       router.push('/products');
     } catch (error) {
@@ -75,7 +95,7 @@ export default function NewProductPage() {
                 Add New Store Product
               </h1>
               <p className="text-xs text-slate-500 mt-0.5">
-                New merchandise is immediately available in the public crypto store.
+                New merchandise is immediately available in the public catalog and reseller storefronts.
               </p>
             </div>
           </div>
@@ -88,8 +108,8 @@ export default function NewProductPage() {
               <input
                 required
                 type="text"
-                placeholder="e.g., Asus ZenBook 14 OLED Touchscreen"
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-primary-500 focus:bg-white transition-all"
+                placeholder="e.g., Apple MacBook Pro 16 M3 Max"
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-primary-500 focus:bg-white transition-all font-medium"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               />
@@ -125,7 +145,7 @@ export default function NewProductPage() {
                   type="number"
                   step="0.01"
                   placeholder="149.99"
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-primary-500 focus:bg-white transition-all font-mono"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-primary-500 focus:bg-white transition-all font-mono font-bold"
                   value={formData.price}
                   onChange={(e) => setFormData({ ...formData, price: e.target.value })}
                 />
@@ -146,22 +166,49 @@ export default function NewProductPage() {
               </div>
             </div>
 
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
-                Category <span className="text-rose-500">*</span>
-              </label>
-              <select
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 font-medium focus:outline-none focus:border-primary-500 focus:bg-white transition-all"
-                value={formData.category}
-                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-              >
-                <option value="Computers & Accessories">Computers & Accessories</option>
-                <option value="Home & Garden">Home & Garden</option>
-                <option value="Sports & Outdoors">Sports & Outdoors</option>
-                <option value="Women's Shoes">Apparel & Footwear</option>
-                <option value="Jewelry & Watches">Jewelry & Watches</option>
-                <option value="Toys & Hobbies">Toys & Hobbies</option>
-              </select>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
+                  Category <span className="text-rose-500">*</span>
+                </label>
+                <select
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 font-bold focus:outline-none focus:border-primary-500 focus:bg-white transition-all"
+                  value={formData.category}
+                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                >
+                  {CATEGORIES.map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
+                  Brand (Optional)
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Apple, Sony"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:border-primary-500"
+                  value={formData.brand}
+                  onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
+                  Sourcing Channel
+                </label>
+                <select
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 font-bold focus:outline-none focus:border-primary-500"
+                  value={formData.source}
+                  onChange={(e) => setFormData({ ...formData, source: e.target.value })}
+                >
+                  <option value="Amazon Prime">Amazon Prime</option>
+                  <option value="eBay Top Rated Plus">eBay Top Rated Plus</option>
+                  <option value="Verified Wholesaler">Verified Wholesaler</option>
+                </select>
+              </div>
             </div>
 
             <div className="pt-4">

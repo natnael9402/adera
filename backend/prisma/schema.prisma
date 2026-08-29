@@ -91,17 +91,22 @@ model VerificationToken {
 }
 
 model Product {
-  id          Int      @id @default(autoincrement())
-  name        String
-  description String
-  price       Float
+  id            Int      @id @default(autoincrement())
+  name          String
+  description   String
+  price         Float
   originalPrice Float?
-  image       String   @default("")
-  category    String
-  rating      Float    @default(0)
-  sold        Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  image         String   @default("")
+  category      String
+  brand         String   @default("Adera Verified")
+  sku           String   @default("")
+  source        String   @default("Amazon Prime")
+  specs         Json?
+  stock         Int      @default(999)
+  rating        Float    @default(4.8)
+  sold          Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   resellerListings ResellerProduct[]
 }

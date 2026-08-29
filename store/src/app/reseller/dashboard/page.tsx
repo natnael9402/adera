@@ -828,7 +828,7 @@ export default function ResellerDashboardPage() {
                   <div>
                     <h2 className="text-base font-black text-slate-900">Wholesale Master Sourcing Catalog</h2>
                     <p className="text-xs text-slate-500">
-                      1-Click import from 3,927 wholesale products. Set your custom markup up to +{currentTierMargin}%.
+                      1-Click import from {catalog.length > 0 ? `${catalog.length.toLocaleString()} verified` : '1,000+'} wholesale products. Set your custom markup up to +{currentTierMargin}%.
                     </p>
                   </div>
 
@@ -836,7 +836,7 @@ export default function ResellerDashboardPage() {
                     <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                     <input
                       type="text"
-                      placeholder="Search 3,927 goods..."
+                      placeholder={`Search ${catalog.length || 1000} goods...`}
                       value={catalogSearch}
                       onChange={(e) => setCatalogSearch(e.target.value)}
                       className="pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-emerald-500"

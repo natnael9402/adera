@@ -24,4 +24,31 @@ export class CreateProductDto {
   @IsString()
   @IsNotEmpty()
   category: string;
+
+  @IsString()
+  @IsOptional()
+  brand?: string;
+
+  @IsString()
+  @IsOptional()
+  sku?: string;
+
+  @IsString()
+  @IsOptional()
+  source?: string;
+
+  @IsOptional()
+  specs?: any;
+
+  @IsNumber()
+  @IsOptional()
+  stock?: number;
+
+  @IsNumber()
+  @IsOptional()
+  rating?: number;
+
+  @IsNumber()
+  @IsOptional()
+  sold?: number;
 }
