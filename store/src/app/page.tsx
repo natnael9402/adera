@@ -30,140 +30,8 @@ interface CartItem extends Product {
   quantity: number;
 }
 
-const FALLBACK_PRODUCTS: Product[] = [
-  {
-    id: 20,
-    name: "Asus ZenBook 14 Flip OLED Touchscreen (16GB RAM / 1TB SSD)",
-    description: "Ultra-portable performance laptop with 14-inch WQHD OLED touchscreen, Ryzen 7 processor, and dual-fan cooling system.",
-    price: 1694.86,
-    originalPrice: 2288.06,
-    image: "/products/6a73fc0ddea998e9f3373e83.jpg",
-    category: "Computers & Accessories",
-    rating: 4.9,
-    sold: 142
-  },
-  {
-    id: 19,
-    name: "Soy Milk PBT Dye-Sub Customized Mechanical Keycaps (136 Keys)",
-    description: "Thick premium PBT keycap set with XDA profile, beautiful retro soy-milk colorway, and broad switch compatibility.",
-    price: 25.05,
-    originalPrice: 33.82,
-    image: "/products/6a73fc53dea998e9f3373ea1.jpg",
-    category: "Computers & Accessories",
-    rating: 4.8,
-    sold: 389
-  },
-  {
-    id: 18,
-    name: "Anti-Oxidation Portable Jewelry Storage Case (20 Pcs Set)",
-    description: "Dust-proof transparent sealed film organizers for delicate necklaces, rings, and heirloom pieces.",
-    price: 1.18,
-    originalPrice: 1.59,
-    image: "/products/6a740008dea998e9f3373fb3.jpg",
-    category: "Jewelry & Accessories",
-    rating: 4.6,
-    sold: 812
-  },
-  {
-    id: 16,
-    name: "SPRING High-Capacity Multi-Stage Water Filter Replacement Cartridge",
-    description: "Advanced filtration core removing 99.9% of micro-contaminants, heavy metals, and chlorine.",
-    price: 179.86,
-    originalPrice: 242.81,
-    image: "/products/6a740216dea998e9f337440f.jpg",
-    category: "Home & Garden",
-    rating: 4.9,
-    sold: 215
-  },
-  {
-    id: 15,
-    name: "Deep Tissue Percussion Muscle Massage Gun (6 Speeds)",
-    description: "Ergonomic handheld therapeutic massager with quiet glide brushless motor and interchangeable attachments.",
-    price: 13.99,
-    originalPrice: 18.89,
-    image: "/products/6a740252dea998e9f3374439.jpg",
-    category: "Sports & Outdoors",
-    rating: 4.7,
-    sold: 520
-  },
-  {
-    id: 14,
-    name: "Daiwa BG SW Heavy-Duty Saltwater Spinning Reel",
-    description: "Hard-anodized machined aluminum housing, DigiGear system, and waterproof drag for extreme saltwater angling.",
-    price: 182.32,
-    originalPrice: 246.13,
-    image: "/products/6a740264dea998e9f3374466.jpg",
-    category: "Sports & Outdoors",
-    rating: 4.9,
-    sold: 96
-  },
-  {
-    id: 13,
-    name: "15.6-inch 1080P Ultra-Slim USB-C & Mini-HDMI Portable Monitor",
-    description: "IPS HDR external display with dual stereo speakers for laptops, smartphones, and mobile workstations.",
-    price: 140.24,
-    originalPrice: 189.32,
-    image: "/products/6a7402d3dea998e9f3374496.jpg",
-    category: "Computers & Accessories",
-    rating: 4.8,
-    sold: 340
-  },
-  {
-    id: 12,
-    name: "Samsung 24-inch SR350 Bezel-Less IPS LED Monitor",
-    description: "75Hz refresh rate with AMD FreeSync, ultra-slim bezel, and flicker-free eye saver mode.",
-    price: 119.68,
-    originalPrice: 161.57,
-    image: "/products/6a7402e6dea998e9f33744c9.jpg",
-    category: "Computers & Accessories",
-    rating: 4.7,
-    sold: 450
-  },
-  {
-    id: 6,
-    name: "Nike Air Max 270 Women's Lightweight Comfort Sneakers",
-    description: "Engineered mesh upper with large volume Max Air heel unit for responsive all-day cushioning.",
-    price: 65.21,
-    originalPrice: 87.68,
-    image: "/products/6a7525e82ce46d1a75a319c1.jpg",
-    category: "Women's Shoes",
-    rating: 4.8,
-    sold: 630
-  },
-  {
-    id: 4,
-    name: "Xiaomi Robot Vacuum X10+ with Smart Auto-Clean Dock",
-    description: "Dual-spinning pressurized mop pads, 4000Pa suction power, and S-Cross 3D obstacle avoidance sensor.",
-    price: 882.88,
-    originalPrice: 1191.89,
-    image: "/products/6a7527592ce46d1a75a31a54.jpg",
-    category: "Home & Garden",
-    rating: 4.9,
-    sold: 110
-  },
-  {
-    id: 2,
-    name: "PHILIPS 6.2L Digital Airfryer XL with Rapid Air Technology",
-    description: "12-in-1 healthy cooking appliance with NutriU app connectivity, touch preset panel, and dishwasher-safe basket.",
-    price: 208.49,
-    originalPrice: 281.46,
-    image: "/products/6a7527fc2ce46d1a75a31aed.jpg",
-    category: "Home & Garden",
-    rating: 4.8,
-    sold: 290
-  },
-  {
-    id: 1,
-    name: "LEGO Star Wars Emperor's Throne Room Diorama Set (75352)",
-    description: "Detailed collectible building model featuring Darth Vader, Luke Skywalker, and Emperor Palpatine.",
-    price: 135.83,
-    originalPrice: 183.37,
-    image: "/products/6a75284d2ce46d1a75a31b3d.jpg",
-    category: "Toys, Hobbies & Robot",
-    rating: 4.9,
-    sold: 180
-  }
-];
+import { MASTER_CATALOG_PRODUCTS } from '@/lib/products-catalog';
+
 
 const CRYPTO_PAYMENT_OPTIONS = [
   {
@@ -211,7 +79,7 @@ const CRYPTO_PAYMENT_OPTIONS = [
 ];
 
 export default function StoreHome() {
-  const [products, setProducts] = useState<Product[]>(FALLBACK_PRODUCTS);
+  const [products, setProducts] = useState<Product[]>(MASTER_CATALOG_PRODUCTS);
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
   const [selectedSource, setSelectedSource] = useState<string>("All");
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -651,8 +519,8 @@ export default function StoreHome() {
                   {/* Mobile Quick Add Button */}
                   <button
                     onClick={() => {
-                      addToCart(FALLBACK_PRODUCTS[0]);
-                      showToast("Asus ZenBook added to cart!");
+                      addToCart(products[0] || MASTER_CATALOG_PRODUCTS[0]);
+                      showToast("Spotlight item added to cart!");
                     }}
                     className="sm:hidden p-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl shadow-md shrink-0 active:scale-95"
                     title="Add to Cart"
@@ -664,8 +532,8 @@ export default function StoreHome() {
                 {/* Desktop Quick Add Button */}
                 <button 
                   onClick={() => {
-                    addToCart(FALLBACK_PRODUCTS[0]);
-                    showToast("Asus ZenBook added to cart!");
+                    addToCart(products[0] || MASTER_CATALOG_PRODUCTS[0]);
+                    showToast("Spotlight item added to cart!");
                   }}
                   className="hidden sm:flex w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs sm:text-sm rounded-xl transition-all shadow-md items-center justify-center gap-2 active:scale-95"
                 >

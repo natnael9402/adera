@@ -9,6 +9,7 @@ import { api } from '@/lib/api';
 import TierMedal, { ShopTierType } from '@/components/TierMedal';
 import StoreAvatar, { STORE_AVATAR_PRESETS } from '@/components/StoreAvatar';
 import ProfileImagePicker from '@/components/ProfileImagePicker';
+import { MASTER_CATALOG_PRODUCTS } from '@/lib/products-catalog';
 
 export type DashboardTab =
   | 'overview'
@@ -33,7 +34,7 @@ export default function ResellerDashboardPage() {
 
   // Data States
   const [inventory, setInventory] = useState<any[]>([]);
-  const [catalog, setCatalog] = useState<any[]>([]);
+  const [catalog, setCatalog] = useState<any[]>(MASTER_CATALOG_PRODUCTS);
   const [walletData, setWalletData] = useState<any>(null);
   const [orders, setOrders] = useState<any[]>([]);
   const [messages, setMessages] = useState<any[]>([]);
@@ -41,7 +42,7 @@ export default function ResellerDashboardPage() {
   // Sourcing Filters
   const [catalogCategory, setCatalogCategory] = useState('All');
   const [catalogSearch, setCatalogSearch] = useState('');
-  const [catalogDisplayLimit, setCatalogDisplayLimit] = useState(24);
+  const [catalogDisplayLimit, setCatalogDisplayLimit] = useState(48);
 
   // Inventory Filter
   const [inventorySearch, setInventorySearch] = useState('');
@@ -100,7 +101,18 @@ export default function ResellerDashboardPage() {
 
       setShop(profileData);
       setInventory(invData || []);
-      setCatalog(catData || []);
+      
+      if (Array.isArray(catData) && catData.length > 0) {
+        setCatalog(catData);
+      } else {
+        const importedIds = new Set((invData || []).map((i: any) => i.productId));
+        setCatalog(MASTER_CATALOG_PRODUCTS.map((p) => ({
+          ...p,
+          isImported: importedIds.has(p.id),
+          importedDetails: (invData || []).find((i: any) => i.productId === p.id) || null,
+        })));
+      }
+
       setWalletData(walletRes);
       setOrders(ordersRes || []);
       setMessages(msgsRes || []);

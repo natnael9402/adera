@@ -229,19 +229,26 @@ export class ResellersService {
   async getWholesaleCatalog(shopId: number) {
     const masterProducts = await this.prisma.product.findMany({
       orderBy: { id: 'desc' },
+      take: 1200,
     });
 
     const shopListings = await this.prisma.resellerProduct.findMany({
       where: { shopId },
     });
 
-    const importedProductIds = new Set(shopListings.map((l) => l.productId));
+    const listingMap = new Map<number, any>();
+    for (const l of shopListings) {
+      listingMap.set(l.productId, l);
+    }
 
-    return masterProducts.map((prod) => ({
-      ...prod,
-      isImported: importedProductIds.has(prod.id),
-      importedDetails: shopListings.find((l) => l.productId === prod.id) || null,
-    }));
+    return masterProducts.map((prod) => {
+      const listing = listingMap.get(prod.id);
+      return {
+        ...prod,
+        isImported: !!listing,
+        importedDetails: listing || null,
+      };
+    });
   }
 
   async getInventory(shopId: number) {
