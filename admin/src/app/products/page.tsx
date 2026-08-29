@@ -89,7 +89,7 @@ export default function ProductsPage() {
   };
 
   const handleSeed1000 = async () => {
-    if (!confirm('Sync and migrate 1,000+ verified Amazon & eBay products to the database catalog?')) return;
+    if (!confirm('Sync and migrate 1,000+ verified master catalog products to the database?')) return;
     setIsSeeding(true);
     try {
       const res = await api.products.seed1000();
@@ -205,7 +205,7 @@ export default function ProductsPage() {
               <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-200">
                 1000+ Items Live
               </span>
-              <span className="text-xs text-slate-500 font-medium">Amazon & eBay Synced</span>
+              <span className="text-xs text-slate-500 font-medium">Master Catalog Synced</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight flex items-center gap-3 mt-1">
               <ShoppingBag className="w-8 h-8 text-primary-600" />
@@ -223,7 +223,7 @@ export default function ProductsPage() {
               className="inline-flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white font-extrabold text-xs rounded-xl shadow-md shadow-orange-600/20 transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
             >
               <Sparkles className={`w-4 h-4 ${isSeeding ? 'animate-spin' : ''}`} />
-              <span>{isSeeding ? 'Syncing 1,000+ Items...' : '⚡ Sync 1,000 Amazon & eBay Catalog'}</span>
+              <span>{isSeeding ? 'Syncing 1,000+ Items...' : '⚡ Sync 1,000 Master Catalog'}</span>
             </button>
 
             <a
@@ -255,7 +255,7 @@ export default function ProductsPage() {
               <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input 
                 type="text"
-                placeholder="Search by product name, brand, SKU (e.g. AMZ-APP1001), or category..."
+                placeholder="Search by product name, brand, SKU (e.g. ADR-APP1001), or category..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-primary-500 focus:bg-white transition-all"
@@ -281,8 +281,9 @@ export default function ProductsPage() {
                   className="bg-transparent text-slate-900 font-bold focus:outline-none cursor-pointer"
                 >
                   <option value="All">All Sources</option>
-                  <option value="Amazon Prime">Amazon Prime</option>
-                  <option value="eBay Top Rated Plus">eBay Top Rated</option>
+                  <option value="Verified Stock">Verified Stock</option>
+                  <option value="Priority Dispatch">Priority Dispatch</option>
+                  <option value="Direct Wholesaler">Direct Wholesaler</option>
                 </select>
               </div>
 
@@ -407,13 +408,9 @@ export default function ProductsPage() {
                             {product.category}
                           </span>
                           <div>
-                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full inline-flex items-center gap-1 ${
-                              product.source?.includes('Amazon') 
-                                ? 'bg-amber-100/70 text-amber-900 border border-amber-300' 
-                                : 'bg-blue-100/70 text-blue-900 border border-blue-300'
-                            }`}>
-                              <ShieldCheck className="w-3 h-3" />
-                              {product.source || 'Amazon Prime'}
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full inline-flex items-center gap-1 bg-emerald-100/70 text-emerald-900 border border-emerald-300">
+                              <ShieldCheck className="w-3 h-3 text-emerald-600" />
+                              {product.source || 'Verified Stock'}
                             </span>
                           </div>
                         </div>
@@ -609,13 +606,13 @@ export default function ProductsPage() {
                 <div>
                   <label className="block text-xs font-bold uppercase text-slate-600 mb-1">Sourcing Channel</label>
                   <select
-                    value={editingProduct.source || 'Amazon Prime'}
+                    value={editingProduct.source || 'Verified Stock'}
                     onChange={(e) => setEditingProduct({ ...editingProduct, source: e.target.value })}
                     className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 font-bold focus:outline-none focus:border-primary-500"
                   >
-                    <option value="Amazon Prime">Amazon Prime</option>
-                    <option value="eBay Top Rated Plus">eBay Top Rated Plus</option>
-                    <option value="Verified Wholesaler">Verified Wholesaler</option>
+                    <option value="Verified Stock">Verified Stock</option>
+                    <option value="Priority Dispatch">Priority Dispatch</option>
+                    <option value="Direct Supplier">Direct Supplier</option>
                   </select>
                 </div>
               </div>

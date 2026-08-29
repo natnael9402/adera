@@ -6,7 +6,7 @@ interface SeedProductDef {
   name: string;
   brand: string;
   category: string;
-  source: 'Amazon Prime' | 'eBay Top Rated Plus' | 'Verified Wholesaler';
+  source: string;
   skuPrefix: string;
   price: number;
   originalPrice: number;
@@ -20,7 +20,7 @@ interface SeedProductDef {
 // 12 Category Model Catalogs
 const CATEGORIES_DATA: {
   category: string;
-  defaultSource: 'Amazon Prime' | 'eBay Top Rated Plus';
+  defaultSource: string;
   brandPool: string[];
   imagePool: string[];
   templates: {
@@ -607,10 +607,8 @@ export function generate1000Products(): SeedProductDef[] {
           catCount++;
 
           const brand = catData.brandPool[catCount % catData.brandPool.length];
-          const isAmazon = catCount % 3 !== 0;
-          const source: 'Amazon Prime' | 'eBay Top Rated Plus' = isAmazon ? 'Amazon Prime' : 'eBay Top Rated Plus';
-          const skuPrefix = isAmazon ? 'AMZ' : 'EBY';
-          const skuCode = `${skuPrefix}-${brand.slice(0, 3).toUpperCase()}${globalCounter}`;
+          const source = 'Verified Stock';
+          const skuCode = `ADR-${brand.slice(0, 3).toUpperCase()}${globalCounter}`;
 
           // Price Calculation
           const minP = tpl.priceRange[0];
@@ -642,7 +640,7 @@ export function generate1000Products(): SeedProductDef[] {
             description: `${tpl.description} Verified authentic merchandise item with full manufacturer warranty and direct humanitarian impact allocation.`,
             specs: {
               ...tpl.specsBase,
-              Condition: source === 'Amazon Prime' ? 'Brand New in Factory Sealed Box' : 'Top Rated Plus / Certified Refurbished',
+              Condition: 'Brand New in Factory Sealed Packaging',
               SKU: skuCode,
               Shipping: 'Free Insured Global Priority (3-5 Business Days)',
               Warranty: '1 Year Full Manufacturer Warranty + 30-Day Money Back Guarantee',

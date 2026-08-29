@@ -635,21 +635,6 @@ export default function StoreHome() {
           </div>
 
           <div className="flex items-center gap-3 flex-wrap">
-            {/* Source Filter */}
-            <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 shadow-2xs">
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Channel:</span>
-              <select
-                value={selectedSource}
-                onChange={(e) => setSelectedSource(e.target.value)}
-                className="bg-transparent text-slate-900 font-bold focus:outline-none cursor-pointer"
-              >
-                <option value="All">All Channels</option>
-                <option value="Amazon Prime">Amazon Prime</option>
-                <option value="eBay Top Rated Plus">eBay Top Rated</option>
-              </select>
-            </div>
-
             {/* Sort Filter */}
             <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 shadow-2xs">
               <Filter className="w-3.5 h-3.5 text-primary-600" />
@@ -678,7 +663,7 @@ export default function StoreHome() {
               No products match &ldquo;{searchQuery}&rdquo; in category &ldquo;{selectedCategory}&rdquo;. Try clearing filters.
             </p>
             <button 
-              onClick={() => { setSelectedCategory("All"); setSelectedSource("All"); setSearchQuery(""); }}
+              onClick={() => { setSelectedCategory("All"); setSearchQuery(""); }}
               className="mt-4 px-4 py-2 bg-primary-600 text-white rounded-xl text-xs font-bold hover:bg-primary-700 cursor-pointer"
             >
               Reset Filters
@@ -709,14 +694,11 @@ export default function StoreHome() {
                         </div>
                       )}
 
-                      {/* Channel Pill Top Right */}
+                      {/* Verified Badge Top Right */}
                       <div className="absolute top-3 right-3 flex items-center gap-1.5">
-                        <span className={`text-[9px] font-extrabold px-2 py-0.5 rounded-md shadow-2xs backdrop-blur-md ${
-                          product.source?.includes('Amazon')
-                            ? 'bg-amber-500/90 text-slate-950 font-sans'
-                            : 'bg-blue-600/90 text-white font-sans'
-                        }`}>
-                          {product.source?.includes('Amazon') ? 'Amazon Prime' : 'eBay Top Rated'}
+                        <span className="text-[9px] font-extrabold px-2 py-0.5 rounded-md shadow-2xs backdrop-blur-md bg-emerald-600/90 text-white font-sans flex items-center gap-1">
+                          <CheckCircle2 className="w-2.5 h-2.5" />
+                          <span>Verified</span>
                         </span>
                         
                         {/* Wishlist Button */}
@@ -901,13 +883,9 @@ export default function StoreHome() {
                     {selectedProduct.category}
                   </span>
                   
-                  <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full inline-flex items-center gap-1 ${
-                    selectedProduct.source?.includes('Amazon')
-                      ? 'bg-amber-100 text-amber-900 border border-amber-300'
-                      : 'bg-blue-100 text-blue-900 border border-blue-300'
-                  }`}>
-                    <ShieldCheck className="w-3 h-3" />
-                    {selectedProduct.source || 'Amazon Prime'}
+                  <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    <ShieldCheck className="w-3 h-3 text-emerald-600" />
+                    <span>Verified Authentic</span>
                   </span>
 
                   {selectedProduct.sku && (

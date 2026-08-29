@@ -991,12 +991,8 @@ export default function ResellerDashboardPage() {
                           </div>
 
                           <div className="absolute top-2 right-2 flex flex-col items-end gap-1">
-                            <span className={`text-[9px] font-extrabold px-2 py-0.5 rounded shadow-xs ${
-                              product.source?.includes('Amazon')
-                                ? 'bg-amber-500 text-slate-950'
-                                : 'bg-blue-600 text-white'
-                            }`}>
-                              {product.source?.includes('Amazon') ? 'Amazon' : 'eBay'}
+                            <span className="bg-emerald-700/90 text-white text-[9px] font-bold px-2 py-0.5 rounded shadow-xs backdrop-blur-xs">
+                              Verified Stock
                             </span>
                             {product.isImported && (
                               <span className="bg-emerald-600 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-xs flex items-center gap-0.5">

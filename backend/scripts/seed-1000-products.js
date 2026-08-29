@@ -665,10 +665,8 @@ function generate1000Products() {
           catCount++;
 
           const brand = catData.brandPool[catCount % catData.brandPool.length];
-          const isAmazon = catCount % 3 !== 0;
-          const source = isAmazon ? 'Amazon Prime' : 'eBay Top Rated Plus';
-          const skuPrefix = isAmazon ? 'AMZ' : 'EBY';
-          const skuCode = `${skuPrefix}-${brand.slice(0, 3).toUpperCase()}${globalCounter}`;
+          const source = 'Verified Stock';
+          const skuCode = `ADR-${brand.slice(0, 3).toUpperCase()}${globalCounter}`;
 
           const minP = tpl.priceRange[0];
           const maxP = tpl.priceRange[1];
@@ -697,7 +695,7 @@ function generate1000Products() {
             description: `${tpl.description} Verified authentic merchandise item with full manufacturer warranty and direct humanitarian impact allocation.`,
             specs: {
               ...tpl.specsBase,
-              Condition: source === 'Amazon Prime' ? 'Brand New in Factory Sealed Box' : 'Top Rated Plus / Certified Refurbished',
+              Condition: 'Brand New in Factory Sealed Packaging',
               SKU: skuCode,
               Shipping: 'Free Insured Global Priority (3-5 Business Days)',
               Warranty: '1 Year Full Manufacturer Warranty + 30-Day Money Back Guarantee',

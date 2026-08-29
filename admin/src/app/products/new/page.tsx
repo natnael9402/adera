@@ -36,7 +36,7 @@ export default function NewProductPage() {
     category: 'Laptops & Computers',
     brand: '',
     sku: '',
-    source: 'Amazon Prime',
+    source: 'Verified Stock',
     image: '',
     stock: '999',
   });
@@ -204,9 +204,9 @@ export default function NewProductPage() {
                   value={formData.source}
                   onChange={(e) => setFormData({ ...formData, source: e.target.value })}
                 >
-                  <option value="Amazon Prime">Amazon Prime</option>
-                  <option value="eBay Top Rated Plus">eBay Top Rated Plus</option>
-                  <option value="Verified Wholesaler">Verified Wholesaler</option>
+                  <option value="Verified Stock">Verified Stock</option>
+                  <option value="Priority Dispatch">Priority Dispatch</option>
+                  <option value="Direct Wholesaler">Direct Wholesaler</option>
                 </select>
               </div>
             </div>

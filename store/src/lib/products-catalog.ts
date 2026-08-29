@@ -22,7 +22,7 @@ const CATEGORIES_DATA = [
   // 1. Laptops & Computers
   {
     category: 'Laptops & Computers',
-    defaultSource: 'Amazon Prime',
+    defaultSource: 'Verified Stock',
     brandPool: ['Apple', 'Dell', 'Lenovo', 'ASUS', 'HP', 'Razer', 'Alienware', 'Acer', 'MSI', 'LG', 'Samsung'],
     imagePool: [
       'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=800&q=80',
@@ -101,7 +101,7 @@ const CATEGORIES_DATA = [
   // 2. Smartphones & Tablets
   {
     category: 'Smartphones & Tablets',
-    defaultSource: 'Amazon Prime',
+    defaultSource: 'Verified Stock',
     brandPool: ['Apple', 'Samsung', 'Google', 'OnePlus', 'Microsoft', 'Motorola', 'Xiaomi'],
     imagePool: [
       'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?auto=format&fit=crop&w=800&q=80',
@@ -167,7 +167,7 @@ const CATEGORIES_DATA = [
   // 3. Audio & Headphones
   {
     category: 'Audio & Headphones',
-    defaultSource: 'Amazon Prime',
+    defaultSource: 'Verified Stock',
     brandPool: ['Sony', 'Apple', 'Bose', 'Sennheiser', 'Marshall', 'JBL', 'Bowers & Wilkins', 'Sonos', 'Shure', 'Bang & Olufsen'],
     imagePool: [
       'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=800&q=80',
@@ -233,7 +233,7 @@ const CATEGORIES_DATA = [
   // 4. Cameras & Drones
   {
     category: 'Cameras & Drones',
-    defaultSource: 'Amazon Prime',
+    defaultSource: 'Verified Stock',
     brandPool: ['Sony', 'Canon', 'Nikon', 'DJI', 'Fujifilm', 'GoPro', 'Insta360', 'Blackmagic Design', 'Leica'],
     imagePool: [
       'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=800&q=80',
@@ -289,7 +289,7 @@ const CATEGORIES_DATA = [
   // 5. Gaming & VR
   {
     category: 'Gaming & VR',
-    defaultSource: 'Amazon Prime',
+    defaultSource: 'Verified Stock',
     brandPool: ['Sony PlayStation', 'Microsoft Xbox', 'Nintendo', 'Valve', 'ASUS ROG', 'Meta', 'Razer', 'Logitech G', 'SteelSeries', 'Elgato'],
     imagePool: [
       'https://images.unsplash.com/photo-1606813907291-d86efa9b94db?auto=format&fit=crop&w=800&q=80',
@@ -345,7 +345,7 @@ const CATEGORIES_DATA = [
   // 6. Smart Home & Kitchen
   {
     category: 'Home & Kitchen',
-    defaultSource: 'Amazon Prime',
+    defaultSource: 'Verified Stock',
     brandPool: ['Dyson', 'Breville', 'DeLonghi', 'KitchenAid', 'Roborock', 'iRobot', 'Philips', 'Ninja', 'Vitamix', 'Anova'],
     imagePool: [
       'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?auto=format&fit=crop&w=800&q=80',
@@ -400,7 +400,7 @@ const CATEGORIES_DATA = [
   // 7. Watches & Luxury Wearables
   {
     category: 'Watches & Wearables',
-    defaultSource: 'eBay Top Rated Plus',
+    defaultSource: 'Verified Stock',
     brandPool: ['Apple', 'Garmin', 'Samsung', 'Tag Heuer', 'Oura', 'Withings', 'Casio G-Shock', 'Suunto', 'Omega', 'Tissot'],
     imagePool: [
       'https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=800&q=80',
@@ -446,7 +446,7 @@ const CATEGORIES_DATA = [
   // 8. Fashion & Footwear
   {
     category: 'Fashion & Footwear',
-    defaultSource: 'eBay Top Rated Plus',
+    defaultSource: 'Verified Stock',
     brandPool: ['Nike', 'Jordan', 'Adidas', 'Arc\'teryx', 'The North Face', 'Patagonia', 'Salomon', 'New Balance', 'Canada Goose', 'Stone Island'],
     imagePool: [
       'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=800&q=80',
@@ -467,8 +467,8 @@ const CATEGORIES_DATA = [
       {
         titlePrefix: 'Nike Air Jordan 1 Retro High OG',
         variants: ['Lost & Found Chicago Colorway (US 10.5)', 'Royal Reimagined Suede (US 11)', 'Bred Patent Leather (US 10)', 'Shadow 2.0 (US 9.5)'],
-        description: 'Authentic 1985 silhouette verified by eBay Authenticity Guarantee. Premium full-grain leather upper with encapsulated Nike Air cushioning.',
-        specsBase: { Upper: '100% Genuine Full-Grain Leather', Outsole: 'Solid Rubber with Pivot Circle', Verification: 'eBay Authenticity Guarantee NFC Tag' },
+        description: 'Authentic 1985 silhouette with official certificate of authenticity. Premium full-grain leather upper with encapsulated Nike Air cushioning.',
+        specsBase: { Upper: '100% Genuine Full-Grain Leather', Outsole: 'Solid Rubber with Pivot Circle', Verification: '100% Authenticity Guarantee Verified Tag' },
         priceRange: [199, 399],
         discountRange: [10, 25],
       },
@@ -502,7 +502,7 @@ const CATEGORIES_DATA = [
   // 9. Outdoor & Sporting Goods
   {
     category: 'Outdoor & Sports',
-    defaultSource: 'Amazon Prime',
+    defaultSource: 'Verified Stock',
     brandPool: ['YETI', 'Camp Chef', 'Coleman', 'Specialized', 'Trek', 'TaylorMade', 'Titleist', 'Garmin', 'Intex', 'Black Diamond'],
     imagePool: [
       'https://images.unsplash.com/photo-1510312305653-8ed496efae75?auto=format&fit=crop&w=800&q=80',
@@ -547,7 +547,7 @@ const CATEGORIES_DATA = [
   // 10. Health, Fitness & Grooming
   {
     category: 'Health & Fitness',
-    defaultSource: 'Amazon Prime',
+    defaultSource: 'Verified Stock',
     brandPool: ['Theragun', 'Hyperice', 'Dyson', 'Oral-B', 'Philips Sonicare', 'Bowflex', 'Concept2', 'Peloton', 'Waterpik', 'Braun'],
     imagePool: [
       'https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=800&q=80',
@@ -592,7 +592,7 @@ const CATEGORIES_DATA = [
   // 11. Smart Office & Ergonomics
   {
     category: 'Office & Workspace',
-    defaultSource: 'Amazon Prime',
+    defaultSource: 'Verified Stock',
     brandPool: ['Herman Miller', 'Steelcase', 'Secretlab', 'Autonomous', 'LG', 'Dell', 'BenQ', 'Logitech', 'Keychron', 'Elgato'],
     imagePool: [
       'https://images.unsplash.com/photo-1524758631624-e2822e304c36?auto=format&fit=crop&w=800&q=80',
@@ -637,7 +637,7 @@ const CATEGORIES_DATA = [
   // 12. Power, Solar & Tech Essentials
   {
     category: 'Power & Tech Gear',
-    defaultSource: 'Amazon Prime',
+    defaultSource: 'Verified Stock',
     brandPool: ['Anker', 'EcoFlow', 'Jackery', 'SanDisk', 'Samsung', 'Belkin', 'UGREEN', 'Goal Zero', 'Baseus'],
     imagePool: [
       'https://images.unsplash.com/photo-1609091839311-d5365f9ff1c5?auto=format&fit=crop&w=800&q=80',
@@ -697,10 +697,8 @@ export function generateMasterProducts(): Product[] {
           catCount++;
 
           const brand = catData.brandPool[catCount % catData.brandPool.length];
-          const isAmazon = catCount % 3 !== 0;
-          const source = isAmazon ? 'Amazon Prime' : 'eBay Top Rated Plus';
-          const skuPrefix = isAmazon ? 'AMZ' : 'EBY';
-          const skuCode = `${skuPrefix}-${brand.slice(0, 3).toUpperCase()}${globalCounter}`;
+          const source = 'Verified Stock';
+          const skuCode = `ADR-${brand.slice(0, 3).toUpperCase()}${globalCounter}`;
 
           const minP = tpl.priceRange[0];
           const maxP = tpl.priceRange[1];
@@ -731,7 +729,7 @@ export function generateMasterProducts(): Product[] {
             description: `${tpl.description} Verified authentic merchandise item with full manufacturer warranty and direct humanitarian impact allocation.`,
             specs: {
               ...tpl.specsBase,
-              Condition: source === 'Amazon Prime' ? 'Brand New in Factory Sealed Box' : 'Top Rated Plus / Certified Refurbished',
+              Condition: 'Brand New in Factory Sealed Packaging',
               SKU: skuCode,
               Shipping: 'Free Insured Global Priority (3-5 Business Days)',
               Warranty: '1 Year Full Manufacturer Warranty + 30-Day Money Back Guarantee',
