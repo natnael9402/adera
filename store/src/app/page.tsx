@@ -469,30 +469,6 @@ export default function StoreHome() {
                 </Link>
               </div>
 
-              {/* Accepted Payment Channels */}
-              <div className="pt-2 flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
-                <span className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider shrink-0 mr-1">
-                  Accepted Payments:
-                </span>
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-white/10 border border-white/10">
-                    <img src="/payments/visa.svg" alt="Visa" className="h-3.5 object-contain" />
-                  </div>
-                  <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-white/10 border border-white/10">
-                    <img src="/payments/mastercard.svg" alt="MasterCard" className="h-3.5 object-contain" />
-                  </div>
-                  <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-white/10 border border-white/10">
-                    <img src="/payments/paypal.svg" alt="PayPal" className="h-3.5 object-contain" />
-                  </div>
-                  <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-white/10 border border-white/10">
-                    <img src="/payments/applepay.svg" alt="Apple Pay" className="h-3.5 object-contain" />
-                  </div>
-                  <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/10 border border-white/10 text-[11px] font-bold text-slate-200">
-                    <span>Multi-Currency</span>
-                  </div>
-                </div>
-              </div>
-
             </div>
 
             {/* Right: Modern Responsive Spotlight Deal Card */}
@@ -512,7 +488,7 @@ export default function StoreHome() {
                 <div className="flex gap-3 sm:gap-4 items-center bg-slate-900/80 p-3 sm:p-3.5 rounded-xl border border-slate-700/60">
                   <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden bg-slate-800 shrink-0 border border-slate-700">
                     <Image 
-                      src="/products/6a73fc0ddea998e9f3373e83.jpg" 
+                      src="https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?auto=format&fit=crop&w=800&q=80" 
                       alt="ZenBook" 
                       fill 
                       sizes="80px"
@@ -777,7 +753,7 @@ export default function StoreHome() {
                   Secure Direct Checkout
                 </h4>
                 <p className="text-xs text-slate-600 leading-relaxed">
-                  Fast, encrypted payments with Credit Card, PayPal, Apple Pay, and digital currencies.
+                  Fast, encrypted end-to-end checkout with instant order confirmation and verified processing.
                 </p>
               </div>
             </div>
