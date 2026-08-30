@@ -121,7 +121,14 @@ export default function StoreHome() {
       .then(data => {
         const items = Array.isArray(data) ? data : data?.items || [];
         if (items.length > 0) {
-          setProducts(items);
+          const sanitized = items.map((p: any, idx: number) => {
+            if (!p.image || p.image.includes('/products/') || p.image.includes('banggoods') || p.image.includes('placeholder')) {
+              const fallback = MASTER_CATALOG_PRODUCTS[idx % MASTER_CATALOG_PRODUCTS.length];
+              return { ...p, image: fallback.image };
+            }
+            return p;
+          });
+          setProducts(sanitized);
         }
       })
       .catch((err) => {
@@ -129,7 +136,16 @@ export default function StoreHome() {
         api.products.list()
           .then(data => {
             const items = Array.isArray(data) ? data : (data as any)?.items || [];
-            if (items.length > 0) setProducts(items);
+            if (items.length > 0) {
+              const sanitized = items.map((p: any, idx: number) => {
+                if (!p.image || p.image.includes('/products/') || p.image.includes('banggoods') || p.image.includes('placeholder')) {
+                  const fallback = MASTER_CATALOG_PRODUCTS[idx % MASTER_CATALOG_PRODUCTS.length];
+                  return { ...p, image: fallback.image };
+                }
+                return p;
+              });
+              setProducts(sanitized);
+            }
           })
           .catch(() => {});
       });

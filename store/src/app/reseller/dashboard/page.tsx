@@ -103,7 +103,14 @@ export default function ResellerDashboardPage() {
       setInventory(invData || []);
       
       if (Array.isArray(catData) && catData.length > 0) {
-        setCatalog(catData);
+        const sanitizedCat = catData.map((p: any, idx: number) => {
+          if (!p.image || p.image.includes('/products/') || p.image.includes('banggoods') || p.image.includes('placeholder')) {
+            const fallback = MASTER_CATALOG_PRODUCTS[idx % MASTER_CATALOG_PRODUCTS.length];
+            return { ...p, image: fallback.image };
+          }
+          return p;
+        });
+        setCatalog(sanitizedCat);
       } else {
         const importedIds = new Set((invData || []).map((i: any) => i.productId));
         setCatalog(MASTER_CATALOG_PRODUCTS.map((p) => ({
