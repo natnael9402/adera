@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, OnModuleInit } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { Product, Prisma } from '@prisma/client';
@@ -15,8 +15,30 @@ export interface ProductFilterQuery {
 }
 
 @Injectable()
-export class ProductsService {
+export class ProductsService implements OnModuleInit {
   constructor(private readonly prisma: PrismaService) {}
+
+  async onModuleInit() {
+    try {
+      const count = await this.prisma.product.count();
+      const hasStale = await this.prisma.product.findFirst({
+        where: {
+          OR: [
+            { image: { contains: 'banggoods' } },
+            { image: { contains: 'placeholder' } },
+            { image: { contains: '/products/' } },
+          ],
+        },
+      });
+
+      if (count < 500 || hasStale) {
+        console.log(`📦 Server startup: Found ${count} products (stale detected: ${!!hasStale}). Auto-seeding 1,000+ unique products...`);
+        await this.seed1000Catalog();
+      }
+    } catch (err: any) {
+      console.warn('⚠️ Product auto-seed check skipped:', err.message);
+    }
+  }
 
   async create(createProductDto: CreateProductDto): Promise<Product> {
     return this.prisma.product.create({
@@ -50,7 +72,7 @@ export class ProductsService {
       ];
     }
 
-    let orderBy: Prisma.ProductOrderByWithRelationInput = { createdAt: 'desc' };
+    let orderBy: Prisma.ProductOrderByWithRelationInput = { id: 'asc' };
     if (query?.sortBy === 'price-low') {
       orderBy = { price: 'asc' };
     } else if (query?.sortBy === 'price-high') {
@@ -118,6 +140,11 @@ export class ProductsService {
   }
 
   async seed1000Catalog(): Promise<any> {
-    return runProductMigration();
+    const result = await runProductMigration({ fresh: true });
+    return {
+      success: true,
+      ...result,
+      message: `Successfully seeded ${result.total} unique, non-repeating products across 12 categories`,
+    };
   }
 }

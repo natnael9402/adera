@@ -1,316 +1,371 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { api } from '@/lib/api';
-import { FileText, Users, Clock, CheckCircle2, XCircle, Plus, ChevronRight, Heart, ShoppingBag, Wallet, ArrowUpRight, ShieldCheck, Activity, Layers, Package } from 'lucide-react';
-import Navbar from '@/components/Navbar';
+import AdminShell from '@/components/AdminShell';
+import { 
+  Package, 
+  Users, 
+  FileText, 
+  Heart, 
+  DollarSign, 
+  ArrowUpRight, 
+  RefreshCw,
+  ShoppingBag,
+  ExternalLink,
+  ChevronRight,
+  TrendingUp,
+  Clock
+} from 'lucide-react';
 
 export default function AdminDashboard() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const [stats, setStats] = useState<any>(null);
+  const [recentOrders, setRecentOrders] = useState<any[]>([]);
+  const [usersData, setUsersData] = useState<any>(null);
+  const [activeTab, setActiveTab] = useState<'ALL' | 'BUYERS' | 'DONORS'>('ALL');
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const loadData = async () => {
+    setIsRefreshing(true);
+    try {
+      const [statsRes, ordersRes, usersRes] = await Promise.all([
+        api.admin.stats().catch(() => null),
+        api.admin.orders.list({ limit: 6 }).catch(() => ({ items: [] })),
+        api.admin.users.list({ limit: 20 }).catch(() => null),
+      ]);
+      if (statsRes) setStats(statsRes);
+      if (ordersRes) setRecentOrders(ordersRes.items || []);
+      if (usersRes) setUsersData(usersRes);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  const filteredUsers = useMemo(() => {
+    const list = usersData?.items || [];
+    return list.filter((u: any) => {
+      if (activeTab === 'ALL') return true;
+      if (activeTab === 'BUYERS') return u.source === 'SHOP' || u.role === 'BUYER';
+      if (activeTab === 'DONORS') return u.source === 'DONOR' || u.role === 'DONOR';
+      return true;
+    }).slice(0, 6);
+  }, [usersData, activeTab]);
 
   useEffect(() => {
     if (!loading && !user) router.push('/login');
-    if (user) api.admin.stats().then(setStats).catch(console.error);
+    if (user) loadData();
   }, [user, loading, router]);
 
   if (loading || !stats) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="w-10 h-10 border-4 border-primary-600 border-t-transparent rounded-full animate-spin" />
-      </div>
+      <AdminShell>
+        <div className="min-h-[60vh] flex items-center justify-center">
+          <div className="w-8 h-8 border-3 border-emerald-600 border-t-transparent rounded-full animate-spin" />
+        </div>
+      </AdminShell>
     );
   }
 
-  const statCards = [
-    { 
-      label: 'Total Causes', 
-      value: stats.totalPosts || 0, 
-      subtext: 'Submitted proposals',
-      icon: FileText, 
-      color: 'bg-blue-50 text-blue-700 border-blue-200' 
+  const metricCards = [
+    {
+      title: 'Gross Volume (USD)',
+      value: `$${(stats.totalRevenueUsd || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+      subtext: 'Escrow & direct donations',
+      icon: DollarSign,
+      iconColor: 'text-emerald-600 bg-emerald-50 border-emerald-100',
+      href: '/orders',
     },
-    { 
-      label: 'Pending Review', 
-      value: stats.pendingPosts || 0, 
-      subtext: 'Requires admin action',
-      icon: Clock, 
-      color: 'bg-amber-50 text-amber-700 border-amber-200' 
+    {
+      title: 'Store Orders',
+      value: stats.totalOrders || 0,
+      subtext: `${stats.inTransitOrders || 0} in transit • ${stats.deliveredOrders || 0} delivered`,
+      icon: Package,
+      iconColor: 'text-blue-600 bg-blue-50 border-blue-100',
+      href: '/orders',
     },
-    { 
-      label: 'Approved Causes', 
-      value: stats.approvedPosts || 0, 
-      subtext: 'Active on public portal',
-      icon: CheckCircle2, 
-      color: 'bg-emerald-50 text-emerald-700 border-emerald-200' 
+    {
+      title: 'Active Causes',
+      value: stats.approvedPosts || 0,
+      subtext: `${stats.pendingPosts || 0} pending review`,
+      icon: FileText,
+      iconColor: 'text-rose-600 bg-rose-50 border-rose-100',
+      href: '/posts',
+      badge: stats.pendingPosts > 0 ? `${stats.pendingPosts} review` : undefined,
     },
-    { 
-      label: 'Rejected', 
-      value: stats.rejectedPosts || 0, 
-      subtext: 'Archived causes',
-      icon: XCircle, 
-      color: 'bg-rose-50 text-rose-700 border-rose-200' 
-    },
-    { 
-      label: 'Registered Users', 
-      value: stats.totalUsers || 0, 
-      subtext: 'Verified donors & creators',
-      icon: Users, 
-      color: 'bg-slate-100 text-slate-800 border-slate-200' 
+    {
+      title: 'Community Supporters',
+      value: usersData?.summary?.total || stats.totalUsers || 0,
+      subtext: `${usersData?.summary?.shopBuyers || 0} buyers • ${usersData?.summary?.donors || 0} donors`,
+      icon: Users,
+      iconColor: 'text-purple-600 bg-purple-50 border-purple-100',
+      href: '/users',
     },
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans">
-      <Navbar />
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 flex-1 w-full space-y-10">
+    <AdminShell>
+      <div className="max-w-7xl mx-auto space-y-6 font-sans">
         
-        {/* Top Header & Fast Actions */}
-        <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-              Admin Dashboard
+        {/* Clean Header Bar */}
+        <div className="flex items-center justify-between pb-2 border-b border-slate-200/80">
+          <div className="flex items-center gap-3">
+            <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+              Overview
             </h1>
-            <p className="text-xs sm:text-sm text-slate-500 mt-1">
-              Overview and management controls for campaigns, products, donors, users, and settlement wallets.
-            </p>
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              Live
+            </span>
           </div>
 
-          {/* Quick Action Button Group */}
-          <div className="flex flex-wrap items-center gap-2.5">
-            <Link
-              href="/posts/new"
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary-600 hover:bg-primary-700 text-white font-bold rounded-xl text-xs transition-all shadow-md shadow-primary-600/20"
+          <div className="flex items-center gap-2">
+            <button
+              onClick={loadData}
+              disabled={isRefreshing}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-slate-700 hover:text-slate-900 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl transition-all shadow-2xs active:scale-95 disabled:opacity-50 cursor-pointer"
             >
-              <Plus className="w-4 h-4" />
-              <span>Create Cause</span>
-            </Link>
-
-            <Link
-              href="/products/new"
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl text-xs transition-all shadow-sm"
-            >
-              <ShoppingBag className="w-4 h-4" />
-              <span>Add Product</span>
-            </Link>
-
-            <Link
-              href="/payments/new"
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded-xl text-xs transition-all border border-slate-200"
-            >
-              <Wallet className="w-4 h-4 text-primary-600" />
-              <span>Add Wallet</span>
-            </Link>
+              <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+              <span>Refresh</span>
+            </button>
           </div>
         </div>
 
-        {/* 5-Column Metrics Strip */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-5">
-          {statCards.map((card) => {
-            const Icon = card.icon;
+        {/* 4 Metric Cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+          {metricCards.map((c) => {
+            const Icon = c.icon;
             return (
-              <div 
-                key={card.label} 
-                className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3 hover:border-slate-300 transition-all"
+              <Link
+                key={c.title}
+                href={c.href}
+                className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs hover:border-slate-300 hover:shadow-sm transition-all group flex flex-col justify-between"
               >
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                    {card.label}
+                <div className="flex items-center justify-between gap-1 mb-2">
+                  <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400 group-hover:text-slate-600 transition-colors truncate">
+                    {c.title}
                   </span>
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center border ${card.color}`}>
-                    <Icon className="w-4 h-4" />
+                  <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl border flex items-center justify-center shrink-0 ${c.iconColor}`}>
+                    <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   </div>
                 </div>
 
                 <div>
-                  <p className="text-3xl font-black text-slate-900 tracking-tight font-mono">
-                    {card.value}
-                  </p>
-                  <p className="text-[11px] text-slate-400 font-medium mt-0.5">
-                    {card.subtext}
+                  <div className="flex items-baseline justify-between gap-1">
+                    <p className="text-lg sm:text-2xl lg:text-3xl font-black font-mono text-slate-900 tracking-tight truncate">
+                      {c.value}
+                    </p>
+                    {c.badge && (
+                      <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 shrink-0">
+                        {c.badge}
+                      </span>
+                    )}
+                  </div>
+
+                  <p className="text-[10px] sm:text-[11px] text-slate-500 font-medium mt-0.5 sm:mt-1 truncate">
+                    {c.subtext}
                   </p>
                 </div>
-              </div>
+              </Link>
             );
           })}
         </div>
 
-        {/* Core Administrative Portals */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold text-slate-900 tracking-tight flex items-center gap-2">
-              <Layers className="w-5 h-5 text-primary-600" />
-              Management Modules
-            </h2>
-            <span className="text-xs font-mono font-semibold text-slate-500">6 Sub-Modules Active</span>
+        {/* 2-Column Split: Orders Table & Community Activity */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+          
+          {/* Recent Orders (2 Columns) */}
+          <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden flex flex-col">
+            <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+              <div>
+                <h2 className="text-sm font-bold text-slate-900 tracking-tight">
+                  Recent Store Orders
+                </h2>
+                <p className="text-[11px] text-slate-400">Latest customer purchases & crypto settlement</p>
+              </div>
+
+              <Link 
+                href="/orders" 
+                className="text-xs font-bold text-emerald-700 hover:text-emerald-800 inline-flex items-center gap-1 hover:underline"
+              >
+                <span>View all</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+
+            <div className="flex-1 overflow-x-auto custom-scrollbar">
+              <table className="w-full min-w-[500px] text-left border-collapse text-xs">
+                <thead>
+                  <tr className="border-b border-slate-100 bg-slate-50/60 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                    <th className="py-3 px-5">Order #</th>
+                    <th className="py-3 px-4">Customer</th>
+                    <th className="py-3 px-4">Total</th>
+                    <th className="py-3 px-4">Status</th>
+                    <th className="py-3 px-5 text-right">Date</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {recentOrders.slice(0, 6).map((ord) => {
+                    const isDelivered = ord.status === 'DELIVERED';
+                    const isInTransit = ord.status === 'IN_TRANSIT';
+                    return (
+                      <tr key={ord.id} className="hover:bg-slate-50/60 transition-colors">
+                        <td className="py-3.5 px-5">
+                          <Link href="/orders" className="font-mono font-bold text-slate-900 hover:text-emerald-600 transition-colors">
+                            #{ord.orderNumber}
+                          </Link>
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <p className="font-bold text-slate-900 truncate max-w-[150px]">
+                            {ord.customerName}
+                          </p>
+                          <p className="text-[10px] text-slate-400 truncate max-w-[150px]">
+                            {ord.customerEmail}
+                          </p>
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <span className="font-mono font-bold text-slate-900 block">
+                            ${(ord.totalAmount || 0).toFixed(2)}
+                          </span>
+                          <span className="text-[10px] font-mono text-emerald-600 font-bold">
+                            {ord.cryptoAmount} {ord.cryptoSymbol}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-black uppercase border ${
+                            isDelivered
+                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                              : isInTransit
+                              ? 'bg-blue-50 text-blue-700 border-blue-200'
+                              : 'bg-amber-50 text-amber-700 border-amber-200'
+                          }`}>
+                            {ord.status}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-5 text-right text-slate-400 font-mono text-[11px]">
+                          {new Date(ord.createdAt).toLocaleDateString()}
+                        </td>
+                      </tr>
+                    );
+                  })}
+
+                  {recentOrders.length === 0 && (
+                    <tr>
+                      <td colSpan={5} className="py-12 text-center text-slate-400">
+                        No orders recorded yet.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            
-            {/* 1. Causes & Posts */}
-            <Link 
-              href="/posts" 
-              className="bg-white p-6 rounded-3xl border border-slate-200 hover:border-primary-500 hover:shadow-md transition-all flex flex-col justify-between group space-y-6"
-            >
-              <div className="space-y-3">
-                <div className="w-12 h-12 bg-primary-50 border border-primary-200 text-primary-700 rounded-2xl flex items-center justify-center group-hover:scale-105 transition-transform">
-                  <FileText className="w-6 h-6" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-slate-900 group-hover:text-primary-700 transition-colors">
-                    Causes & Submissions
-                  </h3>
-                  <p className="text-xs text-slate-500 leading-relaxed mt-1">
-                    Review and approve submitted philanthropic initiatives. Set goal targets, verify documentation, and deploy to the public portal.
-                  </p>
-                </div>
+          {/* Community Supporter Feed (1 Column) */}
+          <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-5 flex flex-col space-y-4">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+              <div>
+                <h2 className="text-sm font-bold text-slate-900 tracking-tight">
+                  Supporters & Donors
+                </h2>
+                <p className="text-[11px] text-slate-400">Platform community members</p>
               </div>
 
-              <div className="flex items-center justify-between pt-4 border-t border-slate-100 text-xs font-bold text-primary-700">
-                <span>Manage All Causes</span>
-                <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </div>
-            </Link>
+              <Link 
+                href="/users" 
+                className="text-xs font-bold text-primary-700 hover:underline inline-flex items-center gap-1"
+              >
+                <span>Directory</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
 
-            {/* 2. Store Products */}
-            <Link 
-              href="/products" 
-              className="bg-white p-6 rounded-3xl border border-slate-200 hover:border-primary-500 hover:shadow-md transition-all flex flex-col justify-between group space-y-6"
-            >
-              <div className="space-y-3">
-                <div className="w-12 h-12 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-2xl flex items-center justify-center group-hover:scale-105 transition-transform">
-                  <ShoppingBag className="w-6 h-6" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-slate-900 group-hover:text-primary-700 transition-colors">
-                    Store Merchandise
-                  </h3>
-                  <p className="text-xs text-slate-500 leading-relaxed mt-1">
-                    Manage direct-impact merchandise, update product inventory, edit crypto price conversions, and monitor sales proceeds.
-                  </p>
-                </div>
-              </div>
+            {/* Filter Tabs */}
+            <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
+              {[
+                { id: 'ALL', label: 'All' },
+                { id: 'BUYERS', label: 'Buyers' },
+                { id: 'DONORS', label: 'Donors' },
+              ].map((t) => (
+                <button
+                  key={t.id}
+                  onClick={() => setActiveTab(t.id as any)}
+                  className={`flex-1 py-1 rounded-lg text-xs font-bold transition-all ${
+                    activeTab === t.id
+                      ? 'bg-white text-slate-900 shadow-2xs'
+                      : 'text-slate-500 hover:text-slate-900'
+                  }`}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
 
-              <div className="flex items-center justify-between pt-4 border-t border-slate-100 text-xs font-bold text-primary-700">
-                <span>Manage Store Catalog</span>
-                <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </div>
-            </Link>
+            {/* User List */}
+            <div className="space-y-2.5 flex-1">
+              {filteredUsers.map((u: any) => {
+                const isDonor = u.source === 'DONOR' || u.role === 'DONOR';
+                const isShop = u.source === 'SHOP' || u.role === 'BUYER';
+                return (
+                  <div
+                    key={u.id}
+                    className="p-2.5 rounded-xl border border-slate-100 hover:border-slate-200 hover:bg-slate-50/50 transition-colors flex items-center justify-between gap-3 text-xs"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-black uppercase text-xs shrink-0 border ${
+                        isDonor
+                          ? 'bg-rose-50 text-rose-700 border-rose-200'
+                          : isShop
+                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                          : 'bg-purple-50 text-purple-700 border-purple-200'
+                      }`}>
+                        {u.name?.[0] || 'U'}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-bold text-slate-900 truncate">
+                          {u.name}
+                        </p>
+                        <p className="text-[10px] text-slate-400 font-mono truncate">
+                          {u.email}
+                        </p>
+                      </div>
+                    </div>
 
-            {/* 3. Donor Leaderboard */}
-            <Link 
-              href="/donors" 
-              className="bg-white p-6 rounded-3xl border border-slate-200 hover:border-primary-500 hover:shadow-md transition-all flex flex-col justify-between group space-y-6"
-            >
-              <div className="space-y-3">
-                <div className="w-12 h-12 bg-rose-50 border border-rose-200 text-rose-700 rounded-2xl flex items-center justify-center group-hover:scale-105 transition-transform">
-                  <Heart className="w-6 h-6" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-slate-900 group-hover:text-primary-700 transition-colors">
-                    Donor Leaderboard
-                  </h3>
-                  <p className="text-xs text-slate-500 leading-relaxed mt-1">
-                    Recognize philanthropic contributors. Add, update, and manage top on-chain donors displayed on the platform homepage.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between pt-4 border-t border-slate-100 text-xs font-bold text-primary-700">
-                <span>View Leaderboard</span>
-                <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </div>
-            </Link>
-
-            {/* 4. Registered Users */}
-            <Link 
-              href="/users" 
-              className="bg-white p-6 rounded-3xl border border-slate-200 hover:border-primary-500 hover:shadow-md transition-all flex flex-col justify-between group space-y-6"
-            >
-              <div className="space-y-3">
-                <div className="w-12 h-12 bg-purple-50 border border-purple-200 text-purple-700 rounded-2xl flex items-center justify-center group-hover:scale-105 transition-transform">
-                  <Users className="w-6 h-6" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-slate-900 group-hover:text-primary-700 transition-colors">
-                    User Accounts
-                  </h3>
-                  <p className="text-xs text-slate-500 leading-relaxed mt-1">
-                    Monitor registered donor profiles, view KYC verification flags, audit platform roles, and manage permissions.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between pt-4 border-t border-slate-100 text-xs font-bold text-primary-700">
-                <span>Audit User Accounts</span>
-                <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </div>
-            </Link>
-
-            {/* 5. Payment Gateways & Wallets */}
-            <Link 
-              href="/payments" 
-              className="bg-white p-6 rounded-3xl border border-slate-200 hover:border-primary-500 hover:shadow-md transition-all flex flex-col justify-between group space-y-6"
-            >
-              <div className="space-y-3">
-                <div className="w-12 h-12 bg-amber-50 border border-amber-200 text-amber-700 rounded-2xl flex items-center justify-center group-hover:scale-105 transition-transform">
-                  <Wallet className="w-6 h-6" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-slate-900 group-hover:text-primary-700 transition-colors">
-                    Payment Gateways & Wallets
-                  </h3>
-                  <p className="text-xs text-slate-500 leading-relaxed mt-1">
-                    Manage multi-channel payment options, monitor Credit Card & PayPal onboarding, and configure active crypto deposit addresses.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between pt-4 border-t border-slate-100 text-xs font-bold text-primary-700">
-                <span>Configure Gateways & Wallets</span>
-                <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </div>
-            </Link>
-
-            {/* 6. Shipment & Order Logistics */}
-            <a 
-              href={`${process.env.NEXT_PUBLIC_STORE_URL || "https://shop.aderafoundation.com"}/track`} 
-              target="_blank"
-              rel="noreferrer"
-              className="bg-white p-6 rounded-3xl border border-slate-200 hover:border-primary-500 hover:shadow-md transition-all flex flex-col justify-between group space-y-6"
-            >
-              <div className="space-y-3">
-                <div className="w-12 h-12 bg-teal-50 border border-teal-200 text-teal-700 rounded-2xl flex items-center justify-center group-hover:scale-105 transition-transform">
-                  <Package className="w-6 h-6" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-lg font-bold text-slate-900 group-hover:text-primary-700 transition-colors">
-                      Shipment & Order Logistics
-                    </h3>
-                    <ArrowUpRight className="w-4 h-4 text-slate-400" />
+                    <div className="text-right shrink-0">
+                      <span className="font-mono font-bold text-slate-900 block text-xs">
+                        {isDonor
+                          ? `$${(u.totalDonated || 0).toLocaleString()}`
+                          : isShop
+                          ? `$${(u.totalSpent || 0).toFixed(2)}`
+                          : u.badge || 'Member'}
+                      </span>
+                      <span className={`text-[9px] font-bold uppercase ${
+                        isDonor ? 'text-rose-600' : isShop ? 'text-emerald-600' : 'text-slate-400'
+                      }`}>
+                        {isDonor ? 'Donor' : isShop ? 'Buyer' : 'User'}
+                      </span>
+                    </div>
                   </div>
-                  <p className="text-xs text-slate-500 leading-relaxed mt-1">
-                    Track customer package numbers, courier fulfillment status, and order receipts across the store.
-                  </p>
-                </div>
-              </div>
+                );
+              })}
 
-              <div className="flex items-center justify-between pt-4 border-t border-slate-100 text-xs font-bold text-primary-700">
-                <span>View Order Tracker</span>
-                <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </div>
-            </a>
-
+              {filteredUsers.length === 0 && (
+                <p className="text-xs text-slate-400 py-6 text-center">
+                  No supporters found.
+                </p>
+              )}
+            </div>
           </div>
+
         </div>
 
-      </main>
-    </div>
+      </div>
+    </AdminShell>
   );
 }

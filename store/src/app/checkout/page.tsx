@@ -3,8 +3,11 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowLeft, Check, Copy, ShieldCheck, Lock, Truck, CheckCircle2, ChevronRight, ShoppingBag, ExternalLink, ArrowRight, Heart, RefreshCw, FileText, Download, Award, Layers, Clock, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Check, Copy, ShieldCheck, Lock, Truck, CheckCircle2, ChevronRight, ShoppingBag, ExternalLink, ArrowRight, Heart, RefreshCw, FileText, Download, Award, Layers, Clock, AlertCircle, User, UploadCloud, Trash2, FileCheck } from 'lucide-react';
 import { api } from '@/lib/api';
+import { useBuyerAuth } from '@/context/BuyerAuthContext';
+import { shrinkImage } from '@/lib/imageShrinker';
+import NotificationCenter from '@/components/NotificationCenter';
 
 interface CartItem {
   id: number;
@@ -96,6 +99,7 @@ const IMPACT_CAUSES = [
 ];
 
 export default function CheckoutPage() {
+  const { buyer } = useBuyerAuth();
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
@@ -126,6 +130,67 @@ export default function CheckoutPage() {
   const [orderCarrier, setOrderCarrier] = useState("");
   const [orderDelivery, setOrderDelivery] = useState("");
   const [orderError, setOrderError] = useState("");
+
+  // Payment Proof State (Canvas-shrunk WebP)
+  const [proofFile, setProofFile] = useState<File | null>(null);
+  const [proofPreview, setProofPreview] = useState<string | null>(null);
+  const [proofOriginalSize, setProofOriginalSize] = useState<number | null>(null);
+  const [proofShrunkSize, setProofShrunkSize] = useState<number | null>(null);
+  const [isShrinking, setIsShrinking] = useState(false);
+  const [uploadedProofUrl, setUploadedProofUrl] = useState<string | null>(null);
+
+  const handleProofSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsShrinking(true);
+    setProofOriginalSize(file.size);
+
+    try {
+      const shrunk = await shrinkImage(file, 1280, 0.82);
+      setProofFile(shrunk.file);
+      setProofShrunkSize(shrunk.shrunkSize);
+      setProofPreview(shrunk.dataUrl);
+    } catch (err) {
+      console.error('Failed to compress proof image:', err);
+      setProofFile(file);
+      setProofShrunkSize(file.size);
+      const reader = new FileReader();
+      reader.onload = () => {
+        setProofPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    } finally {
+      setIsShrinking(false);
+    }
+  };
+
+  const removeProof = () => {
+    setProofFile(null);
+    setProofPreview(null);
+    setProofOriginalSize(null);
+    setProofShrunkSize(null);
+    setUploadedProofUrl(null);
+  };
+
+  // Pre-fill fields from logged-in buyer
+  useEffect(() => {
+    if (buyer) {
+      if (buyer.email) setEmail((prev) => prev || buyer.email);
+      if (buyer.name) {
+        const parts = buyer.name.trim().split(' ');
+        setFirstName((prev) => prev || parts[0] || '');
+        setLastName((prev) => prev || parts.slice(1).join(' ') || '');
+      }
+      if (buyer.savedAddress) {
+        if (buyer.savedAddress.address) setAddress((prev) => prev || buyer.savedAddress?.address || '');
+        if (buyer.savedAddress.apartment) setApartment((prev) => prev || buyer.savedAddress?.apartment || '');
+        if (buyer.savedAddress.city) setCity((prev) => prev || buyer.savedAddress?.city || '');
+        if (buyer.savedAddress.stateProvince) setStateProvince((prev) => prev || buyer.savedAddress?.stateProvince || '');
+        if (buyer.savedAddress.zipCode) setZipCode((prev) => prev || buyer.savedAddress?.zipCode || '');
+        if (buyer.savedAddress.country) setCountry((prev) => prev || buyer.savedAddress?.country || 'United States');
+      }
+    }
+  }, [buyer]);
 
   useEffect(() => {
     // Load cart from localStorage or fallback
@@ -178,6 +243,17 @@ export default function CheckoutPage() {
     const randomHash = "0x" + Array.from({length: 40}, () => Math.floor(Math.random()*16).toString(16)).join('');
     const causeObj = IMPACT_CAUSES.find(c => c.id === selectedCause);
 
+    let proofUrl: string | undefined = undefined;
+    if (proofFile) {
+      try {
+        const uploadRes = await api.upload.proof(proofFile);
+        proofUrl = uploadRes.url;
+        setUploadedProofUrl(uploadRes.url);
+      } catch (uploadErr) {
+        console.error('Proof upload error, proceeding with order creation:', uploadErr);
+      }
+    }
+
     try {
       const res = await api.orders.create({
         customerEmail: email.trim(),
@@ -206,6 +282,8 @@ export default function CheckoutPage() {
           image: item.image,
           category: item.category,
         })),
+        paymentProof: proofUrl,
+        userId: buyer ? buyer.id : undefined,
       });
 
       setOrderNumber(res.orderNumber);
@@ -363,6 +441,20 @@ export default function CheckoutPage() {
               <span>Total Paid:</span>
               <span className="font-mono text-base text-emerald-700">${totalAmount.toFixed(2)} USD</span>
             </div>
+
+            {(uploadedProofUrl || proofPreview) && (
+              <div className="pt-3 border-t border-slate-200">
+                <div className="flex items-center justify-between p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-xs">
+                  <div className="flex items-center gap-2 font-bold text-emerald-950">
+                    <FileCheck className="w-4 h-4 text-emerald-600" />
+                    <span>Payment Proof Screenshot Attached</span>
+                  </div>
+                  <span className="text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                    Pending Verification
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Actions */}
@@ -447,14 +539,17 @@ export default function CheckoutPage() {
               </div>
             </div>
 
-            {/* Back to Catalog */}
-            <Link 
-              href="/"
-              className="inline-flex items-center gap-2 text-xs font-bold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-3.5 py-2 rounded-xl border border-slate-200 transition-colors"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              Back to Catalog
-            </Link>
+            {/* Header Right Actions */}
+            <div className="flex items-center gap-3">
+              <NotificationCenter />
+              <Link 
+                href="/"
+                className="inline-flex items-center gap-2 text-xs font-bold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-3.5 py-2 rounded-xl border border-slate-200 transition-colors"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                Back to Catalog
+              </Link>
+            </div>
 
           </div>
         </div>
@@ -490,6 +585,26 @@ export default function CheckoutPage() {
                   Encrypted
                 </div>
               </div>
+
+              {/* Buyer Session Notice */}
+              {buyer ? (
+                <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center justify-between gap-3 text-xs">
+                  <div className="flex items-center gap-2 text-emerald-900 font-medium">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>Logged in as <strong>{buyer.name}</strong> ({buyer.email}) — Saved info applied</span>
+                  </div>
+                  <Link href="/account" className="text-emerald-700 font-bold hover:underline shrink-0">
+                    Account
+                  </Link>
+                </div>
+              ) : (
+                <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl flex items-center justify-between gap-3 text-xs">
+                  <span className="text-slate-600">Have an Adera account? Sign in for 1-click checkout.</span>
+                  <Link href="/login?redirect=/checkout" className="text-primary-700 font-bold hover:underline shrink-0">
+                    Sign In
+                  </Link>
+                </div>
+              )}
 
               {/* Form Fields */}
               <div className="space-y-4">
@@ -952,6 +1067,89 @@ export default function CheckoutPage() {
                   <Clock className="w-3.5 h-3.5 text-primary-400 shrink-0" />
                   <span>Settlement status is automatically detected on-chain within ~10 seconds.</span>
                 </div>
+              </div>
+
+              {/* Proof of Payment Screenshot Dropzone */}
+              <div className="p-4 rounded-2xl bg-white border border-slate-200 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-900 flex items-center gap-1.5 uppercase tracking-wider">
+                    <UploadCloud className="w-4 h-4 text-emerald-600" />
+                    Proof of Payment Screenshot (Optional)
+                  </span>
+                  <span className="text-[10px] text-slate-400 font-mono">
+                    Auto-shrunk WebP (≤1280px)
+                  </span>
+                </div>
+
+                {!proofPreview ? (
+                  <label className="block border-2 border-dashed border-slate-300 hover:border-emerald-500 rounded-xl p-4 text-center cursor-pointer transition-colors bg-slate-50 hover:bg-emerald-50/20 group">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleProofSelected}
+                      disabled={isShrinking || isSubmitting}
+                    />
+                    {isShrinking ? (
+                      <div className="flex flex-col items-center justify-center py-2 space-y-2">
+                        <RefreshCw className="w-5 h-5 text-emerald-600 animate-spin" />
+                        <p className="text-xs font-bold text-slate-700">Compressing screenshot to WebP...</p>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center py-2 space-y-1.5">
+                        <div className="w-8 h-8 rounded-full bg-white group-hover:bg-emerald-100 text-slate-500 group-hover:text-emerald-700 flex items-center justify-center transition-colors shadow-2xs">
+                          <UploadCloud className="w-4 h-4" />
+                        </div>
+                        <p className="text-xs font-bold text-slate-800">
+                          Attach transfer receipt or wallet screenshot
+                        </p>
+                        <p className="text-[10px] text-slate-400">
+                          PNG, JPG, WebP • Speeds up verification & express courier dispatch
+                        </p>
+                      </div>
+                    )}
+                  </label>
+                ) : (
+                  <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-12 h-12 rounded-lg border border-slate-200 overflow-hidden shrink-0 relative bg-white">
+                        <img
+                          src={proofPreview}
+                          alt="Proof Preview"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs font-bold text-slate-900 truncate">
+                            {proofFile?.name || 'order_proof.webp'}
+                          </span>
+                          <span className="text-[9px] font-bold bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded border border-emerald-200">
+                            Compressed
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-slate-500 font-mono mt-0.5">
+                          {proofOriginalSize && proofShrunkSize ? (
+                            <>
+                              {Math.round(proofOriginalSize / 1024)}KB → <strong className="text-emerald-700">{Math.round(proofShrunkSize / 1024)}KB</strong> ({Math.round((1 - proofShrunkSize / proofOriginalSize) * 100)}% saved)
+                            </>
+                          ) : (
+                            'Ready for merchant escrow verification'
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={removeProof}
+                      disabled={isSubmitting}
+                      className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer shrink-0"
+                      title="Remove screenshot"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Submit / Confirm Button */}

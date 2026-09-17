@@ -296,7 +296,7 @@ export default function ImageUploadGuide({
               </div>
 
               {/* Bottom Quick Controls Bar */}
-              <div className="absolute inset-x-0 bottom-0 z-20 p-2.5 sm:p-3 bg-gradient-to-t from-slate-950/95 via-slate-950/70 to-transparent flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 opacity-95 transition-opacity">
+              <div className="absolute inset-x-0 bottom-0 z-20 p-2.5 sm:p-3 bg-slate-950/85 backdrop-blur-xs flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 opacity-95 transition-opacity">
                 <div className="text-[10px] sm:text-[11px] text-white font-medium truncate min-w-0 flex-1 flex items-center gap-1.5">
                   <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-400 shrink-0" />
                   <span className="truncate">{imageMeta ? imageMeta.ratioLabel : 'Cover Photo Attached'}</span>

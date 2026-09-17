@@ -15,11 +15,15 @@ import { DonorsModule } from './donors/donors.module';
 import { OrdersModule } from './orders/orders.module';
 import { ResellersModule } from './resellers/resellers.module';
 import { UploadModule } from './upload/upload.module';
+import { ActivityLogsModule } from './activity-logs/activity-logs.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     PrismaModule,
+    ActivityLogsModule,
+    NotificationsModule,
     AuthModule,
     UsersModule,
     PostsModule,
@@ -37,3 +41,4 @@ import { UploadModule } from './upload/upload.module';
   providers: [AppService],
 })
 export class AppModule {}
+

@@ -224,14 +224,14 @@ export default function StoreAvatar({
             />
           )
         ) : (
-          <div className={`w-full h-full bg-gradient-to-br ${activePreset.gradient} p-2.5 flex items-center justify-center relative overflow-hidden`}>
+          <div className="w-full h-full bg-slate-950 border border-slate-800 p-2.5 flex items-center justify-center relative overflow-hidden">
             {/* Background SVG Icon Accent */}
-            <div className="absolute inset-0 opacity-40 p-1.5 flex items-center justify-center">
+            <div className="absolute inset-0 opacity-20 p-1.5 flex items-center justify-center">
               {activePreset.svgIcon}
             </div>
 
             {/* Initials Text */}
-            <span className="relative z-10 font-mono font-black text-white drop-shadow-md">
+            <span className="relative z-10 font-mono font-bold text-slate-200">
               {initials}
             </span>
           </div>

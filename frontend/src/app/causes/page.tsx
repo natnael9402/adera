@@ -94,13 +94,13 @@ export default function CausesPage() {
             <div className="max-w-2xl space-y-3">
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold uppercase tracking-wider">
                 <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                <span>100% Verified Impact & Real-Time Tracking</span>
+                <span>Verified Causes</span>
               </div>
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight">
-                Verified Global <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-600">Causes</span>
+                Browse <span className="text-emerald-700">Causes</span>
               </h1>
               <p className="text-base text-slate-600 font-normal leading-relaxed">
-                Donate directly to humanitarian and community initiatives worldwide using Credit Card, PayPal, or Crypto. Every dollar is tracked transparently with verified milestone proof.
+                Find verified community projects to support. 100% of your donation goes directly to the cause.
               </p>
             </div>
 
@@ -110,7 +110,7 @@ export default function CausesPage() {
                 className="inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm rounded-xl transition-all shadow-md shadow-emerald-600/20 hover:-translate-y-0.5"
               >
                 <Heart className="w-4 h-4" />
-                <span>Submit a Cause</span>
+                <span>Start a Cause</span>
               </Link>
             </div>
           </div>
@@ -281,7 +281,7 @@ export default function CausesPage() {
                         <div className="h-2 bg-slate-100 rounded-full overflow-hidden border border-slate-200/60">
                           <div 
                             style={{ width: `${pct}%` }} 
-                            className="h-full bg-gradient-to-r from-emerald-600 to-teal-500 rounded-full"
+                            className="h-full bg-emerald-600 rounded-full"
                           />
                         </div>
 

@@ -12,7 +12,7 @@ import {
   Trash2, ShieldCheck, Heart, Layers, MapPin, Wallet, 
   Clock, Check, X, RefreshCw, Send, Eye
 } from 'lucide-react';
-import Navbar from '@/components/Navbar';
+import AdminShell from '@/components/AdminShell';
 import ImageUploadGuide from '@/components/ImageUploadGuide';
 import AiStoryWriterModal from '@/components/AiStoryWriterModal';
 
@@ -249,8 +249,7 @@ export default function EditCausePage() {
 
   if (!post && !loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
-        <Navbar />
+      <AdminShell>
         <div className="max-w-xl mx-auto py-20 text-center space-y-4 px-4">
           <AlertCircle className="w-12 h-12 text-rose-500 mx-auto" />
           <h2 className="text-xl font-bold text-slate-900">Cause Not Found</h2>
@@ -259,13 +258,12 @@ export default function EditCausePage() {
             <ArrowLeft className="w-4 h-4" /> Back to Causes
           </Link>
         </div>
-      </div>
+      </AdminShell>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans pb-24">
-      <Navbar />
+    <AdminShell>
 
       {/* Floating Success Notification */}
       {toastMessage && (
@@ -276,8 +274,8 @@ export default function EditCausePage() {
       )}
 
       {/* Top Header Breadcrumbs & Action Bar */}
-      <div className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-2xs backdrop-blur-md bg-white/95">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="bg-white border-b border-slate-200 sticky top-14 lg:top-0 z-20 shadow-2xs backdrop-blur-md bg-white/95 rounded-2xl mb-4">
+        <div className="max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           
           <div className="flex items-center gap-3 min-w-0">
             <Link
@@ -330,7 +328,7 @@ export default function EditCausePage() {
         </div>
       </div>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 flex-1 w-full space-y-8">
+      <div className="max-w-7xl mx-auto space-y-8">
         
         {error && (
           <div className="p-4 bg-rose-50 border border-rose-200 rounded-2xl text-xs font-bold text-rose-700 flex items-center gap-2">
@@ -342,28 +340,28 @@ export default function EditCausePage() {
         {/* ========================================================================= */}
         {/* HERO METRICS & LIVE PROGRESS VISUALIZER                                   */}
         {/* ========================================================================= */}
-        <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-950 text-white rounded-3xl p-6 sm:p-8 shadow-xl border border-slate-700/80 space-y-6">
+        <div className="bg-slate-950 text-white rounded-3xl p-6 sm:p-8 shadow-sm border border-slate-800 space-y-6">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="space-y-1">
-              <span className="text-[10px] font-black uppercase tracking-wider text-emerald-400 bg-emerald-950/80 px-2.5 py-0.5 rounded border border-emerald-800/80">
-                ⚡ Real-Time On-Chain Progress
+              <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400 bg-slate-900 px-2.5 py-0.5 rounded border border-slate-800">
+                Campaign Overview
               </span>
               <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white mt-1">
                 Campaign Progress & Fund Allocator
               </h2>
               <p className="text-xs text-slate-400">
-                Manipulate goal targets, gathered capital sliders, and real-time public telemetry.
+                Manage goal targets, gathered capital allocations, and public telemetry.
               </p>
             </div>
 
-            <div className="flex items-center gap-4 bg-slate-800/80 border border-slate-700 px-4 py-2.5 rounded-2xl shrink-0">
+            <div className="flex items-center gap-4 bg-slate-900 border border-slate-800 px-4 py-2.5 rounded-2xl shrink-0">
               <div>
                 <span className="text-[10px] uppercase font-bold text-slate-400 block">Current Status</span>
                 <span className="text-xs font-black text-emerald-400 font-mono">
                   {status} • {activationStatus}
                 </span>
               </div>
-              <div className="h-8 w-px bg-slate-700" />
+              <div className="h-8 w-px bg-slate-800" />
               <div>
                 <span className="text-[10px] uppercase font-bold text-slate-400 block">Supporters Count</span>
                 <span className="text-xs font-black text-white font-mono">
@@ -380,22 +378,22 @@ export default function EditCausePage() {
                 <span className="text-3xl sm:text-4xl font-black font-mono text-emerald-400">
                   ${raised.toLocaleString()}
                 </span>
-                <span className="text-xs text-slate-300 font-medium ml-2">USD gathered up to now</span>
+                <span className="text-xs text-slate-300 font-medium ml-2">USD raised</span>
               </div>
               <div className="flex items-center gap-3 text-xs font-mono">
                 <span className="text-slate-300">
                   Goal: <strong className="text-white">${goal.toLocaleString()} USD</strong>
                 </span>
-                <span className="px-2 py-0.5 rounded-full font-black text-emerald-300 bg-emerald-900/60 border border-emerald-700 text-[11px]">
+                <span className="px-2.5 py-0.5 rounded-full font-bold text-emerald-400 bg-slate-900 border border-slate-800 text-[11px]">
                   {currentPercent}% Funded
                 </span>
               </div>
             </div>
 
             {/* Live Progress Bar */}
-            <div className="h-4 bg-slate-800 rounded-full overflow-hidden p-0.5 border border-slate-700 shadow-inner">
+            <div className="h-3.5 bg-slate-900 rounded-full overflow-hidden p-0.5 border border-slate-800">
               <div 
-                className="h-full bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-400 rounded-full transition-all duration-200"
+                className="h-full bg-emerald-500 rounded-full transition-all duration-200"
                 style={{ width: `${Math.min(currentPercent, 100)}%` }}
               />
             </div>
@@ -972,7 +970,7 @@ export default function EditCausePage() {
 
         </div>
 
-      </main>
+      </div>
 
       {/* Description Draft Modal */}
       <AiStoryWriterModal
@@ -989,6 +987,6 @@ export default function EditCausePage() {
         initialLocation={location}
       />
 
-    </div>
+    </AdminShell>
   );
 }

@@ -10,7 +10,7 @@ import {
   Wallet, Plus, Trash2, Copy, 
   Check, AlertCircle, ShieldCheck, ExternalLink 
 } from 'lucide-react';
-import Navbar from '@/components/Navbar';
+import AdminShell from '@/components/AdminShell';
 
 interface PaymentMethod {
   id: number;
@@ -73,17 +73,17 @@ export default function PaymentsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans">
-      <Navbar />
+    <AdminShell>
+      
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 flex-1 w-full space-y-6">
+      <div className="max-w-7xl mx-auto space-y-5 sm:space-y-6">
         
         {/* Page Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight flex items-center gap-3">
-              <Wallet className="w-8 h-8 text-primary-600" />
-              Payment Channels & Settlement Wallets
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 tracking-tight flex items-center gap-2.5">
+              <Wallet className="w-6 h-6 sm:w-8 sm:h-8 text-primary-600 shrink-0" />
+              <span>Payment Channels & Wallets</span>
             </h1>
             <p className="text-xs sm:text-sm text-slate-500 mt-1">
               Configure multi-channel payment acceptance (Credit Card, PayPal) and manage active multi-chain deposit addresses.
@@ -92,10 +92,10 @@ export default function PaymentsPage() {
 
           <Link
             href="/payments/new"
-            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-primary-600 hover:bg-primary-700 text-white font-bold rounded-xl transition-all shadow-md shadow-primary-600/20 text-xs hover-lift"
+            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-primary-600 hover:bg-primary-700 text-white font-bold rounded-xl transition-all shadow-md shadow-primary-600/20 text-xs hover-lift active:scale-95 shrink-0"
           >
             <Plus className="w-4 h-4" />
-            <span>Add Crypto Wallet</span>
+            <span>Add Wallet</span>
           </Link>
         </div>
 
@@ -146,10 +146,10 @@ export default function PaymentsPage() {
           </span>
         </div>
 
-        {/* Wallets Table */}
-        <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+        {/* Deposit Wallets Management Table */}
+        <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200 overflow-hidden shadow-sm">
+          <div className="overflow-x-auto custom-scrollbar">
+            <table className="w-full min-w-[600px] text-left border-collapse">
               <thead>
                 <tr className="border-b border-slate-200 bg-slate-50">
                   <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600">Asset & Network</th>
@@ -240,7 +240,7 @@ export default function PaymentsPage() {
           </div>
         </div>
 
-      </main>
-    </div>
+      </div>
+    </AdminShell>
   );
 }

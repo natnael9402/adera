@@ -5,12 +5,43 @@ import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Heart, Bitcoin, Hexagon, Check, Copy, ShieldCheck, Share2, AlertCircle, Layers, Calendar, CheckCircle2, Lock, ArrowUpRight } from 'lucide-react';
+import { ArrowLeft, Heart, Bitcoin, Hexagon, Check, Copy, ShieldCheck, Share2, AlertCircle, Layers, Calendar, CheckCircle2, Lock, ArrowUpRight, ShoppingBag } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import RichCauseStory from '@/components/RichCauseStory';
 import { api } from '@/lib/api';
 import { useDonate } from '@/context/DonateContext';
+
+const FALLBACK_SHOP_PRODUCTS = [
+  {
+    id: 1,
+    name: "Apple MacBook Pro 16 M3 Max",
+    price: 3499.00,
+    category: "Laptops & Computers",
+    image: "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=800&q=80"
+  },
+  {
+    id: 2,
+    name: "Sony WH-1000XM5 Noise Canceling",
+    price: 398.00,
+    category: "Audio & Headphones",
+    image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=800&q=80"
+  },
+  {
+    id: 3,
+    name: "YETI Tundra 45 Indestructible Cooler",
+    price: 325.00,
+    category: "Outdoor & Sports",
+    image: "https://images.unsplash.com/photo-1556911220-e15b29be8c8f?auto=format&fit=crop&w=800&q=80"
+  },
+  {
+    id: 4,
+    name: "Herman Miller Aeron Ergonomic Chair",
+    price: 1195.00,
+    category: "Office & Workspace",
+    image: "https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?auto=format&fit=crop&w=800&q=80"
+  }
+];
 
 interface Post {
   id: number;
@@ -60,6 +91,15 @@ export default function CauseDetailPage() {
   const [paymentMethods, setPaymentMethods] = useState<any[]>([]);
   const [copiedId, setCopiedId] = useState<number | null>(null);
   const [copiedShare, setCopiedShare] = useState(false);
+  const [storeProducts, setStoreProducts] = useState<any[]>(FALLBACK_SHOP_PRODUCTS);
+
+  const [storeUrl, setStoreUrl] = useState(process.env.NEXT_PUBLIC_STORE_URL || 'https://shop.aderafoundation.com');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+      setStoreUrl('http://localhost:3003');
+    }
+  }, []);
 
   useEffect(() => {
     if (params?.id === 'new') {
@@ -78,6 +118,16 @@ export default function CauseDetailPage() {
       .finally(() => setLoading(false));
 
     api.paymentMethods.list().then(setPaymentMethods).catch(console.error);
+
+    api.products.list()
+      .then((data: any) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setStoreProducts(data.slice(0, 4));
+        }
+      })
+      .catch(() => {
+        setStoreProducts(FALLBACK_SHOP_PRODUCTS);
+      });
   }, [id]);
 
   const copyAddress = (methodId: number, address: string) => {
@@ -325,6 +375,74 @@ export default function CauseDetailPage() {
                   ))}
                 </div>
               </div>
+
+              {/* ========================================================================= */}
+              {/* SHOP TO SUPPORT THIS CAUSE                                               */}
+              {/* ========================================================================= */}
+              <div className="bg-slate-950 text-white p-6 sm:p-8 rounded-3xl border border-slate-800 shadow-sm space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-5 border-b border-slate-800">
+                  <div className="space-y-1.5">
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-900 border border-slate-800 text-[10px] font-bold uppercase tracking-wider text-emerald-400">
+                      <ShoppingBag className="w-3.5 h-3.5" />
+                      <span>Shop & Support</span>
+                    </div>
+                    <h3 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+                      Support This Cause by Shopping
+                    </h3>
+                    <p className="text-xs sm:text-sm text-slate-400 font-normal max-w-xl">
+                      100% of store profits directly fund verified causes like this. Buy everyday goods and help finance critical project milestones.
+                    </p>
+                  </div>
+
+                  <a
+                    href={storeUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-900 bg-white hover:bg-slate-100 px-4 py-2.5 rounded-xl transition-all shadow-xs shrink-0 self-start sm:self-auto"
+                  >
+                    <span>Visit Full Store</span>
+                    <ArrowUpRight className="w-3.5 h-3.5" />
+                  </a>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {storeProducts.map((prod) => (
+                    <a
+                      key={prod.id}
+                      href={`${storeUrl}/products/${prod.id}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="bg-slate-900 rounded-2xl border border-slate-800 p-3.5 flex gap-3.5 items-center hover:border-emerald-500/60 transition-all group"
+                    >
+                      <div className="w-20 h-20 rounded-xl overflow-hidden bg-slate-950 border border-slate-800 shrink-0 relative">
+                        <img
+                          src={prod.image}
+                          alt={prod.name}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                        />
+                      </div>
+                      <div className="min-w-0 flex-1 space-y-1">
+                        <span className="text-[9px] font-bold uppercase tracking-wider text-emerald-400 bg-slate-950 px-2 py-0.5 rounded border border-slate-800">
+                          {prod.category}
+                        </span>
+                        <h4 className="text-xs font-bold text-white group-hover:text-emerald-400 transition-colors truncate">
+                          {prod.name}
+                        </h4>
+                        <div className="flex items-baseline justify-between pt-0.5">
+                          <span className="font-mono font-bold text-sm text-emerald-400">
+                            ${Number(prod.price).toFixed(2)}
+                          </span>
+                          <span className="text-[10px] text-slate-400 flex items-center gap-0.5 font-medium">
+                            <span>View Item</span>
+                            <ArrowUpRight className="w-3 h-3 text-slate-500" />
+                          </span>
+                        </div>
+                      </div>
+                    </a>
+                  ))}
+                </div>
+              </div>
+
             </motion.div>
 
             {/* Right Column: Sticky Crypto Donation Card */}
@@ -364,7 +482,7 @@ export default function CauseDetailPage() {
                   <div className="h-3 bg-slate-100 rounded-full overflow-hidden p-0.5 border border-slate-200">
                     <div 
                       style={{ width: `${raisedPercentage}%` }}
-                      className="h-full rounded-full bg-gradient-to-r from-emerald-600 to-teal-500 shadow-xs"
+                      className="h-full rounded-full bg-emerald-600 shadow-xs"
                     />
                   </div>
                   <div className="flex justify-between items-center text-xs font-bold text-slate-500">
@@ -379,7 +497,7 @@ export default function CauseDetailPage() {
                 <button
                   type="button"
                   onClick={() => openDonateModal(post)}
-                  className="w-full py-4 px-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 active:scale-[0.99] text-white font-extrabold text-xs sm:text-sm rounded-2xl transition-all shadow-md shadow-emerald-600/20 hover:shadow-lg hover:shadow-emerald-600/25 flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full py-4 px-4 bg-slate-950 hover:bg-slate-800 active:scale-[0.99] text-white font-extrabold text-xs sm:text-sm rounded-2xl transition-all shadow-md shadow-emerald-600/20 hover:shadow-lg hover:shadow-emerald-600/25 flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <Heart className="w-4 h-4 fill-white/30" />
                   <span>Donate with Card, PayPal, or Crypto</span>

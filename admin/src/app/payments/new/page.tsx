@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { api } from '@/lib/api';
 import { Wallet, ArrowLeft, Save, ShieldCheck } from 'lucide-react';
-import Navbar from '@/components/Navbar';
+import AdminShell from '@/components/AdminShell';
 
 export default function NewPaymentPage() {
   const { user, loading } = useAuth();
@@ -47,10 +47,10 @@ export default function NewPaymentPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans">
-      <Navbar />
+    <AdminShell>
+      
 
-      <main className="max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-12 flex-1 w-full space-y-6">
+      <div className="max-w-3xl mx-auto space-y-6">
         
         <div className="flex items-center justify-between">
           <Link 
@@ -65,7 +65,7 @@ export default function NewPaymentPage() {
           </span>
         </div>
 
-        <div className="bg-white p-6 sm:p-10 rounded-3xl border border-slate-200 shadow-sm space-y-6">
+        <div className="bg-white p-4 sm:p-7 lg:p-10 rounded-2xl sm:rounded-3xl border border-slate-200 shadow-sm space-y-5 sm:space-y-6">
           
           <div className="flex items-center gap-3 pb-6 border-b border-slate-100">
             <div className="w-12 h-12 bg-primary-50 border border-primary-200 rounded-2xl flex items-center justify-center text-primary-700">
@@ -163,7 +163,7 @@ export default function NewPaymentPage() {
           </form>
 
         </div>
-      </main>
-    </div>
+      </div>
+    </AdminShell>
   );
 }

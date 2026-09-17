@@ -50,7 +50,7 @@ export default function TrustAndSafety() {
             </div>
 
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight leading-tight">
-              Trust & <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-600">Safety</span>
+              Trust & <span className="text-emerald-700">Safety</span>
             </h1>
 
             <p className="text-base sm:text-lg text-slate-600 font-normal leading-relaxed">

@@ -54,33 +54,26 @@ export default function DonorWall({ limit, minimal = false }: DonorWallProps) {
   };
 
   const getRankStyle = (index: number) => {
-    if (index === 0) return "bg-gradient-to-r from-amber-500/10 via-amber-50/50 to-transparent border-amber-200 shadow-sm shadow-amber-500/5";
-    if (index === 1) return "bg-gradient-to-r from-slate-200/40 via-slate-50/50 to-transparent border-slate-200";
-    if (index === 2) return "bg-gradient-to-r from-amber-700/10 via-amber-50/30 to-transparent border-amber-200/80";
-    return "bg-white border-slate-100 hover:border-emerald-200 hover:bg-slate-50/40";
+    if (index === 0) return "bg-amber-50/50 border-amber-200 shadow-2xs";
+    if (index === 1) return "bg-slate-50/70 border-slate-200 shadow-2xs";
+    if (index === 2) return "bg-amber-50/30 border-amber-200/70 shadow-2xs";
+    return "bg-white border-slate-100 hover:border-slate-200 hover:bg-slate-50/40";
   };
 
   return (
-    <section className={`relative overflow-hidden ${minimal ? 'py-2' : 'py-16 sm:py-20'}`}>
-      {!minimal && (
-        <>
-          <div className="absolute top-0 right-1/4 w-[400px] h-[400px] bg-emerald-400/10 rounded-full blur-[100px] pointer-events-none -z-10" />
-          <div className="absolute bottom-0 left-1/4 w-[300px] h-[300px] bg-teal-400/10 rounded-full blur-[100px] pointer-events-none -z-10" />
-        </>
-      )}
-
+    <section className={`relative ${minimal ? 'py-2' : 'py-16 sm:py-20'}`}>
       <div className={`mx-auto relative z-10 ${minimal ? 'w-full' : 'max-w-4xl px-4 sm:px-6 lg:px-8'}`}>
         {!minimal && (
           <div className="text-center mb-12">
             <div className="inline-flex items-center justify-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold text-xs mb-3">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Verified Top Contributors</span>
+              <span>Top Donors</span>
             </div>
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 mb-3 tracking-tight">
               Donor Leaderboard
             </h2>
             <p className="text-sm sm:text-base text-slate-600 max-w-xl mx-auto">
-              Honoring the visionary changemakers and philanthropists funding life-changing humanitarian initiatives.
+              Recognizing the community members and organizations supporting verified causes.
             </p>
           </div>
         )}
@@ -94,11 +87,11 @@ export default function DonorWall({ limit, minimal = false }: DonorWallProps) {
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-slate-900 leading-none">
-                    Top Contributors
+                    Top Donors
                   </h3>
                   <span className="text-[10px] font-medium text-emerald-600 flex items-center gap-1 mt-0.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    Verified Philanthropy
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                    Verified Donors
                   </span>
                 </div>
               </div>

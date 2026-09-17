@@ -116,7 +116,7 @@ export default function DonorsPage() {
               animate={{ opacity: 1, y: 0 }}
               className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-slate-900 leading-tight"
             >
-              Honoring Our <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700">Top Contributors</span>
+              Honoring Our <span className="text-emerald-700">Top Contributors</span>
             </motion.h1>
 
             <motion.p 
@@ -248,7 +248,7 @@ export default function DonorsPage() {
                 <motion.div 
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="bg-gradient-to-b from-amber-50/80 via-white to-white rounded-3xl p-7 border-2 border-amber-300 shadow-xl shadow-amber-500/10 flex flex-col items-center text-center relative overflow-hidden order-1 md:order-2 md:-translate-y-4"
+                  className="bg-white rounded-3xl p-7 border-2 border-amber-300 shadow-xl shadow-amber-500/10 flex flex-col items-center text-center relative overflow-hidden order-1 md:order-2 md:-translate-y-4"
                 >
                   <div className="absolute top-3 right-3 px-2.5 py-0.5 bg-amber-500 text-white text-[10px] font-black rounded-md shadow-xs flex items-center gap-1 uppercase tracking-wider">
                     <Crown className="w-3 h-3" />
@@ -476,7 +476,7 @@ export default function DonorsPage() {
           {/* ================================================================= */}
           {/* CALL TO ACTION BOTTOM BANNER                                      */}
           {/* ================================================================= */}
-          <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-800 rounded-3xl p-8 sm:p-12 text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-8">
+          <div className="bg-slate-950 rounded-3xl p-8 sm:p-12 text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-8">
             <div className="space-y-2 max-w-xl text-center md:text-left">
               <span className="text-xs font-extrabold uppercase tracking-widest text-emerald-200 bg-black/20 px-3 py-1 rounded-md inline-block">
                 Transparent Philanthropy

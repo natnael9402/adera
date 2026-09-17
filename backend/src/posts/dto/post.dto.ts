@@ -142,6 +142,10 @@ export class DonateToPostDto {
   @IsOptional()
   @IsBoolean()
   isAnonymous?: boolean;
+
+  @IsOptional()
+  @IsString()
+  paymentProof?: string;
 }
 
 export class AddPostUpdateDto {

@@ -6,6 +6,7 @@ import Image from "next/image";
 import { Menu, X, Heart, LayoutDashboard, LogOut, PlusCircle, Globe, ShoppingBag, ShieldCheck } from 'lucide-react';
 import { useAuth } from "@/context/AuthContext";
 import { useDonate } from "@/context/DonateContext";
+import NotificationCenter from "./NotificationCenter";
 
 const navLinks = [
   { label: "Explore Causes", href: "/causes" },
@@ -93,6 +94,9 @@ export default function Navbar() {
               <span>Donate Now</span>
             </button>
 
+            {/* Notifications Center */}
+            <NotificationCenter />
+
             {/* Creator / User Session Profile */}
             {user ? (
               <div className="flex items-center gap-1.5 pl-2 border-l border-slate-200">
@@ -125,6 +129,7 @@ export default function Navbar() {
 
           {/* Mobile Hamburger Button */}
           <div className="flex md:hidden items-center gap-2">
+            <NotificationCenter />
             <button
               type="button"
               onClick={() => openDonateModal()}

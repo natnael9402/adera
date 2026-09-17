@@ -457,7 +457,7 @@ export default function LoginPage() {
       {/* ========================================================================= */}
       {/* RIGHT COLUMN (50%): MINIMALIST ARTWORK & BRAND ETHOS                      */}
       {/* ========================================================================= */}
-      <div className="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-slate-950 via-emerald-950 to-slate-900 items-center justify-center p-12 xl:p-16 overflow-hidden border-l border-slate-800">
+      <div className="hidden lg:flex lg:w-1/2 relative bg-slate-950 items-center justify-center p-12 xl:p-16 overflow-hidden border-l border-slate-800">
         
         {/* Subtle Ambient Radial Lighting */}
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-emerald-500/20 rounded-full blur-[100px] pointer-events-none" />

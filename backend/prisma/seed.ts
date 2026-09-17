@@ -2,6 +2,7 @@ import { PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 import * as fs from 'fs';
 import * as path from 'path';
+import { runProductMigration } from '../scripts/seed-1000-products';
 
 const prisma = new PrismaClient();
 
@@ -291,37 +292,9 @@ async function main() {
   }
   console.log(`✅ Seeded reseller shops.`);
 
-  // 6. Products from products.json if available
-  const existingProducts = await prisma.product.count();
-  if (existingProducts === 0) {
-    const dataPath = path.join(__dirname, '..', 'products.json');
-    if (fs.existsSync(dataPath)) {
-      try {
-        let fileData = fs.readFileSync(dataPath, 'utf8');
-        if (fileData.charCodeAt(0) === 0xfeff) fileData = fileData.slice(1);
-        const parsed = JSON.parse(fileData);
-        const products = parsed.products || [];
-        console.log(`Importing initial ${Math.min(products.length, 100)} products...`);
-        for (const p of products.slice(0, 100)) {
-          await prisma.product.create({
-            data: {
-              name: p.title || p.name || 'Impact Product',
-              description: p.description || 'Proceeds directly empower verified community programs.',
-              price: parseFloat(p.price || p.salePrice || 25.0),
-              originalPrice: p.originalPrice ? parseFloat(p.originalPrice) : null,
-              image: p.imgUrl || p.image || '/placeholder-product.jpg',
-              category: p.category || 'General',
-              rating: p.rating ? parseFloat(p.rating) : 4.8,
-              sold: p.sold ? parseInt(p.sold) : 12,
-            },
-          });
-        }
-        console.log('✅ Products imported successfully.');
-      } catch (err: any) {
-        console.warn('⚠️ Could not import products.json:', err.message);
-      }
-    }
-  }
+  // 6. Products: Seed 1,000+ Unique Curated Products (No Repeated Items)
+  console.log('📦 Seeding 1,000+ unique curated merchandise products...');
+  await runProductMigration({ fresh: true });
 
   console.log('--- Database Seed Complete! ---');
 }

@@ -9,6 +9,7 @@ datasource db {
 
 enum Role {
   USER
+  BUYER
   ADMIN
 }
 
@@ -19,17 +20,24 @@ enum PostStatus {
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  password  String
-  name      String
-  role      Role     @default(USER)
-  verified  Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           Int      @id @default(autoincrement())
+  email        String   @unique
+  password     String
+  name         String
+  role         Role     @default(USER)
+  phone        String?
+  avatar       String?
+  savedAddress Json?
+  lastLoginAt  DateTime?
+  verified     Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-  posts  Post[]
-  tokens VerificationToken[]
+  posts        Post[]
+  orders       Order[]
+  tokens       VerificationToken[]
+  activities   ActivityLog[]
+  notifications Notification[]
 }
 
 model Post {
@@ -75,6 +83,7 @@ model DirectDonation {
   message      String?
   isAnonymous  Boolean  @default(false)
   status       String   @default("CONFIRMED")
+  paymentProof String?
   createdAt    DateTime @default(now())
 
   cause        Post?    @relation(fields: [causeId], references: [id], onDelete: SetNull)
@@ -170,8 +179,12 @@ model Order {
   causeTitle        String
   items             Json
   status            String   @default("CONFIRMED")
+  paymentProof      String?
+  userId            Int?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
+
+  user              User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
 }
 
 enum ResellerTier {
@@ -281,4 +294,52 @@ model ResellerMessage {
 
   shop         ResellerShop @relation(fields: [shopId], references: [id], onDelete: Cascade)
 }
+
+model ActivityLog {
+  id         Int      @id @default(autoincrement())
+  type       String   // "BUYER_SIGNUP", "BUYER_LOGIN", "ORDER_PLACED", "ORDER_STATUS_CHANGED", "EMAIL_DISPATCHED", "EMAIL_FAILED", "ADMIN_ACTION"
+  actorName  String   @default("System")
+  actorEmail String?
+  userId     Int?
+  ipAddress  String?
+  userAgent  String?
+  summary    String
+  details    Json?
+  status     String   @default("SUCCESS") // "SUCCESS", "FAILED", "WARNING", "INFO"
+  createdAt  DateTime @default(now())
+
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+}
+
+model EmailLog {
+  id            Int      @id @default(autoincrement())
+  recipient     String
+  recipientName String?
+  subject       String
+  template      String   // "ORDER_RECEIPT", "VERIFICATION_CODE", "NEWSLETTER", "CONTACT_INQUIRY", "CONTACT_AUTOREPLY", "ADMIN_CUSTOM"
+  status        String   @default("SENT") // "SENT", "FAILED", "DELIVERED"
+  errorMessage  String?
+  metadata      Json?
+  preview       String?  @db.Text
+  sentAt        DateTime @default(now())
+}
+
+model Notification {
+  id         Int      @id @default(autoincrement())
+  userId     Int?
+  userEmail  String?
+  targetRole String?  // "ALL", "USER", "BUYER", "ADMIN"
+  title      String
+  message    String
+  type       String   // "DONATION_RECEIVED", "DONATION_VERIFIED", "DONATION_REJECTED", "ORDER_PLACED", "ORDER_ACCEPTED", "ORDER_SHIPPED", "ANNOUNCEMENT", "SYSTEM"
+  link       String?
+  metadata   Json?
+  isRead     Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user       User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+
 

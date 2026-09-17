@@ -186,7 +186,7 @@ export default function ResellerStorefrontPage() {
       </header>
 
       {/* Branded Storefront Hero Banner */}
-      <section className="bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white py-10 sm:py-14 px-4 sm:px-6 border-b border-slate-800 relative overflow-hidden">
+      <section className="bg-slate-950 text-white py-10 sm:py-14 px-4 sm:px-6 border-b border-slate-800 relative">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative z-10">
           
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
@@ -201,13 +201,13 @@ export default function ResellerStorefrontPage() {
               
               {/* Tier Pill */}
               <div className="flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase bg-slate-800 border border-slate-700 text-white shadow-xs">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase bg-slate-900 border border-slate-800 text-white shadow-xs">
                   <TierMedal tier={shop.tier} size="xs" />
-                  <span>{shop.tier} Level Reseller</span>
+                  <span>{shop.tier} Reseller</span>
                 </span>
-                <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[11px] font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                <span className="bg-slate-900 text-emerald-400 border border-slate-800 text-[11px] font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1">
                   <ShieldCheck className="w-3.5 h-3.5" />
-                  <span>Verified Philanthropic Reseller</span>
+                  <span>Verified Philanthropic Partner</span>
                 </span>
               </div>
 
@@ -216,7 +216,7 @@ export default function ResellerStorefrontPage() {
               </h1>
 
               <p className="text-xs sm:text-sm text-slate-300 max-w-2xl font-normal leading-relaxed">
-                {shop.description || 'Welcome to our official curated catalog. Every purchase is protected by smart-contract crypto escrow and directly finances clean water and education causes.'}
+                {shop.description || 'Welcome to our official curated catalog. Every purchase directly finances verified clean water and education projects worldwide.'}
               </p>
 
               <div className="flex items-center gap-4 text-xs text-slate-400 pt-1 font-medium">
@@ -224,18 +224,18 @@ export default function ResellerStorefrontPage() {
                 <span>•</span>
                 <span>⚡ <strong>{shop.totalSales || 0}</strong> Orders Dispatched</span>
                 <span>•</span>
-                <span>🛡️ Multi-Chain Crypto Escrow</span>
+                <span>🛡️ Verified Escrow</span>
               </div>
 
             </div>
           </div>
 
             {/* Tier Seal Showcase & Quick Reseller Action Link */}
-            <div className="bg-slate-800/80 p-5 rounded-3xl border border-slate-700 space-y-3 text-xs text-center shrink-0 w-full sm:w-auto flex flex-col items-center">
+            <div className="bg-slate-900 p-5 rounded-3xl border border-slate-800 space-y-3 text-xs text-center shrink-0 w-full sm:w-auto flex flex-col items-center">
               <TierMedal tier={shop.tier} size="lg" />
               <div className="space-y-1">
                 <span className="text-slate-400 font-bold uppercase text-[10px] block">Verified Storefront</span>
-                <code className="text-emerald-400 font-mono font-bold bg-slate-900 px-3 py-1 rounded-lg block">
+                <code className="text-emerald-400 font-mono font-bold bg-slate-950 px-3 py-1 rounded-lg block border border-slate-800">
                   @{shop.handle}
                 </code>
               </div>

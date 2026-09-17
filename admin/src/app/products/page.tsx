@@ -8,9 +8,9 @@ import { api } from '@/lib/api';
 import { 
   ShoppingBag, Plus, Trash2, Tag, 
   Search, ExternalLink, AlertCircle, Edit2, 
-  Sparkles, RefreshCw, CheckCircle2, X, ChevronLeft, ChevronRight, Filter, ShieldCheck, Box
+  RefreshCw, CheckCircle2, X, ChevronLeft, ChevronRight, Filter, ShieldCheck, Box
 } from 'lucide-react';
-import Navbar from '@/components/Navbar';
+import AdminShell from '@/components/AdminShell';
 
 interface Product {
   id: number;
@@ -185,8 +185,8 @@ export default function ProductsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans">
-      <Navbar />
+    <AdminShell>
+      
 
       {/* Toast Notification */}
       {toastMessage && (
@@ -196,10 +196,10 @@ export default function ProductsPage() {
         </div>
       )}
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 flex-1 w-full space-y-6">
+      <div className="max-w-7xl mx-auto space-y-5 sm:space-y-6">
         
         {/* Page Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4">
           <div>
             <div className="flex items-center gap-2">
               <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-200">
@@ -207,23 +207,23 @@ export default function ProductsPage() {
               </span>
               <span className="text-xs text-slate-500 font-medium">Master Catalog Synced</span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight flex items-center gap-3 mt-1">
-              <ShoppingBag className="w-8 h-8 text-primary-600" />
-              Store Merchandise Catalog
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 tracking-tight flex items-center gap-2.5 mt-1">
+              <ShoppingBag className="w-6 h-6 sm:w-8 sm:h-8 text-primary-600 shrink-0" />
+              <span>Store Merchandise</span>
             </h1>
             <p className="text-xs sm:text-sm text-slate-500 mt-1">
               Fullstack inventory management across 12 e-commerce categories with instant price and metadata control.
             </p>
           </div>
 
-          <div className="flex items-center gap-2.5 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap">
             <button
               onClick={handleSeed1000}
               disabled={isSeeding}
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white font-extrabold text-xs rounded-xl shadow-md shadow-orange-600/20 transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow-xs transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
             >
-              <Sparkles className={`w-4 h-4 ${isSeeding ? 'animate-spin' : ''}`} />
-              <span>{isSeeding ? 'Syncing 1,000+ Items...' : '⚡ Sync 1,000 Master Catalog'}</span>
+              <RefreshCw className={`w-4 h-4 ${isSeeding ? 'animate-spin' : ''}`} />
+              <span>{isSeeding ? 'Syncing Catalog...' : 'Sync Master Catalog'}</span>
             </button>
 
             <a
@@ -329,9 +329,9 @@ export default function ProductsPage() {
         </div>
 
         {/* Products Table Card */}
-        <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xs">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+        <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200 overflow-hidden shadow-xs">
+          <div className="overflow-x-auto custom-scrollbar">
+            <table className="w-full min-w-[720px] text-left border-collapse">
               <thead>
                 <tr className="border-b border-slate-200 bg-slate-50/80">
                   <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600 w-20">Item</th>
@@ -517,7 +517,7 @@ export default function ProductsPage() {
           )}
         </div>
 
-      </main>
+      </div>
 
       {/* Edit Product Modal */}
       {editingProduct && (
@@ -661,6 +661,6 @@ export default function ProductsPage() {
         </div>
       )}
 
-    </div>
+    </AdminShell>
   );
 }

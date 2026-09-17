@@ -289,7 +289,10 @@ async function main() {
       create: s,
     });
   }
-  console.log(`✅ Seeded reseller shops.`);
+  // 6. Seed 1,000+ Unique Curated Merchandise Products (No Repeated Items)
+  console.log('📦 Seeding 1,000+ unique curated merchandise products...');
+  const { runProductMigration } = require('./scripts/seed-1000-products');
+  await runProductMigration({ fresh: true });
 
   console.log('--- Production Database Seed Complete! ---');
 }

@@ -3,11 +3,14 @@ import { OrdersService } from './orders.service';
 import { OrdersController } from './orders.controller';
 import { PrismaModule } from '../prisma/prisma.module';
 import { MailModule } from '../mail/mail.module';
+import { ActivityLogsModule } from '../activity-logs/activity-logs.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
-  imports: [PrismaModule, MailModule],
+  imports: [PrismaModule, MailModule, ActivityLogsModule, NotificationsModule],
   controllers: [OrdersController],
   providers: [OrdersService],
   exports: [OrdersService],
 })
 export class OrdersModule {}
+

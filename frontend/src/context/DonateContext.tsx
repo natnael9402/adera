@@ -19,6 +19,7 @@ interface DonateContextType {
   activeCause: CauseDonationTarget | null;
   openDonateModal: (cause?: CauseDonationTarget | null) => void;
   closeDonateModal: () => void;
+  setActiveCause: (cause: CauseDonationTarget) => void;
 }
 
 const DEFAULT_FEATURED_CAUSE: CauseDonationTarget = {
@@ -54,6 +55,7 @@ export function DonateProvider({ children }: { children: ReactNode }) {
         activeCause,
         openDonateModal,
         closeDonateModal,
+        setActiveCause,
       }}
     >
       {children}

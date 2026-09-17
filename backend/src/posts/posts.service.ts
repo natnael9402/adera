@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { 
   CreatePostDto, 
   UpdatePostStatusDto, 
@@ -10,7 +11,10 @@ import {
 
 @Injectable()
 export class PostsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private readonly notifications: NotificationsService
+  ) {}
 
   async create(dto: CreatePostDto, authorId: number, status: 'PENDING' | 'APPROVED' = 'PENDING') {
     return this.prisma.post.create({
@@ -66,6 +70,7 @@ export class PostsService {
 
     const amountUsd = parseFloat(dto.amountUsd.toString());
     const donorName = dto.isAnonymous ? 'Anonymous Supporter' : (dto.donorName?.trim() || 'Generous Donor');
+    const initialStatus = dto.paymentProof ? 'PENDING_VERIFICATION' : 'CONFIRMED';
 
     // 1. Create DirectDonation record
     const donation = await this.prisma.directDonation.create({
@@ -79,7 +84,8 @@ export class PostsService {
         txHash: dto.txHash,
         message: dto.message || null,
         isAnonymous: dto.isAnonymous || false,
-        status: 'CONFIRMED',
+        status: initialStatus,
+        paymentProof: dto.paymentProof || null,
       },
     });
 
@@ -107,6 +113,9 @@ export class PostsService {
     } catch (e) {
       // Ignore donor wall duplicate errors
     }
+
+    // 4. Automatically trigger notification to donor and admin
+    await this.notifications.notifyDonationSubmitted(donation, post.title);
 
     return {
       message: 'Donation processed successfully!',
@@ -178,6 +187,31 @@ export class PostsService {
       include: {
         directDonations: {
           orderBy: { createdAt: 'desc' },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async findMyDonations(userEmail?: string) {
+    if (!userEmail) return [];
+    return this.prisma.directDonation.findMany({
+      where: { donorEmail: { equals: userEmail, mode: 'insensitive' } },
+      include: {
+        cause: {
+          select: {
+            id: true,
+            title: true,
+            image: true,
+            category: true,
+            raised: true,
+            goal: true,
+            donationsCount: true,
+            status: true,
+            beneficiary: true,
+            location: true,
+            updates: true,
+          },
         },
       },
       orderBy: { createdAt: 'desc' },
@@ -306,6 +340,46 @@ ${dto.additionalDetails ? `- Key Details / Notes from Field: ${dto.additionalDet
       if (err instanceof BadRequestException) throw err;
       throw new BadRequestException(`Failed to communicate with DeepSeek AI: ${err.message}`);
     }
+  }
+
+  async getAllDirectDonations(status?: string) {
+    const where: any = {};
+    if (status && status !== 'ALL') {
+      where.status = status;
+    }
+    return this.prisma.directDonation.findMany({
+      where,
+      include: {
+        cause: {
+          select: { id: true, title: true, image: true, category: true, goal: true, raised: true },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async updateDonationStatus(donationId: number, status: string, reason?: string) {
+    const donation = await this.prisma.directDonation.findUnique({
+      where: { id: donationId },
+      include: { cause: true },
+    });
+    if (!donation) throw new NotFoundException('Donation not found');
+
+    const updated = await this.prisma.directDonation.update({
+      where: { id: donationId },
+      data: { status },
+      include: { cause: true },
+    });
+
+    const causeTitle = donation.cause?.title || 'Humanitarian Initiative';
+
+    if (status === 'CONFIRMED') {
+      await this.notifications.notifyDonationVerified(updated, causeTitle);
+    } else if (status === 'REJECTED') {
+      await this.notifications.notifyDonationRejected(updated, causeTitle, reason);
+    }
+
+    return updated;
   }
 
   async getStats() {

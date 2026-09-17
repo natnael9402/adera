@@ -1,8 +1,10 @@
 const API = process.env.NEXT_PUBLIC_API_URL || 'https://api.aderafoundation.com/api';
 
 async function request(path: string, options: RequestInit = {}) {
+  const buyerToken = typeof window !== 'undefined' ? localStorage.getItem('adera_buyer_token') : null;
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
+    ...(buyerToken ? { Authorization: `Bearer ${buyerToken}` } : {}),
     ...(options.headers as Record<string, string>),
   };
 
@@ -16,6 +18,22 @@ async function request(path: string, options: RequestInit = {}) {
 }
 
 export const api = {
+  buyer: {
+    signup: (body: { name: string; email: string; password: string; phone?: string; role?: string }) =>
+      request('/auth/signup', { method: 'POST', body: JSON.stringify({ ...body, role: 'BUYER' }) }),
+    verifyCode: (body: { email: string; code: string }) =>
+      request('/auth/verify-code', { method: 'POST', body: JSON.stringify(body) }),
+    resendVerification: (email: string) =>
+      request('/auth/resend-verification', { method: 'POST', body: JSON.stringify({ email }) }),
+    login: (body: { email: string; password: string }) =>
+      request('/auth/login', { method: 'POST', body: JSON.stringify(body) }),
+    getProfile: () =>
+      request('/auth/profile'),
+    updateProfile: (body: any) =>
+      request('/auth/profile', { method: 'PUT', body: JSON.stringify(body) }),
+    getOrders: () =>
+      request('/auth/orders'),
+  },
   orders: {
     create: (body: any) =>
       request('/orders', { method: 'POST', body: JSON.stringify(body) }),
@@ -68,6 +86,37 @@ export const api = {
     sendMessage: (body: { handle?: string; shopId?: number; sender: string; subject: string; content: string }) =>
       request('/resellers/public/message', { method: 'POST', body: JSON.stringify(body) }),
   },
+  upload: {
+    proof: async (file: File) => {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch(API + '/upload/proof', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Upload failed');
+      return data;
+    },
+    proofBase64: (base64Data: string, filename?: string) =>
+      request('/upload/proof-base64', {
+        method: 'POST',
+        body: JSON.stringify({ base64Data, filename }),
+      }),
+  },
+  notifications: {
+    list: (query?: { userEmail?: string; role?: string; unreadOnly?: boolean; limit?: number }) => {
+      const qs = query ? '?' + new URLSearchParams(Object.entries(query).filter(([_, v]) => v !== undefined && v !== '').map(([k, v]) => [k, String(v)])).toString() : '';
+      return request('/notifications' + qs);
+    },
+    unreadCount: (query?: { userEmail?: string; role?: string }) => {
+      const qs = query ? '?' + new URLSearchParams(Object.entries(query).filter(([_, v]) => v !== undefined && v !== '').map(([k, v]) => [k, String(v)])).toString() : '';
+      return request('/notifications/unread-count' + qs);
+    },
+    markAsRead: (id: number) => request(`/notifications/${id}/read`, { method: 'PATCH' }),
+    markAllAsRead: (query?: { userEmail?: string; role?: string }) => {
+      const qs = query ? '?' + new URLSearchParams(Object.entries(query).filter(([_, v]) => v !== undefined && v !== '').map(([k, v]) => [k, String(v)])).toString() : '';
+      return request('/notifications/mark-all-read' + qs, { method: 'POST' });
+    },
+  },
 };
-
-

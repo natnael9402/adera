@@ -10,7 +10,8 @@ import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../prisma/prisma.service';
 import { MailService } from '../mail/mail.service';
-import { SignupDto, LoginDto, VerifyCodeDto } from './dto/auth.dto';
+import { ActivityLogsService } from '../activity-logs/activity-logs.service';
+import { SignupDto, LoginDto, VerifyCodeDto, UpdateProfileDto } from './dto/auth.dto';
 
 @Injectable()
 export class AuthService {
@@ -21,26 +22,35 @@ export class AuthService {
     private jwt: JwtService,
     private config: ConfigService,
     private mail: MailService,
+    private activityLogs: ActivityLogsService,
   ) {}
 
   private generate6DigitCode(): string {
     return Math.floor(100000 + Math.random() * 900000).toString();
   }
 
-  async signup(dto: SignupDto) {
+  async signup(dto: SignupDto, clientIp?: string, userAgent?: string) {
     const normalizedEmail = dto.email.toLowerCase().trim();
     const existing = await this.prisma.user.findUnique({ where: { email: normalizedEmail } });
     if (existing) {
       if (!existing.verified) {
         // User created earlier but not verified, generate fresh code and resend
-        return this.resendVerification(normalizedEmail);
+        return this.resendVerification(normalizedEmail, clientIp, userAgent);
       }
       throw new BadRequestException('An account with this email already exists. Please log in.');
     }
 
+    const role = dto.role === 'BUYER' ? 'BUYER' : 'USER';
     const hashed = await bcrypt.hash(dto.password, 10);
     const user = await this.prisma.user.create({
-      data: { email: normalizedEmail, name: dto.name.trim(), password: hashed },
+      data: {
+        email: normalizedEmail,
+        name: dto.name.trim(),
+        password: hashed,
+        phone: dto.phone ? dto.phone.trim() : null,
+        role: role as any,
+        verified: false,
+      },
     });
 
     const code = this.generate6DigitCode();
@@ -52,6 +62,19 @@ export class AuthService {
       },
     });
 
+    // Log Activity
+    await this.activityLogs.log({
+      type: role === 'BUYER' ? 'BUYER_SIGNUP' : 'USER_SIGNUP',
+      actorName: user.name,
+      actorEmail: user.email,
+      userId: user.id,
+      ipAddress: clientIp,
+      userAgent: userAgent,
+      summary: `${role === 'BUYER' ? 'Buyer' : 'User'} signed up: ${user.name} (${user.email})`,
+      details: { role, phone: dto.phone },
+      status: 'SUCCESS',
+    });
+
     this.mail
       .sendVerificationEmail(user.email, user.name, code)
       .then(() => this.logger.log(`Verification code ${code} sent to ${user.email}`))
@@ -60,10 +83,11 @@ export class AuthService {
     return {
       message: 'Account created. Please enter the 6-digit verification code sent to your email.',
       email: user.email,
+      userId: user.id,
     };
   }
 
-  async verifyCode(dto: VerifyCodeDto) {
+  async verifyCode(dto: VerifyCodeDto, clientIp?: string, userAgent?: string) {
     const normalizedEmail = dto.email.toLowerCase().trim();
     const normalizedCode = dto.code.trim();
 
@@ -77,7 +101,7 @@ export class AuthService {
       return {
         message: 'Account already verified.',
         token,
-        user: { id: user.id, email: user.email, name: user.name, role: user.role },
+        user: { id: user.id, email: user.email, name: user.name, role: user.role, phone: user.phone, avatar: user.avatar, savedAddress: user.savedAddress },
       };
     }
 
@@ -89,13 +113,23 @@ export class AuthService {
     });
 
     if (!record || record.expiresAt < new Date()) {
+      await this.activityLogs.log({
+        type: 'VERIFICATION_FAILED',
+        actorName: user.name,
+        actorEmail: user.email,
+        userId: user.id,
+        ipAddress: clientIp,
+        userAgent: userAgent,
+        summary: `Verification code failed for ${user.email}`,
+        status: 'FAILED',
+      });
       throw new BadRequestException('Invalid or expired 6-digit verification code. Please request a new code.');
     }
 
     // Mark user verified
     await this.prisma.user.update({
       where: { id: user.id },
-      data: { verified: true },
+      data: { verified: true, lastLoginAt: new Date() },
     });
 
     // Delete token
@@ -103,15 +137,27 @@ export class AuthService {
       where: { userId: user.id },
     });
 
+    // Log Activity
+    await this.activityLogs.log({
+      type: 'USER_VERIFIED',
+      actorName: user.name,
+      actorEmail: user.email,
+      userId: user.id,
+      ipAddress: clientIp,
+      userAgent: userAgent,
+      summary: `Email verified successfully for ${user.name} (${user.email})`,
+      status: 'SUCCESS',
+    });
+
     const token = this.jwt.sign({ sub: user.id, role: user.role });
     return {
-      message: 'Email verified successfully! Welcome to Adera Foundation.',
+      message: 'Email verified successfully! Welcome to Adera.',
       token,
-      user: { id: user.id, email: user.email, name: user.name, role: user.role },
+      user: { id: user.id, email: user.email, name: user.name, role: user.role, phone: user.phone, avatar: user.avatar, savedAddress: user.savedAddress },
     };
   }
 
-  async resendVerification(email: string) {
+  async resendVerification(email: string, clientIp?: string, userAgent?: string) {
     const normalizedEmail = email.toLowerCase().trim();
     const user = await this.prisma.user.findUnique({
       where: { email: normalizedEmail },
@@ -148,75 +194,162 @@ export class AuthService {
     return { message: 'A new 6-digit verification code has been sent to your email.' };
   }
 
-  async verifyEmail(token: string) {
-    const record = await this.prisma.verificationToken.findFirst({ where: { token } });
-    if (!record || record.expiresAt < new Date()) {
-      // Check if user is already verified
-      throw new BadRequestException('Invalid or expired verification link.');
-    }
-
-    await this.prisma.user.update({ where: { id: record.userId }, data: { verified: true } });
-    await this.prisma.verificationToken.deleteMany({ where: { userId: record.userId } });
-    return { message: 'Email verified successfully! You can now sign in.' };
-  }
-
-  async login(dto: LoginDto) {
+  async login(dto: LoginDto, clientIp?: string, userAgent?: string) {
     const normalizedEmail = dto.email.toLowerCase().trim();
     const user = await this.prisma.user.findUnique({ where: { email: normalizedEmail } });
-    if (!user) throw new UnauthorizedException('Invalid credentials');
+    if (!user) {
+      await this.activityLogs.log({
+        type: 'LOGIN_FAILED',
+        actorName: 'Guest',
+        actorEmail: normalizedEmail,
+        ipAddress: clientIp,
+        userAgent: userAgent,
+        summary: `Failed login attempt for non-existent email: ${normalizedEmail}`,
+        status: 'FAILED',
+      });
+      throw new UnauthorizedException('Invalid credentials');
+    }
 
     const valid = await bcrypt.compare(dto.password, user.password);
-    if (!valid) throw new UnauthorizedException('Invalid credentials');
+    if (!valid) {
+      await this.activityLogs.log({
+        type: 'LOGIN_FAILED',
+        actorName: user.name,
+        actorEmail: user.email,
+        userId: user.id,
+        ipAddress: clientIp,
+        userAgent: userAgent,
+        summary: `Failed login attempt (wrong password) for ${user.email}`,
+        status: 'FAILED',
+      });
+      throw new UnauthorizedException('Invalid credentials');
+    }
 
     if (!user.verified) {
       // Automatically send a fresh code if they try to log in before verifying
-      await this.resendVerification(normalizedEmail);
+      await this.resendVerification(normalizedEmail, clientIp, userAgent);
       throw new UnauthorizedException('Please verify your email address. We have sent a fresh 6-digit code to your inbox.');
     }
 
+    // Update lastLoginAt
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { lastLoginAt: new Date() },
+    });
+
+    // Log Activity
+    const isBuyer = user.role === 'BUYER';
+    const isAdmin = user.role === 'ADMIN';
+    await this.activityLogs.log({
+      type: isAdmin ? 'ADMIN_LOGIN' : isBuyer ? 'BUYER_LOGIN' : 'USER_LOGIN',
+      actorName: user.name,
+      actorEmail: user.email,
+      userId: user.id,
+      ipAddress: clientIp,
+      userAgent: userAgent,
+      summary: `${isAdmin ? 'Admin' : isBuyer ? 'Buyer' : 'User'} logged in: ${user.name} (${user.email})`,
+      details: { role: user.role },
+      status: 'SUCCESS',
+    });
+
     const token = this.jwt.sign({ sub: user.id, role: user.role });
     return {
       token,
-      user: { id: user.id, email: user.email, name: user.name, role: user.role },
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        phone: user.phone,
+        avatar: user.avatar,
+        savedAddress: user.savedAddress,
+      },
     };
   }
 
-  async quickDonorAuth(dto: { email: string; name?: string; password?: string }) {
-    const normalizedEmail = dto.email.toLowerCase().trim();
-    let user = await this.prisma.user.findUnique({ where: { email: normalizedEmail } });
+  async getProfile(userId: number) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        phone: true,
+        avatar: true,
+        savedAddress: true,
+        verified: true,
+        lastLoginAt: true,
+        createdAt: true,
+      },
+    });
 
-    if (user) {
-      if (dto.password && user.password) {
-        const valid = await bcrypt.compare(dto.password, user.password);
-        if (!valid) {
-          throw new BadRequestException('Incorrect password for this donor account. Please sign in with the correct password.');
-        }
+    if (!user) throw new NotFoundException('User not found');
+    return user;
+  }
+
+  async updateProfile(userId: number, dto: UpdateProfileDto, clientIp?: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new NotFoundException('User not found');
+
+    const dataToUpdate: any = {};
+    if (dto.name) dataToUpdate.name = dto.name.trim();
+    if (dto.phone !== undefined) dataToUpdate.phone = dto.phone ? dto.phone.trim() : null;
+    if (dto.avatar !== undefined) dataToUpdate.avatar = dto.avatar;
+    if (dto.savedAddress !== undefined) dataToUpdate.savedAddress = dto.savedAddress;
+
+    if (dto.newPassword) {
+      if (!dto.currentPassword) {
+        throw new BadRequestException('Current password is required to change password.');
       }
-    } else {
-      const passwordToHash = dto.password || (Math.random().toString(36).slice(-8) + 'A1!');
-      const hashed = await bcrypt.hash(passwordToHash, 10);
-      const donorName = dto.name && dto.name.trim() ? dto.name.trim() : normalizedEmail.split('@')[0];
-
-      user = await this.prisma.user.create({
-        data: {
-          email: normalizedEmail,
-          name: donorName,
-          password: hashed,
-          verified: true,
-          role: 'USER',
-        },
-      });
+      const valid = await bcrypt.compare(dto.currentPassword, user.password);
+      if (!valid) {
+        throw new BadRequestException('Current password is incorrect.');
+      }
+      dataToUpdate.password = await bcrypt.hash(dto.newPassword, 10);
     }
 
-    const token = this.jwt.sign({ sub: user.id, role: user.role });
-    return {
-      message: 'Donor authenticated successfully!',
-      token,
-      user: { id: user.id, email: user.email, name: user.name, role: user.role },
-    };
+    const updated = await this.prisma.user.update({
+      where: { id: userId },
+      data: dataToUpdate,
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        phone: true,
+        avatar: true,
+        savedAddress: true,
+        verified: true,
+        updatedAt: true,
+      },
+    });
+
+    await this.activityLogs.log({
+      type: 'PROFILE_UPDATED',
+      actorName: updated.name,
+      actorEmail: updated.email,
+      userId: updated.id,
+      ipAddress: clientIp,
+      summary: `Profile updated for ${updated.name} (${updated.email})`,
+      status: 'SUCCESS',
+    });
+
+    return updated;
   }
 
-  getProfile(user: any) {
-    return { id: user.id, email: user.email, name: user.name, role: user.role };
+  async getBuyerOrders(userId: number) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new NotFoundException('User not found');
+
+    return this.prisma.order.findMany({
+      where: {
+        OR: [
+          { userId },
+          { customerEmail: { equals: user.email, mode: 'insensitive' } },
+        ],
+      },
+      orderBy: { createdAt: 'desc' },
+    });
   }
 }

@@ -210,9 +210,8 @@ export default function DonorAvatar({
           />
         ) : selectedPreset ? (
           <div
-            className={`w-full h-full bg-gradient-to-br ${selectedPreset.gradient} p-2 flex items-center justify-center relative overflow-hidden`}
+            className="w-full h-full bg-slate-950 border border-slate-800 p-2 flex items-center justify-center relative overflow-hidden"
           >
-            <div className="absolute inset-0 bg-white/5 backdrop-blur-[1px]" />
             <div className={`${iconSizes[size]} relative z-10 flex items-center justify-center`}>
               {selectedPreset.svgIcon}
             </div>
@@ -220,13 +219,12 @@ export default function DonorAvatar({
         ) : (
           // Procedural Generated Theme Avatar
           <div
-            className={`w-full h-full bg-gradient-to-br ${autoPreset.gradient} p-1.5 flex flex-col items-center justify-center relative overflow-hidden text-white`}
+            className="w-full h-full bg-slate-900 border border-slate-800 p-1.5 flex flex-col items-center justify-center relative overflow-hidden text-white"
           >
-            <div className="absolute -top-3 -right-3 w-8 h-8 rounded-full bg-white/10 blur-sm pointer-events-none" />
             <div className={`${iconSizes[size]} opacity-90 relative z-10 flex items-center justify-center mb-0.5`}>
               {autoPreset.svgIcon}
             </div>
-            <span className="font-mono font-black text-[9px] uppercase tracking-wider relative z-10 opacity-90 leading-none">
+            <span className="font-mono font-bold text-[9px] uppercase tracking-wider relative z-10 text-slate-300 leading-none">
               {getInitials(name)}
             </span>
           </div>

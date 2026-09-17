@@ -763,7 +763,7 @@ export default function NewCausePage() {
                 </div>
 
                 {/* QR Code & Payment Details Box (Dark Glass Theme) */}
-                <div className="bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white p-6 rounded-3xl border border-slate-800 shadow-xl space-y-6">
+                <div className="bg-slate-950 text-white p-6 rounded-3xl border border-slate-800 shadow-xl space-y-6">
                   <div className="flex flex-col sm:flex-row items-center gap-6">
                     
                     {/* QR Code with Centered Crypto Logo */}
@@ -964,7 +964,7 @@ export default function NewCausePage() {
                     type="button"
                     onClick={handleActivateCampaign}
                     disabled={isActivating || uploadingProof || (!paymentProofImage && !txHash.trim())}
-                    className="w-full py-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-extrabold text-sm rounded-2xl transition-all shadow-lg shadow-emerald-600/25 flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50 cursor-pointer"
+                    className="w-full py-4 bg-slate-950 hover:bg-slate-800 text-white font-extrabold text-sm rounded-2xl transition-all shadow-lg shadow-emerald-600/25 flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50 cursor-pointer"
                   >
                     {isActivating ? (
                       <>

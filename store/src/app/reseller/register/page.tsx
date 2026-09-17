@@ -383,7 +383,7 @@ export default function ResellerRegisterPage() {
       {/* Modern Slim Animated Progress Bar */}
       <div className="w-full bg-slate-100 h-1.5 relative overflow-hidden">
         <motion.div
-          className="h-full bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600"
+          className="h-full bg-emerald-600"
           initial={{ width: '20%' }}
           animate={{ width: `${(currentStep / 5) * 100}%` }}
           transition={{ duration: 0.4, ease: 'easeOut' }}
@@ -998,12 +998,12 @@ export default function ResellerRegisterPage() {
                   </div>
 
                   {/* Complete Storefront Launch Summary Card */}
-                  <div className="p-5 bg-gradient-to-br from-emerald-50/70 via-white to-slate-50 rounded-2xl border border-emerald-200 space-y-3 shadow-2xs">
+                  <div className="p-5 bg-slate-50 rounded-2xl border border-slate-200 space-y-3 shadow-2xs">
                     <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-black uppercase tracking-wider text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded border border-emerald-300">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded border border-emerald-200">
                         Ready to Launch
                       </span>
-                      <span className="text-xs font-black text-emerald-700">
+                      <span className="text-xs font-mono font-bold text-emerald-700">
                         +{TIERS.find(t => t.id === tier)?.margin}% Margin
                       </span>
                     </div>

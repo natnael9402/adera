@@ -47,15 +47,15 @@ export default function AboutPage() {
           <div className="text-center max-w-3xl mx-auto space-y-4">
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold uppercase tracking-wider">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Our Mission & Principles</span>
+              <span>About Adera Foundation</span>
             </div>
 
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight leading-tight">
-              Rebuilding Trust in <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-600">Global Giving</span>
+              Transparent Giving for <span className="text-emerald-700">Verified Causes</span>
             </h1>
 
             <p className="text-base sm:text-lg text-slate-600 font-normal leading-relaxed">
-              Adera Foundation was founded on a simple premise: donors deserve total transparency, and beneficiaries deserve 100% of the funds intended for them.
+              Adera Foundation connects donors directly with verified causes, ensuring 100% of donations reach the people who need them.
             </p>
           </div>
 
@@ -77,19 +77,19 @@ export default function AboutPage() {
             <div className="lg:col-span-6 space-y-6">
               <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-800">
                 <Target className="w-4 h-4 text-emerald-600" />
-                <span>The Story of Adera</span>
+                <span>Our Approach</span>
               </div>
 
               <h2 className="text-2xl sm:text-4xl font-extrabold text-slate-900 tracking-tight leading-snug">
-                Eliminating Non-Profit Overhead with Direct Disbursements
+                Direct Aid With Zero Overhead
               </h2>
 
               <div className="text-sm sm:text-base text-slate-600 leading-relaxed space-y-4 font-normal">
                 <p>
-                  For decades, international humanitarian giving has been plagued by opaque financial channels, exorbitant administrative overhead, and currency conversion losses.
+                  Traditional charity often suffers from high administrative costs, slow processing times, and lack of transparency.
                 </p>
                 <p>
-                  Adera solves this by routing capital directly into verified milestone vaults via Credit Card, PayPal, and digital currencies. Funds are disbursed exclusively upon validated on-the-ground proof, ensuring complete accountability.
+                  Adera eliminates intermediaries. Donors contribute directly through credit card, PayPal, or crypto, and funds are disbursed upon verified project milestones.
                 </p>
               </div>
 

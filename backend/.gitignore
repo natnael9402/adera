@@ -18,3 +18,8 @@ Thumbs.db
 .env.local
 .env.*
 !.env.example
+
+# Seed data & Uploads
+production-seed-data.json
+public/uploads/proofs/*
+!public/uploads/proofs/.gitkeep

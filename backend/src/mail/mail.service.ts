@@ -1,8 +1,10 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
 import * as path from 'path';
 import * as fs from 'fs';
+import { PrismaService } from '../prisma/prisma.service';
+import { ActivityLogsService } from '../activity-logs/activity-logs.service';
 
 export interface OrderItem {
   id: number;
@@ -44,7 +46,11 @@ export class MailService {
   private transporter: nodemailer.Transporter;
   private readonly logger = new Logger(MailService.name);
 
-  constructor(private config: ConfigService) {
+  constructor(
+    private config: ConfigService,
+    private prisma: PrismaService,
+    private activityLogs: ActivityLogsService,
+  ) {
     const host = this.config.get<string>('SMTP_HOST', 'smtp.hostinger.com');
     const port = Number(this.config.get<number>('SMTP_PORT', 465));
     const isSecure = this.config.get<string>('SMTP_SECURE') === 'true' || port === 465;
@@ -207,6 +213,58 @@ export class MailService {
     `;
   }
 
+  /**
+   * Internal helper to record every email dispatched to EmailLog and ActivityLog
+   */
+  private async recordEmailLog(params: {
+    recipient: string;
+    recipientName?: string;
+    subject: string;
+    template: string;
+    status: 'SENT' | 'FAILED';
+    errorMessage?: string;
+    metadata?: any;
+    preview?: string;
+  }) {
+    try {
+      const emailLog = await this.prisma.emailLog.create({
+        data: {
+          recipient: params.recipient.toLowerCase().trim(),
+          recipientName: params.recipientName || null,
+          subject: params.subject,
+          template: params.template,
+          status: params.status,
+          errorMessage: params.errorMessage || null,
+          metadata: params.metadata ? (params.metadata as any) : undefined,
+          preview: params.preview || null,
+        },
+      });
+
+      await this.activityLogs.log({
+        type: params.status === 'SENT' ? 'EMAIL_DISPATCHED' : 'EMAIL_FAILED',
+        actorName: 'Hostinger SMTP',
+        actorEmail: params.recipient,
+        summary:
+          params.status === 'SENT'
+            ? `Email sent: "${params.subject}" to ${params.recipient}`
+            : `Email failed: "${params.subject}" to ${params.recipient} (${params.errorMessage})`,
+        details: {
+          emailLogId: emailLog.id,
+          template: params.template,
+          subject: params.subject,
+          recipient: params.recipient,
+          error: params.errorMessage,
+        },
+        status: params.status === 'SENT' ? 'SUCCESS' : 'FAILED',
+      });
+
+      return emailLog;
+    } catch (err: any) {
+      this.logger.warn(`Failed to record email log: ${err.message}`);
+      return null;
+    }
+  }
+
   async testSmtpConnection(): Promise<{ success: boolean; message: string; details?: any }> {
     try {
       this.logger.log('Verifying SMTP connection to Hostinger...');
@@ -278,15 +336,42 @@ export class MailService {
       </p>
     `;
 
+    const subject = `${code} is your Adera Foundation verification code`;
     const html = this.wrapEmailTemplate(contentHtml, `Your Adera Foundation verification code is ${code}`);
 
-    return this.transporter.sendMail({
-      from: this.getFromAddress(),
-      to,
-      subject: `${code} is your Adera Foundation verification code`,
-      html,
-      attachments: this.getLogoAttachments(),
-    });
+    try {
+      const info = await this.transporter.sendMail({
+        from: this.getFromAddress(),
+        to,
+        subject,
+        html,
+        attachments: this.getLogoAttachments(),
+      });
+
+      await this.recordEmailLog({
+        recipient: to,
+        recipientName: name,
+        subject,
+        template: 'VERIFICATION_CODE',
+        status: 'SENT',
+        preview: html,
+        metadata: { code, name },
+      });
+
+      return info;
+    } catch (err: any) {
+      await this.recordEmailLog({
+        recipient: to,
+        recipientName: name,
+        subject,
+        template: 'VERIFICATION_CODE',
+        status: 'FAILED',
+        errorMessage: err.message,
+        preview: html,
+        metadata: { code, name },
+      });
+      throw err;
+    }
   }
 
   async sendOrderReceiptEmail(order: OrderEmailData) {
@@ -437,27 +522,77 @@ export class MailService {
       </div>
     `;
 
+    const subject = `✅ Order #${order.orderNumber} Confirmed (Tracking: ${order.trackingNumber}) - Adera Store`;
     const html = this.wrapEmailTemplate(contentHtml, `Order Confirmation #${order.orderNumber} - Tracking: ${order.trackingNumber}`);
 
-    // Send customer confirmation
-    await this.transporter.sendMail({
-      from: this.getStoreFromAddress(),
-      to: order.customerEmail,
-      subject: `✅ Order #${order.orderNumber} Confirmed (Tracking: ${order.trackingNumber}) - Adera Store`,
-      html,
-      attachments: this.getLogoAttachments(),
-    });
+    // Dispatch customer email
+    try {
+      await this.transporter.sendMail({
+        from: this.getStoreFromAddress(),
+        to: order.customerEmail,
+        subject,
+        html,
+        attachments: this.getLogoAttachments(),
+      });
+
+      await this.recordEmailLog({
+        recipient: order.customerEmail,
+        recipientName: order.customerName,
+        subject,
+        template: 'ORDER_RECEIPT',
+        status: 'SENT',
+        preview: html,
+        metadata: {
+          orderNumber: order.orderNumber,
+          trackingNumber: order.trackingNumber,
+          totalAmount: order.totalAmount,
+          cryptoSymbol: order.cryptoSymbol,
+        },
+      });
+    } catch (err: any) {
+      await this.recordEmailLog({
+        recipient: order.customerEmail,
+        recipientName: order.customerName,
+        subject,
+        template: 'ORDER_RECEIPT',
+        status: 'FAILED',
+        errorMessage: err.message,
+        preview: html,
+        metadata: {
+          orderNumber: order.orderNumber,
+          trackingNumber: order.trackingNumber,
+          totalAmount: order.totalAmount,
+        },
+      });
+      this.logger.error(`Failed to dispatch order email to customer: ${err.message}`);
+    }
 
     // Send admin notification
     const adminEmail = this.getAdminNotificationEmail();
     if (adminEmail && adminEmail !== order.customerEmail) {
-      this.transporter.sendMail({
-        from: this.getStoreFromAddress(),
-        to: adminEmail,
-        subject: `🛒 New Store Order #${order.orderNumber} ($${order.totalAmount.toFixed(2)}) - ${order.customerName}`,
-        html,
-        attachments: this.getLogoAttachments(),
-      }).catch((err) => this.logger.warn(`Failed to dispatch admin order copy: ${err.message}`));
+      const adminSubject = `🛒 New Store Order #${order.orderNumber} ($${order.totalAmount.toFixed(2)}) - ${order.customerName}`;
+      this.transporter
+        .sendMail({
+          from: this.getStoreFromAddress(),
+          to: adminEmail,
+          subject: adminSubject,
+          html,
+          attachments: this.getLogoAttachments(),
+        })
+        .then(() => {
+          this.recordEmailLog({
+            recipient: adminEmail,
+            recipientName: 'Admin Operations',
+            subject: adminSubject,
+            template: 'ADMIN_ORDER_ALERT',
+            status: 'SENT',
+            preview: html,
+            metadata: { orderNumber: order.orderNumber },
+          });
+        })
+        .catch((err) => {
+          this.logger.warn(`Failed to dispatch admin order copy: ${err.message}`);
+        });
     }
   }
 
@@ -506,15 +641,38 @@ export class MailService {
       </div>
     `;
 
+    const subject = 'Welcome to Adera Foundation Updates';
     const html = this.wrapEmailTemplate(contentHtml, 'Welcome to Adera Foundation Impact Updates');
 
-    return this.transporter.sendMail({
-      from: this.getFromAddress(),
-      to,
-      subject: 'Welcome to Adera Foundation Updates',
-      html,
-      attachments: this.getLogoAttachments(),
-    });
+    try {
+      const info = await this.transporter.sendMail({
+        from: this.getFromAddress(),
+        to,
+        subject,
+        html,
+        attachments: this.getLogoAttachments(),
+      });
+
+      await this.recordEmailLog({
+        recipient: to,
+        subject,
+        template: 'NEWSLETTER',
+        status: 'SENT',
+        preview: html,
+      });
+
+      return info;
+    } catch (err: any) {
+      await this.recordEmailLog({
+        recipient: to,
+        subject,
+        template: 'NEWSLETTER',
+        status: 'FAILED',
+        errorMessage: err.message,
+        preview: html,
+      });
+      throw err;
+    }
   }
 
   async sendContactInquiryNotification(inquiry: {
@@ -566,16 +724,43 @@ ${inquiry.message}
       </table>
     `;
 
+    const subject = `[Contact Form] ${inquiry.topic} - from ${inquiry.name}`;
     const html = this.wrapEmailTemplate(contentHtml, `New inquiry from ${inquiry.name}: ${inquiry.topic}`);
 
-    return this.transporter.sendMail({
-      from: this.getFromAddress(),
-      to: adminEmail,
-      replyTo: inquiry.email,
-      subject: `[Contact Form] ${inquiry.topic} - from ${inquiry.name}`,
-      html,
-      attachments: this.getLogoAttachments(),
-    });
+    try {
+      const info = await this.transporter.sendMail({
+        from: this.getFromAddress(),
+        to: adminEmail,
+        replyTo: inquiry.email,
+        subject,
+        html,
+        attachments: this.getLogoAttachments(),
+      });
+
+      await this.recordEmailLog({
+        recipient: adminEmail,
+        recipientName: 'Admin Operations',
+        subject,
+        template: 'CONTACT_INQUIRY',
+        status: 'SENT',
+        preview: html,
+        metadata: inquiry,
+      });
+
+      return info;
+    } catch (err: any) {
+      await this.recordEmailLog({
+        recipient: adminEmail,
+        recipientName: 'Admin Operations',
+        subject,
+        template: 'CONTACT_INQUIRY',
+        status: 'FAILED',
+        errorMessage: err.message,
+        preview: html,
+        metadata: inquiry,
+      });
+      throw err;
+    }
   }
 
   async sendContactAutoReply(to: string, name: string, topic: string) {
@@ -614,14 +799,310 @@ ${inquiry.message}
       </p>
     `;
 
+    const subject = 'Message Received - Adera Foundation Support';
     const html = this.wrapEmailTemplate(contentHtml, 'We have received your message - Adera Foundation');
 
-    return this.transporter.sendMail({
-      from: this.getFromAddress(),
-      to,
-      subject: 'Message Received - Adera Foundation Support',
-      html,
-      attachments: this.getLogoAttachments(),
-    });
+    try {
+      const info = await this.transporter.sendMail({
+        from: this.getFromAddress(),
+        to,
+        subject,
+        html,
+        attachments: this.getLogoAttachments(),
+      });
+
+      await this.recordEmailLog({
+        recipient: to,
+        recipientName: name,
+        subject,
+        template: 'CONTACT_AUTOREPLY',
+        status: 'SENT',
+        preview: html,
+        metadata: { name, topic },
+      });
+
+      return info;
+    } catch (err: any) {
+      await this.recordEmailLog({
+        recipient: to,
+        recipientName: name,
+        subject,
+        template: 'CONTACT_AUTOREPLY',
+        status: 'FAILED',
+        errorMessage: err.message,
+        preview: html,
+        metadata: { name, topic },
+      });
+      throw err;
+    }
+  }
+
+  /**
+   * Query all email logs with filtering and pagination
+   */
+  async findAllEmailLogs(query: {
+    template?: string;
+    status?: string;
+    search?: string;
+    limit?: number;
+    offset?: number;
+  }) {
+    const limit = query.limit ? Math.min(Math.max(Number(query.limit), 1), 100) : 30;
+    const offset = query.offset ? Math.max(Number(query.offset), 0) : 0;
+
+    const where: any = {};
+    if (query.template && query.template !== 'ALL') where.template = query.template;
+    if (query.status && query.status !== 'ALL') where.status = query.status;
+    if (query.search) {
+      const s = query.search.trim();
+      where.OR = [
+        { recipient: { contains: s, mode: 'insensitive' } },
+        { recipientName: { contains: s, mode: 'insensitive' } },
+        { subject: { contains: s, mode: 'insensitive' } },
+      ];
+    }
+
+    const [items, total] = await Promise.all([
+      this.prisma.emailLog.findMany({
+        where,
+        orderBy: { sentAt: 'desc' },
+        take: limit,
+        skip: offset,
+      }),
+      this.prisma.emailLog.count({ where }),
+    ]);
+
+    return {
+      items,
+      total,
+      limit,
+      offset,
+      pages: Math.ceil(total / limit),
+    };
+  }
+
+  async getEmailLogById(id: number) {
+    const record = await this.prisma.emailLog.findUnique({ where: { id } });
+    if (!record) throw new NotFoundException(`Email log #${id} not found`);
+    return record;
+  }
+
+  async resendEmail(id: number) {
+    const record = await this.prisma.emailLog.findUnique({ where: { id } });
+    if (!record) throw new NotFoundException(`Email log #${id} not found`);
+
+    if (!record.preview) {
+      throw new Error('This email does not have a saved HTML preview to re-send.');
+    }
+
+    try {
+      await this.transporter.sendMail({
+        from: this.getFromAddress(),
+        to: record.recipient,
+        subject: record.subject,
+        html: record.preview,
+        attachments: this.getLogoAttachments(),
+      });
+
+      await this.recordEmailLog({
+        recipient: record.recipient,
+        recipientName: record.recipientName || undefined,
+        subject: `[RESENT] ${record.subject}`,
+        template: record.template,
+        status: 'SENT',
+        preview: record.preview,
+        metadata: { originalLogId: record.id, isResend: true },
+      });
+
+      return {
+        success: true,
+        message: `Email "${record.subject}" successfully re-dispatched to ${record.recipient}`,
+      };
+    } catch (err: any) {
+      await this.recordEmailLog({
+        recipient: record.recipient,
+        recipientName: record.recipientName || undefined,
+        subject: `[RESENT FAILED] ${record.subject}`,
+        template: record.template,
+        status: 'FAILED',
+        errorMessage: err.message,
+        preview: record.preview,
+        metadata: { originalLogId: record.id, isResend: true },
+      });
+      throw new Error(`Failed to resend email: ${err.message}`);
+    }
+  }
+
+  async getEmailStats() {
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    const [total, sentToday, failedTotal] = await Promise.all([
+      this.prisma.emailLog.count(),
+      this.prisma.emailLog.count({
+        where: { sentAt: { gte: startOfToday } },
+      }),
+      this.prisma.emailLog.count({
+        where: { status: 'FAILED' },
+      }),
+    ]);
+
+    const successRate = total > 0 ? (((total - failedTotal) / total) * 100).toFixed(1) : '100.0';
+
+    return {
+      total,
+      sentToday,
+      failedTotal,
+      successRate: `${successRate}%`,
+    };
+  }
+
+  /**
+   * Send a direct, bespoke email composed by an administrator to any recipient
+   */
+  async sendDirectEmail(params: {
+    recipient: string;
+    recipientName?: string;
+    subject: string;
+    message: string;
+    category?: string;
+    adminEmail?: string;
+    adminId?: number;
+  }) {
+    const to = params.recipient.toLowerCase().trim();
+    const name = params.recipientName?.trim();
+    const displayName = name || to.split('@')[0];
+    const category = (params.category || 'DIRECT_MESSAGE').toUpperCase();
+
+    // Convert raw message text into structured HTML paragraphs with lightweight formatting
+    const rawParagraphs = params.message
+      .split(/\n{2,}/)
+      .map((p) => p.trim())
+      .filter(Boolean);
+
+    const formattedParagraphs = rawParagraphs
+      .map((para) => {
+        let content = para.replace(/\n/g, '<br />');
+        // Bold: **text**
+        content = content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        // Italic: *text*
+        content = content.replace(/\*(.*?)\*/g, '<em>$1</em>');
+        // Links: [label](https://...)
+        content = content.replace(
+          /\[(.*?)\]\((https?:\/\/[^\s]+)\)/g,
+          '<a href="$2" style="color: #059669; text-decoration: underline; font-weight: 600;" target="_blank">$1</a>',
+        );
+        return `<p style="margin: 0 0 16px 0; font-size: 14px; line-height: 1.75; color: #334155;">${content}</p>`;
+      })
+      .join('');
+
+    const categoryBadges: Record<string, { label: string; bg: string; text: string; border: string }> = {
+      ANNOUNCEMENT: { label: 'Official Announcement', bg: '#eff6ff', text: '#1d4ed8', border: '#bfdbfe' },
+      DONOR_OUTREACH: { label: 'Donor Relations', bg: '#fdf2f8', text: '#be185d', border: '#fbcfe8' },
+      ORDER_UPDATE: { label: 'Store Order Care', bg: '#ecfdf5', text: '#047857', border: '#a7f3d0' },
+      ACCOUNT_NOTICE: { label: 'Account Notice', bg: '#fefce8', text: '#a16207', border: '#fef08a' },
+      DIRECT_MESSAGE: { label: 'Direct Communication', bg: '#f8fafc', text: '#475569', border: '#e2e8f0' },
+    };
+
+    const badge = categoryBadges[category] || categoryBadges.DIRECT_MESSAGE;
+
+    const contentHtml = `
+      <!-- Category Badge & Header -->
+      <div style="margin-bottom: 24px;">
+        <span style="display: inline-block; padding: 4px 14px; background-color: ${badge.bg}; color: ${badge.text}; font-size: 11px; font-weight: 700; border-radius: 9999px; border: 1px solid ${badge.border}; text-transform: uppercase; letter-spacing: 0.8px;">
+          ${badge.label}
+        </span>
+        <h2 style="margin: 14px 0 6px 0; font-size: 22px; font-weight: 900; color: #0f172a; letter-spacing: -0.5px; line-height: 1.3;">
+          ${params.subject}
+        </h2>
+        <p style="margin: 0; font-size: 13px; color: #64748b;">
+          Direct communication from the Adera Foundation Administration team
+        </p>
+      </div>
+
+      <!-- Main Message Card -->
+      <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 24px; margin-bottom: 24px;">
+        <p style="margin: 0 0 16px 0; font-size: 15px; font-weight: 700; color: #0f172a;">
+          Hello ${displayName},
+        </p>
+        ${formattedParagraphs}
+      </div>
+
+      <!-- Official Sign-off & Portal Access -->
+      <div style="margin-top: 28px; padding-top: 20px; border-top: 1px solid #e2e8f0;">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+          <tr>
+            <td style="vertical-align: top;">
+              <div style="font-size: 13px; font-weight: 800; color: #0f172a;">Adera Foundation Executive Team</div>
+              <div style="font-size: 12px; color: #64748b; margin-top: 2px;">Community & Operations Support</div>
+              <div style="font-size: 11px; color: #94a3b8; margin-top: 4px; font-family: monospace;">
+                Official Admin Dispatch &bull; Reference #${Date.now().toString().slice(-6)}
+              </div>
+            </td>
+            <td align="right" style="vertical-align: middle;">
+              <a href="${this.getAppUrl()}" style="display: inline-block; padding: 10px 20px; background-color: #059669; color: #ffffff; font-size: 12px; font-weight: 700; text-decoration: none; border-radius: 8px;">
+                Visit Portal &rarr;
+              </a>
+            </td>
+          </tr>
+        </table>
+      </div>
+    `;
+
+    const previewSnippet = params.message.slice(0, 120).replace(/\n/g, ' ');
+    const html = this.wrapEmailTemplate(contentHtml, previewSnippet);
+
+    try {
+      const info = await this.transporter.sendMail({
+        from: this.getFromAddress(),
+        to,
+        subject: params.subject,
+        html,
+        attachments: this.getLogoAttachments(),
+      });
+
+      const emailLog = await this.recordEmailLog({
+        recipient: to,
+        recipientName: name,
+        subject: params.subject,
+        template: 'ADMIN_CUSTOM',
+        status: 'SENT',
+        preview: html,
+        metadata: {
+          category,
+          adminEmail: params.adminEmail,
+          adminId: params.adminId,
+        },
+      });
+
+      this.logger.log(`Direct admin email successfully sent to ${to} (Subject: "${params.subject}")`);
+
+      return {
+        success: true,
+        message: `Direct email "${params.subject}" successfully sent to ${to}`,
+        emailLog,
+        messageId: info?.messageId,
+      };
+    } catch (err: any) {
+      this.logger.error(`Failed to send direct email to ${to}: ${err.message}`, err.stack);
+      
+      const emailLog = await this.recordEmailLog({
+        recipient: to,
+        recipientName: name,
+        subject: params.subject,
+        template: 'ADMIN_CUSTOM',
+        status: 'FAILED',
+        errorMessage: err.message,
+        preview: html,
+        metadata: {
+          category,
+          adminEmail: params.adminEmail,
+          adminId: params.adminId,
+        },
+      });
+
+      throw new Error(`Failed to send email to ${to}: ${err.message}`);
+    }
   }
 }
+

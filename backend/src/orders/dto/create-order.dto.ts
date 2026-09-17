@@ -22,6 +22,15 @@ export class OrderItemDto {
   @IsString()
   @IsOptional()
   category?: string;
+
+  @IsOptional()
+  wholesalePrice?: number;
+
+  @IsOptional()
+  shopId?: number;
+
+  @IsOptional()
+  resellerHandle?: string;
 }
 
 export class ShippingAddressDto {
@@ -98,4 +107,34 @@ export class CreateOrderDto {
   @ValidateNested({ each: true })
   @Type(() => OrderItemDto)
   items: OrderItemDto[];
+
+  @IsOptional()
+  @IsNumber()
+  userId?: number;
+
+  @IsOptional()
+  @IsString()
+  paymentProof?: string;
+}
+
+export class UpdateOrderStatusDto {
+  @IsString()
+  @IsNotEmpty()
+  status: string; // "PENDING_VERIFICATION" | "CONFIRMED" | "PROCESSING" | "IN_TRANSIT" | "DELIVERED" | "CANCELLED"
+
+  @IsOptional()
+  @IsString()
+  trackingNumber?: string;
+
+  @IsOptional()
+  @IsString()
+  carrier?: string;
+
+  @IsOptional()
+  @IsString()
+  estimatedDelivery?: string;
+
+  @IsOptional()
+  @IsString()
+  paymentProof?: string;
 }

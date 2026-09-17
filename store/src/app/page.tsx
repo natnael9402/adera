@@ -7,7 +7,9 @@ import { Search, ShoppingCart, User, Menu, X, ChevronRight, Star, Zap, ShieldChe
 import ShopTierBanner from '@/components/ShopTierBanner';
 import StoreAvatar from '@/components/StoreAvatar';
 import TierMedal from '@/components/TierMedal';
+import NotificationCenter from '@/components/NotificationCenter';
 import { api } from '@/lib/api';
+import { useBuyerAuth } from '@/context/BuyerAuthContext';
 
 interface Product {
   id: number;
@@ -79,6 +81,7 @@ const CRYPTO_PAYMENT_OPTIONS = [
 ];
 
 export default function StoreHome() {
+  const { buyer } = useBuyerAuth();
   const [products, setProducts] = useState<Product[]>(MASTER_CATALOG_PRODUCTS);
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
   const [selectedSource, setSelectedSource] = useState<string>("All");
@@ -341,30 +344,63 @@ export default function StoreHome() {
               </div>
             </div>
 
-            {/* Actions: Wishlist, Return to Causes, Cart */}
-            <div className="flex items-center gap-3">
+            {/* Actions: Buyer Account, Causes, Cart */}
+            <div className="flex items-center gap-2 sm:gap-3">
               <a 
                 href={`${process.env.NEXT_PUBLIC_APP_URL || "https://aderafoundation.com"}/causes`} 
-                className="hidden lg:inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors border border-slate-200"
+                className="hidden lg:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors border border-slate-200"
               >
                 <Compass className="w-3.5 h-3.5 text-primary-600" />
-                View Causes
+                <span>Causes</span>
               </a>
+
+              {/* Buyer Account Button */}
+              {buyer ? (
+                <Link
+                  href="/account"
+                  className="inline-flex items-center gap-2 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-xl text-xs font-bold transition-all"
+                >
+                  <span className="w-6 h-6 rounded-lg bg-emerald-600 text-white flex items-center justify-center text-[10px] font-black uppercase">
+                    {buyer.name?.[0] || 'B'}
+                  </span>
+                  <span className="hidden sm:inline max-w-[100px] truncate">{buyer.name.split(' ')[0]}</span>
+                </Link>
+              ) : (
+                <div className="flex items-center gap-1.5">
+                  <Link
+                    href="/login"
+                    className="inline-flex items-center gap-1 px-3 py-2 text-xs font-bold text-slate-700 hover:text-primary-700 hover:bg-slate-100 rounded-xl transition-colors"
+                  >
+                    <User className="w-3.5 h-3.5 text-primary-600" />
+                    <span>Sign In</span>
+                  </Link>
+
+                  <Link
+                    href="/register"
+                    className="hidden sm:inline-flex items-center px-3 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl transition-colors shadow-xs"
+                  >
+                    <span>Sign Up</span>
+                  </Link>
+                </div>
+              )}
+
+              {/* Notification Center */}
+              <NotificationCenter />
 
               {/* Cart Button */}
               <button 
                 onClick={() => setIsCartOpen(true)}
-                className="inline-flex items-center gap-2.5 px-4 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-bold text-sm transition-all shadow-md shadow-primary-600/20 group"
+                className="inline-flex items-center gap-2.5 px-3.5 sm:px-4 py-2 sm:py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-bold text-sm transition-all shadow-md shadow-primary-600/20 group"
               >
                 <div className="relative">
-                  <ShoppingCart className="w-5 h-5 text-white" />
+                  <ShoppingCart className="w-4 sm:w-5 h-4 sm:h-5 text-white" />
                   {cartTotalItems > 0 && (
-                    <span className="absolute -top-2 -right-2 w-5 h-5 bg-slate-900 text-white text-[10px] font-black rounded-full flex items-center justify-center border border-white">
+                    <span className="absolute -top-2 -right-2 w-4 sm:w-5 h-4 sm:h-5 bg-slate-900 text-white text-[9px] sm:text-[10px] font-black rounded-full flex items-center justify-center border border-white">
                       {cartTotalItems}
                     </span>
                   )}
                 </div>
-                <span className="hidden sm:inline font-mono">
+                <span className="hidden sm:inline font-mono text-xs sm:text-sm">
                   ${cartSubtotal.toFixed(2)}
                 </span>
               </button>
@@ -419,11 +455,7 @@ export default function StoreHome() {
       </header>
 
       {/* 4. Mobile-Optimized Hero Banner: Direct-to-Impact E-Commerce */}
-      <section className="bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white border-b border-slate-800 py-6 sm:py-10 lg:py-14 relative overflow-hidden">
-        {/* Subtle Ambient Glow */}
-        <div className="absolute top-0 right-1/4 w-72 sm:w-96 h-72 sm:h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 left-1/4 w-72 sm:w-96 h-72 sm:h-96 bg-teal-500/10 rounded-full blur-3xl pointer-events-none" />
-
+      <section className="bg-slate-950 text-white border-b border-slate-800 py-6 sm:py-10 lg:py-14 relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="grid lg:grid-cols-12 gap-6 lg:gap-10 items-center">
             
@@ -431,22 +463,22 @@ export default function StoreHome() {
             <div className="lg:col-span-7 space-y-3.5 sm:space-y-5">
               
               {/* Micro Status Pill */}
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 text-[11px] sm:text-xs font-bold uppercase tracking-wider">
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
-                <span>100% Proceeds Fund Causes</span>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900 text-emerald-400 border border-slate-800 text-[11px] sm:text-xs font-bold uppercase tracking-wider">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                <span>100% Profits to Causes</span>
               </div>
 
               {/* Punchy Headline */}
               <h1 className="text-2xl xs:text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight leading-[1.15]">
-                Shop Premium Goods. <br className="hidden xs:block" />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400">
-                  Fund Global Causes
+                Shop Products. <br className="hidden xs:block" />
+                <span className="text-emerald-400">
+                  Fund Verified Causes
                 </span>.
               </h1>
 
               {/* Crisp Subtext */}
               <p className="text-xs sm:text-sm md:text-base text-slate-300 max-w-xl font-normal leading-relaxed line-clamp-2 sm:line-clamp-none">
-                Every purchase automatically routes 100% of proceeds into verified clean water, education, and humanitarian relief projects worldwide.
+                Quality products for everyday life. Every purchase directly funds vetted humanitarian projects worldwide.
               </p>
 
               {/* Action Buttons & Micro Crypto Strip */}
@@ -456,13 +488,13 @@ export default function StoreHome() {
                   className="inline-flex items-center justify-center gap-2 px-5 py-2.5 sm:px-6 sm:py-3 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-extrabold text-xs sm:text-sm rounded-xl transition-all shadow-md shadow-emerald-600/25"
                 >
                   <ShoppingBag className="w-4 h-4" />
-                  <span>Browse Products</span>
+                  <span>Shop Products</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </a>
 
                 <Link
                   href="/track"
-                  className="inline-flex items-center justify-center gap-2 px-4 py-2.5 sm:px-5 sm:py-3 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 font-bold text-xs sm:text-sm rounded-xl transition-colors border border-slate-700"
+                  className="inline-flex items-center justify-center gap-2 px-4 py-2.5 sm:px-5 sm:py-3 bg-slate-900 hover:bg-slate-800 active:scale-95 text-slate-200 font-bold text-xs sm:text-sm rounded-xl transition-colors border border-slate-800"
                 >
                   <Truck className="w-4 h-4 text-emerald-400" />
                   <span>Track Package</span>
@@ -473,20 +505,20 @@ export default function StoreHome() {
 
             {/* Right: Modern Responsive Spotlight Deal Card */}
             <div className="lg:col-span-5">
-              <div className="bg-slate-800/80 backdrop-blur-md rounded-2xl sm:rounded-3xl border border-slate-700/80 p-4 sm:p-5 space-y-3 shadow-xl">
+              <div className="bg-slate-900 rounded-2xl sm:rounded-3xl border border-slate-800 p-4 sm:p-5 space-y-3 shadow-md">
                 
                 <div className="flex items-center justify-between text-xs">
                   <span className="font-extrabold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5 text-[11px]">
                     <Award className="w-3.5 h-3.5 text-emerald-400" />
-                    Spotlight Deal
+                    Featured Product
                   </span>
-                  <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-full font-bold text-[10px] font-mono">
-                    100% Impact Verified
+                  <span className="bg-slate-950 text-emerald-400 border border-slate-800 px-2.5 py-0.5 rounded-full font-bold text-[10px] font-mono">
+                    Causes Funded
                   </span>
                 </div>
 
-                <div className="flex gap-3 sm:gap-4 items-center bg-slate-900/80 p-3 sm:p-3.5 rounded-xl border border-slate-700/60">
-                  <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden bg-slate-800 shrink-0 border border-slate-700">
+                <div className="flex gap-3 sm:gap-4 items-center bg-slate-950 p-3 sm:p-3.5 rounded-xl border border-slate-800">
+                  <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden bg-slate-900 shrink-0 border border-slate-800">
                     <Image 
                       src="https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?auto=format&fit=crop&w=800&q=80" 
                       alt="ZenBook" 
@@ -499,8 +531,8 @@ export default function StoreHome() {
                     <h4 className="text-xs sm:text-sm font-bold text-white truncate">
                       Asus ZenBook 14 Flip OLED Touch
                     </h4>
-                    <p className="text-[11px] text-emerald-400 font-medium truncate mt-0.5">
-                      Donates ~$1,694 to education
+                    <p className="text-[11px] text-slate-400 font-medium truncate mt-0.5">
+                      Proceeds fund clean water and education
                     </p>
                     <div className="flex items-baseline gap-2 mt-1">
                       <span className="text-sm sm:text-base font-black text-emerald-400 font-mono">$1,694.86</span>
@@ -512,7 +544,7 @@ export default function StoreHome() {
                   <button
                     onClick={() => {
                       addToCart(products[0] || MASTER_CATALOG_PRODUCTS[0]);
-                      showToast("Spotlight item added to cart!");
+                      showToast("Item added to cart!");
                     }}
                     className="sm:hidden p-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl shadow-md shrink-0 active:scale-95"
                     title="Add to Cart"
@@ -525,12 +557,12 @@ export default function StoreHome() {
                 <button 
                   onClick={() => {
                     addToCart(products[0] || MASTER_CATALOG_PRODUCTS[0]);
-                    showToast("Spotlight item added to cart!");
+                    showToast("Item added to cart!");
                   }}
                   className="hidden sm:flex w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs sm:text-sm rounded-xl transition-all shadow-md items-center justify-center gap-2 active:scale-95"
                 >
                   <ShoppingCart className="w-4 h-4" /> 
-                  <span>Quick Add Spotlight Item</span>
+                  <span>Add to Cart</span>
                 </button>
 
               </div>
@@ -547,10 +579,10 @@ export default function StoreHome() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-slate-200">
           <div>
             <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">
-              {selectedCategory === "All" ? "All Catalog Goods" : selectedCategory}
+              {selectedCategory === "All" ? "All Products" : selectedCategory}
             </h2>
             <p className="text-xs text-slate-500 mt-1">
-              Showing <span className="font-bold text-slate-900">{filteredProducts.length.toLocaleString()}</span> verified items available for direct delivery
+              Showing <span className="font-bold text-slate-900">{filteredProducts.length.toLocaleString()}</span> products
             </p>
           </div>
 
@@ -600,12 +632,14 @@ export default function StoreHome() {
                   <div>
                     {/* Image Container with Badges */}
                     <div className="relative aspect-square w-full bg-slate-50 rounded-xl overflow-hidden mb-4 border border-slate-100">
-                      <img 
-                        src={product.image} 
-                        alt={product.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ease-out"
-                        loading="lazy"
-                      />
+                      <Link href={`/products/${product.id}`} className="block w-full h-full">
+                        <img 
+                          src={product.image} 
+                          alt={product.name}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ease-out"
+                          loading="lazy"
+                        />
+                      </Link>
 
                       {/* Sale Badge */}
                       {product.originalPrice && product.originalPrice > product.price && (
@@ -659,12 +693,12 @@ export default function StoreHome() {
                         </div>
                       </div>
 
-                      <h3 
-                        onClick={() => setSelectedProduct(product)}
-                        className="font-bold text-sm text-slate-900 line-clamp-2 leading-snug cursor-pointer group-hover:text-primary-700 transition-colors pt-1"
+                      <Link 
+                        href={`/products/${product.id}`}
+                        className="font-bold text-sm text-slate-900 line-clamp-2 leading-snug hover:text-emerald-700 transition-colors pt-1 block"
                       >
                         {product.name}
-                      </h3>
+                      </Link>
 
                       {product.brand && (
                         <p className="text-[11px] text-slate-400 font-medium">
@@ -885,6 +919,17 @@ export default function StoreHome() {
                     className="flex-1 py-3 bg-primary-600 hover:bg-primary-700 text-white font-bold text-xs sm:text-sm rounded-xl transition-all shadow-md shadow-primary-600/20 flex items-center justify-center gap-2 cursor-pointer"
                   >
                     Proceed to Checkout <ArrowRight className="w-4 h-4" />
+                  </Link>
+                </div>
+
+                <div className="text-center pt-1">
+                  <Link
+                    href={`/products/${selectedProduct.id}`}
+                    onClick={() => setSelectedProduct(null)}
+                    className="text-xs font-bold text-slate-600 hover:text-emerald-700 inline-flex items-center gap-1 transition-colors"
+                  >
+                    <span>View Full Product Specifications</span>
+                    <ArrowUpRight className="w-3.5 h-3.5" />
                   </Link>
                 </div>
               </div>

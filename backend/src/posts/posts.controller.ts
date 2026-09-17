@@ -36,6 +36,31 @@ export class PostsController {
     return this.posts.findByAuthor(user.id);
   }
 
+  @Get('my/donations')
+  @UseGuards(JwtAuthGuard)
+  findMyDonations(@CurrentUser() user: any) {
+    return this.posts.findMyDonations(user.email);
+  }
+
+  // Admin list all direct donations
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
+  @Get('donations/all')
+  findAllDirectDonations(@Query('status') status?: string) {
+    return this.posts.getAllDirectDonations(status);
+  }
+
+  // Admin update direct donation verification status
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
+  @Patch('donations/:id/status')
+  updateDonationStatus(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: { status: string; reason?: string }
+  ) {
+    return this.posts.updateDonationStatus(id, body.status, body.reason);
+  }
+
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.posts.findById(id);

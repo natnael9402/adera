@@ -1,24 +1,27 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   X, Heart, Copy, Check, ShieldCheck, ArrowRight, ArrowLeft,
   Lock, Coins, CheckCircle2, DollarSign, Wallet, 
-  QrCode, User, Mail, Eye, EyeOff, Loader2, Sparkles, LogOut, AlertCircle
+  QrCode, User, Mail, Eye, EyeOff, Loader2, Sparkles, LogOut, AlertCircle,
+  ChevronDown, Search, CreditCard, RefreshCw, UploadCloud, Trash2, FileCheck
 } from 'lucide-react';
-import { useDonate } from '@/context/DonateContext';
+import { useDonate, CauseDonationTarget } from '@/context/DonateContext';
+import { useAuth } from '@/context/AuthContext';
 import QRCodeWithLogo from './QRCodeWithLogo';
 import { api } from '@/lib/api';
+import { shrinkImage } from '@/lib/imageShrinker';
 
 interface CryptoOption {
   symbol: string;
   name: string;
   network: string;
   address: string;
-  rate: number; // USD rate per 1 unit
+  rate: number;
   icon: string;
   prefix: string;
 }
@@ -73,8 +76,97 @@ const DEFAULT_CRYPTO_OPTIONS: CryptoOption[] = [
 
 const PRESET_USD_AMOUNTS = [25, 50, 100, 250, 500, 1000];
 
+const FALLBACK_CAUSES: CauseDonationTarget[] = [
+  {
+    id: 33,
+    title: 'Solar Water Filtration Well in Dire Dawa',
+    category: 'Clean Water',
+    goal: 18000,
+    raised: 14760,
+    image: '/causes/cause_water_1786200462466.jpg',
+    description: 'Providing sustainable solar-powered deep borehole water access to drought-affected rural communities.',
+    urgency: 'Critical',
+  },
+  {
+    id: 19,
+    title: 'Build a Rural School in Tigray',
+    category: 'Education',
+    goal: 50000,
+    raised: 38250,
+    image: '/causes/cause_school_1786200448807.jpg',
+    description: 'Constructing modern classrooms, libraries, and clean sanitation for 600 elementary students.',
+    urgency: 'Urgent',
+  },
+  {
+    id: 22,
+    title: 'Mobile Medical Clinic in Amhara',
+    category: 'Healthcare',
+    goal: 25000,
+    raised: 19500,
+    image: '/causes/cause_clinic_1786200473696.jpg',
+    description: 'Equipping an all-terrain mobile clinic to provide emergency triage, vaccinations, and prenatal care.',
+    urgency: 'Featured',
+  },
+  {
+    id: 32,
+    title: 'Sustainable Agriculture Tools',
+    category: 'Empowerment',
+    goal: 25000,
+    raised: 17500,
+    image: '/causes/cause_farming_1786200495727.jpg',
+    description: 'Empowering smallholder farming families with drip irrigation kits, climate-resilient seeds, and training.',
+    urgency: 'Almost There',
+  },
+  {
+    id: 28,
+    title: 'Emergency Food Supplies for Somali Region',
+    category: 'Disaster Relief',
+    goal: 60000,
+    raised: 42000,
+    image: '/causes/cause_disaster_food.jpg',
+    description: 'Delivering life-saving nutrition packs and clean drinking water to famine-vulnerable pastoralist households.',
+    urgency: 'Urgent',
+  },
+  {
+    id: 31,
+    title: "Women's Skill Training Workshop",
+    category: 'Empowerment',
+    goal: 12000,
+    raised: 8900,
+    image: '/causes/cause_women_1786200616826.jpg',
+    description: 'Vocational training, micro-grant seeding, and textile machinery for female-led rural cooperatives.',
+    urgency: 'New',
+  },
+  {
+    id: 30,
+    title: 'Solar Panels for Rural Clinics',
+    category: 'Environment',
+    goal: 22000,
+    raised: 16800,
+    image: '/causes/cause_env_solar.jpg',
+    description: 'Installing solar power battery banks for continuous refrigeration of critical vaccines and medicines.',
+    urgency: 'Featured',
+  },
+  {
+    id: 25,
+    title: 'Clean Water Well for Somali Region',
+    category: 'Clean Water',
+    goal: 15000,
+    raised: 11250,
+    image: '/causes/cause_water_pump.jpg',
+    description: 'Drilling community water points serving over 4,000 residents and livestock herds.',
+    urgency: 'Urgent',
+  },
+];
+
 export default function DonateModal() {
-  const { isOpen, activeCause, closeDonateModal } = useDonate();
+  const { isOpen, activeCause, closeDonateModal, setActiveCause } = useDonate();
+  const { user: authUser, token: authToken, logout: authLogout } = useAuth();
+
+  // Causes List & Dropdown State
+  const [allCauses, setAllCauses] = useState<CauseDonationTarget[]>(FALLBACK_CAUSES);
+  const [showCauseDropdown, setShowCauseDropdown] = useState(false);
+  const [causeSearch, setCauseSearch] = useState('');
 
   // Wizard Step: 1 (Account), 2 (Payment Method & Amount), 3 (QR & Send), 4 (Success)
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3 | 4>(1);
@@ -101,6 +193,86 @@ export default function DonateModal() {
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
 
+  // Payment Proof State (Canvas-shrunk WebP)
+  const [proofFile, setProofFile] = useState<File | null>(null);
+  const [proofPreview, setProofPreview] = useState<string | null>(null);
+  const [proofOriginalSize, setProofOriginalSize] = useState<number | null>(null);
+  const [proofShrunkSize, setProofShrunkSize] = useState<number | null>(null);
+  const [isShrinking, setIsShrinking] = useState(false);
+  const [uploadProofError, setUploadProofError] = useState<string | null>(null);
+  const [uploadedProofUrl, setUploadedProofUrl] = useState<string | null>(null);
+
+  const handleProofSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadProofError(null);
+    setIsShrinking(true);
+    setProofOriginalSize(file.size);
+
+    try {
+      const shrunk = await shrinkImage(file, 1280, 0.82);
+      setProofFile(shrunk.file);
+      setProofShrunkSize(shrunk.shrunkSize);
+      setProofPreview(shrunk.dataUrl);
+    } catch (err: any) {
+      console.error('Failed to compress proof image:', err);
+      setProofFile(file);
+      setProofShrunkSize(file.size);
+      const reader = new FileReader();
+      reader.onload = () => {
+        setProofPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    } finally {
+      setIsShrinking(false);
+    }
+  };
+
+  const removeProof = () => {
+    setProofFile(null);
+    setProofPreview(null);
+    setProofOriginalSize(null);
+    setProofShrunkSize(null);
+    setUploadedProofUrl(null);
+    setUploadProofError(null);
+  };
+
+  // Fetch all causes on mount
+  useEffect(() => {
+    let mounted = true;
+    api.posts.list()
+      .then((posts: any[]) => {
+        if (!mounted) return;
+        if (Array.isArray(posts) && posts.length > 0) {
+          const fallbackImgs = [
+            "/causes/cause_water_1786200462466.jpg",
+            "/causes/cause_school_1786200448807.jpg",
+            "/causes/cause_clinic_1786200473696.jpg",
+            "/causes/cause_farming_1786200495727.jpg",
+            "/causes/cause_disaster_food.jpg",
+            "/causes/cause_women_1786200616826.jpg",
+          ];
+          const mapped: CauseDonationTarget[] = posts.map((p, idx) => ({
+            id: p.id,
+            title: p.title,
+            category: p.category || 'Humanitarian Relief',
+            goal: p.goal || 25000,
+            raised: p.raised || 0,
+            image: p.image || fallbackImgs[idx % fallbackImgs.length],
+            description: p.description,
+            urgency: p.urgency,
+          }));
+          setAllCauses(mapped);
+        }
+      })
+      .catch((err) => {
+        console.warn('Using curated fallback causes for modal:', err);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   // Check authenticated state on mount or when modal opens
   useEffect(() => {
     if (isOpen) {
@@ -108,26 +280,31 @@ export default function DonateModal() {
       setConfirmedTxHash('');
       setSubmitting(false);
       setAuthError(null);
+      setShowCauseDropdown(false);
+      setCauseSearch('');
+      removeProof();
 
-      // Check if user is already logged in
-      try {
-        const storedUser = localStorage.getItem('user');
-        const storedToken = localStorage.getItem('token');
-        if (storedUser && storedToken) {
-          const parsed = JSON.parse(storedUser);
-          setCurrentUser(parsed);
-          setDonorName(parsed.name || '');
-          setCurrentStep(2); // Automatically jump to Payment & Amount if logged in!
-        } else {
-          setCurrentUser(null);
-          setCurrentStep(1); // Start at Step 1 (Account Creation)
-        }
-      } catch (e) {
+      // Check if user is already signed up / logged in
+      const storedToken = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+      const storedUser = typeof window !== 'undefined' ? localStorage.getItem('user') : null;
+      let active = authUser;
+
+      if (!active && storedUser) {
+        try {
+          active = JSON.parse(storedUser);
+        } catch (e) {}
+      }
+
+      if (active || storedToken || authToken) {
+        setCurrentUser(active);
+        setDonorName(active?.name || '');
+        setCurrentStep(2); // ALREADY SIGNED UP: Instantly jump straight to Amount & Payment!
+      } else {
         setCurrentUser(null);
-        setCurrentStep(1);
+        setCurrentStep(1); // Only show for non-signed-up visitors
       }
     }
-  }, [isOpen]);
+  }, [isOpen, authUser, authToken]);
 
   if (!isOpen || !activeCause) return null;
 
@@ -157,7 +334,7 @@ export default function DonateModal() {
     setTimeout(() => setCopied(false), 2500);
   };
 
-  const handlePresetClick = (amount: number) => {
+  const handlePresetSelect = (amount: number) => {
     setUsdAmount(amount);
     setCustomAmount(amount.toString());
   };
@@ -186,18 +363,27 @@ export default function DonateModal() {
 
     setAuthLoading(true);
     try {
-      const res = await api.auth.quickDonorAuth({
-        email: authEmail.trim(),
-        name: authName.trim() || authEmail.split('@')[0],
-        password: authPassword,
-      });
+      let res;
+      if (authMode === 'login') {
+        res = await api.auth.login({
+          email: authEmail.trim(),
+          password: authPassword,
+        });
+      } else {
+        res = await api.auth.quickDonorAuth({
+          email: authEmail.trim(),
+          name: authName.trim() || authEmail.split('@')[0],
+          password: authPassword,
+        });
+      }
 
       if (res.token && res.user) {
         localStorage.setItem('token', res.token);
         localStorage.setItem('user', JSON.stringify(res.user));
         setCurrentUser(res.user);
         setDonorName(res.user.name || '');
-        goToStep(2); // Seamlessly proceed to Step 2!
+        setIsAnonymous(false);
+        goToStep(2);
       }
     } catch (err: any) {
       setAuthError(err.message || 'Authentication failed. Please check your credentials.');
@@ -206,9 +392,16 @@ export default function DonateModal() {
     }
   };
 
+  const handleAnonymousContinue = () => {
+    setIsAnonymous(true);
+    setDonorName('Anonymous Donor');
+    goToStep(2);
+  };
+
   const handleSignOut = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    authLogout();
     setCurrentUser(null);
     goToStep(1);
   };
@@ -228,6 +421,17 @@ export default function DonateModal() {
     const mockTxHash = `0x${Array.from({length: 64}, () => Math.floor(Math.random()*16).toString(16)).join('')}`;
     setConfirmedTxHash(mockTxHash);
 
+    let proofUrl: string | undefined = undefined;
+    if (proofFile) {
+      try {
+        const uploadRes = await api.upload.proof(proofFile);
+        proofUrl = uploadRes.url;
+        setUploadedProofUrl(uploadRes.url);
+      } catch (err: any) {
+        console.error('Proof upload error, proceeding with donation recording:', err);
+      }
+    }
+
     try {
       if (activeCause?.id) {
         await api.posts.donate(Number(activeCause.id), {
@@ -238,6 +442,7 @@ export default function DonateModal() {
           cryptoSymbol: selectedCrypto.symbol,
           txHash: mockTxHash,
           isAnonymous,
+          paymentProof: proofUrl,
         });
       }
     } catch (err) {
@@ -253,27 +458,36 @@ export default function DonateModal() {
   const percentFunded = Math.min(Math.round((raised / goal) * 100), 100);
   const coverImage = activeCause.image || '/causes/cause_water_1786200462466.jpg';
 
+  const filteredCauses = useMemo(() => {
+    if (!causeSearch.trim()) return allCauses;
+    const q = causeSearch.toLowerCase();
+    return allCauses.filter(c => 
+      c.title.toLowerCase().includes(q) || 
+      (c.category && c.category.toLowerCase().includes(q))
+    );
+  }, [allCauses, causeSearch]);
+
   const stepVariants: any = {
     enter: (dir: number) => ({
-      x: dir > 0 ? 35 : -35,
+      x: dir > 0 ? 25 : -25,
       opacity: 0,
-      scale: 0.98,
+      scale: 0.99,
     }),
     center: {
       x: 0,
       opacity: 1,
       scale: 1,
       transition: {
-        duration: 0.3,
+        duration: 0.25,
         ease: 'easeOut',
       },
     },
     exit: (dir: number) => ({
-      x: dir > 0 ? -35 : 35,
+      x: dir > 0 ? -25 : 25,
       opacity: 0,
-      scale: 0.98,
+      scale: 0.99,
       transition: {
-        duration: 0.2,
+        duration: 0.18,
         ease: 'easeIn',
       },
     }),
@@ -281,41 +495,35 @@ export default function DonateModal() {
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 md:p-6 overflow-y-auto font-sans">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 md:p-6 overflow-y-auto font-sans">
         
-        {/* Backdrop Blur */}
+        {/* Backdrop */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={closeDonateModal}
-          className="fixed inset-0 bg-slate-950/70 backdrop-blur-md transition-opacity"
+          className="fixed inset-0 bg-slate-950/75 backdrop-blur-md transition-opacity"
         />
 
-        {/* Modal Container */}
+        {/* Modal Container: Fixed Max Height, Internal Scroll, Never Cut Off */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.94, y: 20 }}
+          initial={{ opacity: 0, scale: 0.95, y: 16 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.94, y: 20 }}
-          transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-          className="relative w-full max-w-2xl bg-white rounded-3xl sm:rounded-[32px] border border-slate-200 shadow-2xl overflow-hidden my-auto z-10"
+          exit={{ opacity: 0, scale: 0.95, y: 16 }}
+          transition={{ type: 'spring', damping: 26, stiffness: 320 }}
+          className="relative w-full max-w-2xl bg-white rounded-3xl sm:rounded-[32px] border border-slate-200 shadow-2xl overflow-hidden my-auto z-10 flex flex-col max-h-[94vh] sm:max-h-[90vh]"
         >
-          
-          {/* Close Button */}
-          <button
-            onClick={closeDonateModal}
-            className="absolute top-4 right-4 z-20 w-9 h-9 rounded-full bg-slate-900/40 hover:bg-slate-900/70 text-white backdrop-blur-md flex items-center justify-center transition-all hover:scale-105"
-            title="Close"
-          >
-            <X className="w-5 h-5" />
-          </button>
 
           {currentStep < 4 ? (
-            <div className="flex flex-col max-h-[90vh] overflow-y-auto">
-              
-              {/* 1. CAUSE SHOWCASE HEADER BANNER */}
-              <div className="relative p-6 sm:p-7 bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 text-white overflow-hidden">
-                <div className="absolute inset-0 opacity-20 pointer-events-none">
+            <>
+              {/* ========================================================= */}
+              {/* 1. PINNED HEADER: CAUSE DROPDOWN & CLOSE BUTTON */}
+              {/* ========================================================= */}
+              <div className="relative bg-slate-950 text-white p-3.5 sm:p-5 border-b border-slate-800 shrink-0 z-30">
+                
+                {/* Ambient background photo overlay */}
+                <div className="absolute inset-0 opacity-20 pointer-events-none overflow-hidden">
                   <Image
                     src={coverImage}
                     alt={activeCause.title}
@@ -323,63 +531,191 @@ export default function DonateModal() {
                     className="object-cover"
                     sizes="600px"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/80 to-transparent" />
+                  <div className="absolute inset-0 bg-slate-950/85" />
                 </div>
 
                 <div className="relative z-10 space-y-2.5">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold uppercase tracking-wider">
-                      <ShieldCheck className="w-3.5 h-3.5" />
-                      <span>{activeCause.category || 'Humanitarian Relief'}</span>
-                    </span>
-                    <span className="text-[10px] font-semibold text-emerald-300 bg-white/10 px-2 py-0.5 rounded-full backdrop-blur-sm">
-                      Verified Milestone Escrow
-                    </span>
-                  </div>
+                  
+                  {/* Top Row: Cause Selector Button & Close Button */}
+                  <div className="flex items-center justify-between gap-2.5">
+                    
+                    {/* CAUSE SWITCHER DROPDOWN TRIGGER */}
+                    <div className="relative flex-1 min-w-0">
+                      <button
+                        type="button"
+                        onClick={() => setShowCauseDropdown(!showCauseDropdown)}
+                        className="w-full sm:w-auto inline-flex items-center justify-between sm:justify-start gap-2.5 px-3 py-1.5 sm:py-2 rounded-2xl bg-slate-900/90 hover:bg-slate-850 border border-slate-700/90 text-white transition-all shadow-sm group cursor-pointer active:scale-[0.99]"
+                      >
+                        <div className="w-7 h-7 rounded-xl overflow-hidden relative shrink-0 border border-slate-700 bg-slate-800">
+                          <Image src={coverImage} alt={activeCause.title} fill className="object-cover" sizes="28px" />
+                        </div>
+                        <div className="flex flex-col text-left min-w-0 pr-1">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[9px] uppercase font-mono font-bold text-emerald-400 leading-none">
+                              {activeCause.category || 'Cause'}
+                            </span>
+                            <span className="text-[9px] text-slate-400 font-semibold">• Change</span>
+                          </div>
+                          <span className="text-xs sm:text-sm font-black text-white truncate max-w-[190px] sm:max-w-[320px] md:max-w-[380px]">
+                            {activeCause.title}
+                          </span>
+                        </div>
+                        <ChevronDown className={`w-4 h-4 text-slate-400 group-hover:text-emerald-400 transition-transform shrink-0 ${showCauseDropdown ? 'rotate-180 text-emerald-400' : ''}`} />
+                      </button>
 
-                  <h2 className="text-lg sm:text-xl font-black tracking-tight text-white leading-snug line-clamp-1">
-                    {activeCause.title}
-                  </h2>
+                      {/* DROPDOWN MENU */}
+                      <AnimatePresence>
+                        {showCauseDropdown && (
+                          <>
+                            {/* Backdrop click outside */}
+                            <div 
+                              className="fixed inset-0 z-40" 
+                              onClick={() => setShowCauseDropdown(false)} 
+                            />
 
-                  {/* Progress Tracker */}
-                  <div className="space-y-1 pt-0.5">
-                    <div className="flex justify-between items-baseline text-xs">
-                      <div className="space-x-1.5">
-                        <span className="font-extrabold text-emerald-400 font-mono text-sm">
-                          ${raised.toLocaleString()}
-                        </span>
-                        <span className="text-slate-400 font-medium text-[11px]">raised of ${goal.toLocaleString()}</span>
-                      </div>
-                      <span className="font-extrabold text-emerald-300 font-mono text-[11px]">{percentFunded}% Funded</span>
+                            <motion.div
+                              initial={{ opacity: 0, y: 6, scale: 0.98 }}
+                              animate={{ opacity: 1, y: 0, scale: 1 }}
+                              exit={{ opacity: 0, y: 6, scale: 0.98 }}
+                              transition={{ duration: 0.15 }}
+                              className="absolute top-full left-0 mt-2 w-full sm:w-[420px] max-w-[92vw] bg-slate-950 border border-slate-800 rounded-2xl shadow-2xl z-50 overflow-hidden flex flex-col max-h-80"
+                            >
+                              {/* Search Bar */}
+                              <div className="p-2.5 border-b border-slate-800 flex items-center gap-2 bg-slate-900/80">
+                                <Search className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                                <input
+                                  type="text"
+                                  value={causeSearch}
+                                  onChange={(e) => setCauseSearch(e.target.value)}
+                                  placeholder="Search causes by title or category..."
+                                  className="w-full bg-transparent text-xs text-white placeholder-slate-400 focus:outline-none font-medium"
+                                  autoFocus
+                                />
+                                {causeSearch && (
+                                  <button 
+                                    type="button" 
+                                    onClick={() => setCauseSearch('')} 
+                                    className="text-slate-400 hover:text-white text-xs px-1 cursor-pointer"
+                                  >
+                                    ✕
+                                  </button>
+                                )}
+                              </div>
+
+                              {/* Cause Items List */}
+                              <div className="overflow-y-auto divide-y divide-slate-800/60 p-1.5 space-y-1">
+                                {filteredCauses.map((c) => {
+                                  const isSelected = String(c.id) === String(activeCause.id);
+                                  const cGoal = c.goal || 50000;
+                                  const cRaised = c.raised || 0;
+                                  const cPct = Math.min(Math.round((cRaised / cGoal) * 100), 100);
+                                  return (
+                                    <button
+                                      key={c.id}
+                                      type="button"
+                                      onClick={() => {
+                                        setActiveCause(c);
+                                        setShowCauseDropdown(false);
+                                        setCauseSearch('');
+                                      }}
+                                      className={`w-full text-left p-2 rounded-xl transition-all flex items-center gap-2.5 cursor-pointer ${
+                                        isSelected
+                                          ? 'bg-emerald-950/60 border border-emerald-500/40 text-white'
+                                          : 'hover:bg-slate-900 text-slate-300'
+                                      }`}
+                                    >
+                                      <div className="w-10 h-10 rounded-lg overflow-hidden relative shrink-0 bg-slate-900 border border-slate-800">
+                                        <Image
+                                          src={c.image || '/causes/cause_water_1786200462466.jpg'}
+                                          alt={c.title}
+                                          fill
+                                          className="object-cover"
+                                          sizes="40px"
+                                        />
+                                      </div>
+                                      <div className="flex-1 min-w-0 space-y-0.5">
+                                        <div className="flex items-center justify-between gap-1">
+                                          <span className="text-[9px] font-mono font-bold uppercase text-emerald-400">
+                                            {c.category || 'Humanitarian'}
+                                          </span>
+                                          <span className="text-[10px] font-mono text-slate-400">
+                                            {cPct}% Funded
+                                          </span>
+                                        </div>
+                                        <p className="text-xs font-bold text-white truncate">
+                                          {c.title}
+                                        </p>
+                                      </div>
+                                      {isSelected && (
+                                        <Check className="w-4 h-4 text-emerald-400 shrink-0 stroke-[3]" />
+                                      )}
+                                    </button>
+                                  );
+                                })}
+                                {filteredCauses.length === 0 && (
+                                  <div className="p-4 text-center text-xs text-slate-500">
+                                    No causes found matching &quot;{causeSearch}&quot;
+                                  </div>
+                                )}
+                              </div>
+                            </motion.div>
+                          </>
+                        )}
+                      </AnimatePresence>
                     </div>
 
-                    <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden p-0.5 border border-slate-700">
+                    {/* Close Button */}
+                    <button
+                      onClick={closeDonateModal}
+                      className="w-8 h-8 rounded-full bg-slate-900/80 hover:bg-slate-800 border border-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition-all shrink-0 cursor-pointer"
+                      title="Close"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  {/* Progress Tracker */}
+                  <div className="space-y-1">
+                    <div className="flex justify-between items-baseline text-xs font-mono">
+                      <div className="space-x-1.5">
+                        <span className="font-extrabold text-emerald-400 text-sm">
+                          ${raised.toLocaleString()}
+                        </span>
+                        <span className="text-slate-400 text-[11px]">raised of ${goal.toLocaleString()}</span>
+                      </div>
+                      <span className="font-extrabold text-slate-300 text-[11px]">{percentFunded}% Funded</span>
+                    </div>
+
+                    <div className="h-1.5 bg-slate-900 rounded-full overflow-hidden border border-slate-800">
                       <motion.div
                         initial={{ width: 0 }}
                         animate={{ width: `${percentFunded}%` }}
                         transition={{ duration: 0.8, ease: 'easeOut' }}
-                        className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-400"
+                        className="h-full rounded-full bg-emerald-500"
                       />
                     </div>
                   </div>
+
                 </div>
               </div>
 
-              {/* SLIM PROGRESS STEP INDICATOR */}
-              <div className="px-6 sm:px-8 pt-4 pb-2 border-b border-slate-100 flex items-center justify-between">
+              {/* ========================================================= */}
+              {/* 2. PINNED STEP INDICATOR */}
+              {/* ========================================================= */}
+              <div className="px-4 sm:px-6 py-2 sm:py-2.5 bg-slate-50 border-b border-slate-100 flex items-center justify-between shrink-0 z-20">
                 <div className="flex items-center gap-2">
-                  <span className="text-[11px] font-black text-emerald-600 uppercase tracking-wider">
-                    Step 0{currentStep} of 03:
+                  <span className="text-[10px] font-black text-emerald-700 uppercase tracking-wider">
+                    {currentUser ? `Step 0${currentStep - 1} of 02:` : `Step 0${currentStep} of 03:`}
                   </span>
                   <span className="text-xs font-bold text-slate-800">
-                    {currentStep === 1 && 'Donor Account'}
-                    {currentStep === 2 && 'Payment Method & Amount'}
-                    {currentStep === 3 && 'Transfer & QR Payment'}
+                    {currentStep === 1 && 'Donor Identification'}
+                    {currentStep === 2 && 'Payment & Amount'}
+                    {currentStep === 3 && 'Verification & Transfer'}
                   </span>
                 </div>
 
                 <div className="flex items-center gap-1.5">
-                  {[1, 2, 3].map((stepIdx) => (
+                  {(currentUser ? [2, 3] : [1, 2, 3]).map((stepIdx) => (
                     <div
                       key={stepIdx}
                       className={`h-1.5 rounded-full transition-all duration-300 ${
@@ -394,8 +730,10 @@ export default function DonateModal() {
                 </div>
               </div>
 
-              {/* STEP CONTAINER */}
-              <div className="p-6 sm:p-8">
+              {/* ========================================================= */}
+              {/* 3. SCROLLABLE STEP BODY */}
+              {/* ========================================================= */}
+              <div className="flex-1 overflow-y-auto p-4 sm:p-6">
                 <AnimatePresence custom={direction} mode="wait">
                   
                   {/* ========================================================= */}
@@ -409,34 +747,38 @@ export default function DonateModal() {
                       initial="enter"
                       animate="center"
                       exit="exit"
-                      className="space-y-5"
+                      className="space-y-4 max-w-lg mx-auto"
                     >
-                      <div className="text-center sm:text-left space-y-1">
-                        <h3 className="text-lg font-black text-slate-900">
-                          Create Your Donor Account
+                      <div className="space-y-1">
+                        <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-bold uppercase tracking-wider">
+                          <ShieldCheck className="w-3 h-3 text-emerald-600" />
+                          <span>Direct On-Chain Allocation</span>
+                        </div>
+                        <h3 className="text-lg font-black text-slate-900 tracking-tight">
+                          Donor Information
                         </h3>
                         <p className="text-xs text-slate-500">
-                          Takes 5 seconds. Required for cryptographically verified tax receipts and tracking your impact.
+                          Provide your details for verified tax receipts and milestone proofs, or proceed anonymously.
                         </p>
                       </div>
 
-                      {/* Mode Toggle */}
-                      <div className="flex bg-slate-100 p-1 rounded-xl">
+                      {/* Minimal Segment Switcher */}
+                      <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200">
                         <button
                           type="button"
                           onClick={() => { setAuthMode('register'); setAuthError(null); }}
-                          className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
+                          className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
                             authMode === 'register'
                               ? 'bg-white text-slate-900 shadow-xs'
                               : 'text-slate-500 hover:text-slate-900'
                           }`}
                         >
-                          ⚡ Quick Sign Up
+                          New Donor
                         </button>
                         <button
                           type="button"
                           onClick={() => { setAuthMode('login'); setAuthError(null); }}
-                          className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
+                          className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
                             authMode === 'login'
                               ? 'bg-white text-slate-900 shadow-xs'
                               : 'text-slate-500 hover:text-slate-900'
@@ -447,31 +789,30 @@ export default function DonateModal() {
                       </div>
 
                       {authError && (
-                        <div className="p-3.5 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl text-xs font-bold flex items-center gap-2">
+                        <div className="p-3 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl text-xs font-bold flex items-center gap-2">
                           <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
                           <span>{authError}</span>
                         </div>
                       )}
 
-                      <form onSubmit={handleQuickAuth} className="space-y-3.5">
+                      <form onSubmit={handleQuickAuth} className="space-y-3">
                         {authMode === 'register' && (
                           <div>
-                            <label className="block text-[11px] font-extrabold uppercase tracking-wider text-slate-700 mb-1.5">
-                              Your Full Name
+                            <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">
+                              Your Name
                             </label>
                             <input
-                              autoFocus
                               type="text"
                               value={authName}
                               onChange={(e) => setAuthName(e.target.value)}
-                              placeholder="e.g. Sarah Jenkins"
-                              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:bg-white focus:outline-none focus:border-emerald-500"
+                              placeholder="e.g. Alex Johnson"
+                              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:outline-none focus:border-emerald-600 transition-colors"
                             />
                           </div>
                         )}
 
                         <div>
-                          <label className="block text-[11px] font-extrabold uppercase tracking-wider text-slate-700 mb-1.5">
+                          <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">
                             Email Address *
                           </label>
                           <input
@@ -480,61 +821,69 @@ export default function DonateModal() {
                             value={authEmail}
                             onChange={(e) => setAuthEmail(e.target.value)}
                             placeholder="donor@example.com"
-                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:bg-white focus:outline-none focus:border-emerald-500"
+                            className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:outline-none focus:border-emerald-600 transition-colors"
                           />
                         </div>
 
                         <div>
-                          <div className="flex items-center justify-between mb-1.5">
-                            <label className="block text-[11px] font-extrabold uppercase tracking-wider text-slate-700">
+                          <div className="flex items-center justify-between mb-1">
+                            <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700">
                               Password *
                             </label>
                             <button
                               type="button"
                               onClick={() => setShowPassword(!showPassword)}
-                              className="text-[11px] text-slate-400 hover:text-slate-600 font-semibold"
+                              className="text-[11px] text-slate-400 hover:text-slate-600 font-medium cursor-pointer"
                             >
                               {showPassword ? 'Hide' : 'Show'}
                             </button>
                           </div>
-
-                          <div className="relative">
-                            <input
-                              required
-                              type={showPassword ? 'text' : 'password'}
-                              value={authPassword}
-                              onChange={(e) => setAuthPassword(e.target.value)}
-                              placeholder="At least 6 characters"
-                              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:bg-white focus:outline-none focus:border-emerald-500"
-                            />
-                          </div>
+                          <input
+                            required
+                            type={showPassword ? 'text' : 'password'}
+                            value={authPassword}
+                            onChange={(e) => setAuthPassword(e.target.value)}
+                            placeholder="At least 6 characters"
+                            className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:outline-none focus:border-emerald-600 transition-colors"
+                          />
                         </div>
 
-                        <div className="pt-2">
+                        <div className="pt-1 space-y-2.5">
                           <button
                             type="submit"
                             disabled={authLoading}
-                            className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white font-black text-xs sm:text-sm rounded-xl transition-all shadow-md shadow-emerald-600/25 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                            className="w-full py-3 bg-slate-950 hover:bg-slate-800 active:scale-[0.99] text-white font-bold text-xs sm:text-sm rounded-xl transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                           >
                             {authLoading ? (
                               <>
                                 <Loader2 className="w-4 h-4 animate-spin" />
-                                <span>Authenticating Account...</span>
+                                <span>Verifying...</span>
                               </>
                             ) : (
                               <>
-                                <span>{authMode === 'register' ? 'Create Account & Continue' : 'Sign In & Continue'}</span>
+                                <span>{authMode === 'register' ? 'Continue to Payment' : 'Sign In & Continue'}</span>
                                 <ArrowRight className="w-4 h-4" />
                               </>
                             )}
                           </button>
+
+                          <div className="text-center pt-1 border-t border-slate-100">
+                            <button
+                              type="button"
+                              onClick={handleAnonymousContinue}
+                              className="text-xs font-semibold text-slate-500 hover:text-slate-800 transition-colors inline-flex items-center gap-1 cursor-pointer py-1"
+                            >
+                              <span>Skip & donate anonymously (no account needed)</span>
+                              <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
+                            </button>
+                          </div>
                         </div>
                       </form>
                     </motion.div>
                   )}
 
                   {/* ========================================================= */}
-                  {/* STEP 2: PAYMENT METHOD & DONATION AMOUNT */}
+                  {/* STEP 2: PAYMENT METHOD & AMOUNT SELECTION */}
                   {/* ========================================================= */}
                   {currentStep === 2 && (
                     <motion.div
@@ -544,28 +893,29 @@ export default function DonateModal() {
                       initial="enter"
                       animate="center"
                       exit="exit"
-                      className="space-y-6"
+                      className="space-y-4 max-w-xl mx-auto"
                     >
-                      {/* Authenticated User Status Bar */}
+                      {/* Authenticated User Status Bar: Compact 1-line */}
                       {currentUser && (
-                        <div className="p-3 bg-emerald-50/70 border border-emerald-200 rounded-xl flex items-center justify-between">
-                          <div className="flex items-center gap-2.5">
-                            <div className="w-7 h-7 rounded-full bg-emerald-600 text-white font-black text-xs flex items-center justify-center shadow-xs uppercase">
-                              {currentUser.name?.[0] || 'D'}
+                        <div className="px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between text-xs">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <div className="w-5 h-5 rounded-full bg-emerald-700 text-white font-black text-[10px] flex items-center justify-center shrink-0">
+                              {currentUser.name?.[0]?.toUpperCase() || 'D'}
                             </div>
-                            <div>
-                              <span className="text-xs font-bold text-slate-900 block leading-tight">
-                                {currentUser.name}
-                              </span>
-                              <span className="text-[10px] text-slate-500 font-medium">
-                                {currentUser.email} • Verified Donor
-                              </span>
-                            </div>
+                            <span className="font-bold text-slate-800 truncate">
+                              {currentUser.name || 'Donor'}
+                            </span>
+                            <span className="text-[11px] text-slate-400 truncate hidden sm:inline">
+                              • {currentUser.email}
+                            </span>
+                            <span className="text-[9px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.2 rounded shrink-0">
+                              Verified
+                            </span>
                           </div>
                           <button
                             type="button"
                             onClick={handleSignOut}
-                            className="text-[11px] font-bold text-slate-400 hover:text-slate-700 flex items-center gap-1"
+                            className="text-[11px] font-bold text-slate-500 hover:text-slate-900 transition-colors flex items-center gap-1 shrink-0 ml-2 cursor-pointer"
                           >
                             <LogOut className="w-3 h-3" />
                             <span>Switch</span>
@@ -573,93 +923,73 @@ export default function DonateModal() {
                         </div>
                       )}
 
-                      {/* 1. Payment Methods Selection */}
-                      <div className="space-y-2.5">
-                        <label className="block text-xs font-extrabold uppercase tracking-wider text-slate-700">
-                          1. Select Payment Channel
+                      {/* 1. Payment Methods: Compact, No Overlaps */}
+                      <div className="space-y-1.5">
+                        <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700">
+                          1. Payment Channel
                         </label>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                           
-                          {/* Option 1: Bitcoin & Supported Crypto (ENABLED & ACTIVE) */}
+                          {/* Option 1: Crypto (Active) */}
                           <div
                             onClick={() => setSelectedMethod('crypto')}
-                            className="p-3.5 rounded-2xl border-2 border-emerald-500 bg-emerald-50/70 shadow-sm ring-2 ring-emerald-500/20 cursor-pointer flex flex-col justify-between space-y-2"
+                            className="p-3 rounded-2xl border-2 border-emerald-600 bg-emerald-50/60 shadow-2xs flex items-center justify-between cursor-pointer"
                           >
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-1">
-                                <img src="/crypto/btc.svg" alt="BTC" className="w-5 h-5 object-contain" />
-                                <img src="/crypto/usdc.svg" alt="USDC" className="w-4 h-4 object-contain" />
-                                <img src="/crypto/eth.svg" alt="ETH" className="w-4 h-4 object-contain" />
+                            <div className="flex items-center gap-2.5">
+                              <div className="flex -space-x-1.5">
+                                <div className="w-5 h-5 rounded-full bg-amber-500 text-white font-black text-[9px] flex items-center justify-center border border-white">₿</div>
+                                <div className="w-5 h-5 rounded-full bg-blue-500 text-white font-black text-[9px] flex items-center justify-center border border-white">$</div>
+                                <div className="w-5 h-5 rounded-full bg-indigo-500 text-white font-black text-[9px] flex items-center justify-center border border-white">Ξ</div>
                               </div>
-                              <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-600 text-white">
-                                Active • Supported
-                              </span>
+                              <div>
+                                <div className="text-xs font-black text-slate-900 leading-tight">Instant Crypto</div>
+                                <div className="text-[10px] text-emerald-800 font-semibold font-mono">0% Fee • On-Chain</div>
+                              </div>
                             </div>
-                            <div>
-                              <h4 className="text-xs font-black text-slate-900">
-                                Bitcoin & Crypto
-                              </h4>
-                              <p className="text-[10px] text-slate-500 font-medium mt-0.5">
-                                BTC, USDC, USDT, ETH, SOL
-                              </p>
-                            </div>
+                            <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-600 text-white shrink-0">
+                              Active
+                            </span>
                           </div>
 
-                          {/* Option 2: Credit Card (DISABLED - COMING SOON) */}
-                          <div className="p-3.5 rounded-2xl border-2 border-slate-200 bg-slate-50/80 opacity-60 cursor-not-allowed flex flex-col justify-between space-y-2 relative">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-1 grayscale opacity-80">
-                                <img src="/payments/visa.svg" alt="Visa" className="h-3.5 object-contain" />
-                                <img src="/payments/mastercard.svg" alt="MasterCard" className="h-3.5 object-contain" />
+                          {/* Option 2: Credit Card (Coming Soon) */}
+                          <div className="p-3 rounded-2xl border border-slate-200 bg-slate-50/60 opacity-60 flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <CreditCard className="w-4 h-4 text-slate-400 shrink-0" />
+                              <div>
+                                <div className="text-xs font-bold text-slate-600 leading-tight">Credit Card</div>
+                                <div className="text-[10px] text-slate-400">Visa / Mastercard</div>
                               </div>
-                              <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-slate-200 text-slate-700 flex items-center gap-1">
-                                <Lock className="w-2.5 h-2.5" />
-                                <span>Coming Soon</span>
-                              </span>
                             </div>
-                            <div>
-                              <h4 className="text-xs font-black text-slate-700">
-                                Credit / Debit Card
-                              </h4>
-                              <p className="text-[10px] text-slate-400 font-medium mt-0.5">
-                                Visa, Mastercard, Amex
-                              </p>
-                            </div>
+                            <span className="text-[9px] font-mono uppercase px-1.5 py-0.5 rounded bg-slate-200 text-slate-600">
+                              Soon
+                            </span>
                           </div>
 
-                          {/* Option 3: PayPal / Apple Pay (DISABLED - COMING SOON) */}
-                          <div className="p-3.5 rounded-2xl border-2 border-slate-200 bg-slate-50/80 opacity-60 cursor-not-allowed flex flex-col justify-between space-y-2 relative">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-1 grayscale opacity-80">
-                                <img src="/payments/paypal.svg" alt="PayPal" className="h-3.5 object-contain" />
-                                <img src="/payments/applepay.svg" alt="Apple Pay" className="h-3.5 object-contain" />
+                          {/* Option 3: PayPal / Apple Pay (Coming Soon) */}
+                          <div className="p-3 rounded-2xl border border-slate-200 bg-slate-50/60 opacity-60 flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <Wallet className="w-4 h-4 text-slate-400 shrink-0" />
+                              <div>
+                                <div className="text-xs font-bold text-slate-600 leading-tight">Digital Wallets</div>
+                                <div className="text-[10px] text-slate-400">Apple / PayPal</div>
                               </div>
-                              <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-slate-200 text-slate-700 flex items-center gap-1">
-                                <Lock className="w-2.5 h-2.5" />
-                                <span>Coming Soon</span>
-                              </span>
                             </div>
-                            <div>
-                              <h4 className="text-xs font-black text-slate-700">
-                                PayPal & Apple Pay
-                              </h4>
-                              <p className="text-[10px] text-slate-400 font-medium mt-0.5">
-                                Digital Wallets
-                              </p>
-                            </div>
+                            <span className="text-[9px] font-mono uppercase px-1.5 py-0.5 rounded bg-slate-200 text-slate-600">
+                              Soon
+                            </span>
                           </div>
 
                         </div>
                       </div>
 
-                      {/* 2. Asset & Network Selection */}
-                      <div className="space-y-2">
-                        <label className="block text-xs font-extrabold uppercase tracking-wider text-slate-700">
+                      {/* 2. Asset Selection: 5-Col Grid Fits Perfectly Everywhere */}
+                      <div className="space-y-1.5">
+                        <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700">
                           2. Supported Currency / Asset
                         </label>
 
-                        <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+                        <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
                           {DEFAULT_CRYPTO_OPTIONS.map((crypto) => {
                             const isSelected = selectedCrypto.symbol === crypto.symbol;
                             return (
@@ -667,23 +997,23 @@ export default function DonateModal() {
                                 key={crypto.symbol}
                                 type="button"
                                 onClick={() => setSelectedCrypto(crypto)}
-                                className={`p-2.5 rounded-2xl border-2 flex flex-col items-center gap-1.5 transition-all text-center cursor-pointer ${
+                                className={`p-2 rounded-xl border-2 flex flex-col items-center justify-center gap-1 transition-all text-center cursor-pointer ${
                                   isSelected
-                                    ? 'border-emerald-500 bg-emerald-50/70 shadow-sm ring-2 ring-emerald-500/20'
-                                    : 'border-slate-200 bg-white hover:border-slate-300'
+                                    ? 'border-emerald-600 bg-emerald-50 text-emerald-950 ring-2 ring-emerald-500/20 shadow-xs'
+                                    : 'border-slate-200 bg-white hover:border-slate-300 text-slate-700'
                                 }`}
                               >
-                                <div className="w-7 h-7 relative flex items-center justify-center">
+                                <div className="w-6 h-6 relative flex items-center justify-center">
                                   <Image
                                     src={crypto.icon}
                                     alt={crypto.name}
-                                    width={26}
-                                    height={26}
+                                    width={22}
+                                    height={22}
                                     className="object-contain"
                                     style={{ width: 'auto', height: 'auto' }}
                                   />
                                 </div>
-                                <span className={`text-xs font-black font-mono ${isSelected ? 'text-emerald-950' : 'text-slate-800'}`}>
+                                <span className="text-xs font-black font-mono leading-none">
                                   {crypto.symbol}
                                 </span>
                               </button>
@@ -692,27 +1022,28 @@ export default function DonateModal() {
                         </div>
                       </div>
 
-                      {/* 3. Amount Selection & Conversion */}
-                      <div className="space-y-2.5">
+                      {/* 3. Donation Amount & Converter */}
+                      <div className="space-y-2">
                         <div className="flex items-center justify-between">
-                          <label className="block text-xs font-extrabold uppercase tracking-wider text-slate-700">
+                          <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700">
                             3. Donation Amount
                           </label>
-                          <span className="text-xs font-mono font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-lg border border-emerald-200">
+                          <span className="text-xs font-mono font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200">
                             ≈ {cryptoAmount} {selectedCrypto.symbol}
                           </span>
                         </div>
 
-                        <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                        {/* Presets: 6 buttons */}
+                        <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5">
                           {PRESET_USD_AMOUNTS.map((amt) => (
                             <button
                               key={amt}
                               type="button"
-                              onClick={() => handlePresetClick(amt)}
-                              className={`py-2 px-2 rounded-xl border text-xs font-black font-mono transition-all cursor-pointer ${
-                                usdAmount === amt
-                                  ? 'bg-emerald-600 border-emerald-600 text-white shadow-xs'
-                                  : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+                              onClick={() => handlePresetSelect(amt)}
+                              className={`py-2 text-xs font-black font-mono rounded-xl transition-all cursor-pointer ${
+                                usdAmount === amt && customAmount === String(amt)
+                                  ? 'bg-emerald-600 text-white shadow-xs'
+                                  : 'bg-slate-100 hover:bg-slate-200 text-slate-800'
                               }`}
                             >
                               ${amt}
@@ -720,8 +1051,9 @@ export default function DonateModal() {
                           ))}
                         </div>
 
-                        <div className="relative pt-1">
-                          <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs pt-1">
+                        {/* Custom Input */}
+                        <div className="relative">
+                          <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-black text-slate-400 font-mono">
                             $ USD
                           </div>
                           <input
@@ -729,43 +1061,45 @@ export default function DonateModal() {
                             min="1"
                             value={customAmount}
                             onChange={(e) => handleCustomAmountChange(e.target.value)}
-                            placeholder="Custom amount in USD"
-                            className="w-full pl-16 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold font-mono text-slate-900 focus:bg-white focus:outline-none focus:border-emerald-500"
+                            placeholder="Enter custom amount in USD"
+                            className="w-full pl-18 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold font-mono text-slate-900 focus:bg-white focus:outline-none focus:border-emerald-500"
                           />
                         </div>
                       </div>
 
-                      {/* Anonymous Checkbox */}
-                      <div className="pt-1 flex items-center justify-between bg-slate-50 p-3 rounded-xl border border-slate-200">
+                      {/* Public Recognition Checkbox */}
+                      <div className="flex items-center justify-between bg-slate-50 px-3.5 py-2 rounded-xl border border-slate-200">
                         <span className="text-xs font-bold text-slate-700">
                           Public Recognition
                         </span>
-                        <label className="flex items-center gap-1.5 text-xs text-slate-600 cursor-pointer font-medium">
+                        <label className="flex items-center gap-2 text-xs text-slate-600 cursor-pointer font-medium">
                           <input
                             type="checkbox"
                             checked={isAnonymous}
                             onChange={(e) => setIsAnonymous(e.target.checked)}
-                            className="rounded text-emerald-600 focus:ring-emerald-500 w-3.5 h-3.5"
+                            className="rounded text-emerald-600 focus:ring-emerald-500 w-3.5 h-3.5 cursor-pointer"
                           />
                           <span>Hide name on leaderboard</span>
                         </label>
                       </div>
 
-                      {/* Step 2 Action Button */}
+                      {/* Step 2 Action Buttons */}
                       <div className="pt-2 flex items-center justify-between gap-3">
-                        <button
-                          type="button"
-                          onClick={() => goToStep(1)}
-                          className="px-5 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer"
-                        >
-                          <ArrowLeft className="w-4 h-4" />
-                          <span>Back</span>
-                        </button>
+                        {!currentUser && (
+                          <button
+                            type="button"
+                            onClick={() => goToStep(1)}
+                            className="px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer"
+                          >
+                            <ArrowLeft className="w-4 h-4" />
+                            <span>Back</span>
+                          </button>
+                        )}
 
                         <button
                           type="button"
                           onClick={handleProceedToQR}
-                          className="flex-1 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs sm:text-sm rounded-xl transition-all shadow-md shadow-emerald-600/25 flex items-center justify-center gap-2 cursor-pointer hover:scale-[1.01]"
+                          className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white font-black text-xs sm:text-sm rounded-xl transition-all shadow-md shadow-emerald-600/25 flex items-center justify-center gap-2 cursor-pointer"
                         >
                           <span>Proceed to QR Code & Address</span>
                           <ArrowRight className="w-4 h-4" />
@@ -786,47 +1120,47 @@ export default function DonateModal() {
                       initial="enter"
                       animate="center"
                       exit="exit"
-                      className="space-y-6"
+                      className="space-y-4 max-w-xl mx-auto"
                     >
                       {/* Top Payment Target Notice */}
-                      <div className="p-4 bg-emerald-50/80 border border-emerald-200 rounded-2xl flex items-center justify-between">
+                      <div className="p-3 bg-emerald-50/80 border border-emerald-200 rounded-xl flex items-center justify-between">
                         <div>
-                          <span className="text-[10px] font-black uppercase tracking-wider text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded border border-emerald-300">
+                          <span className="text-[9px] font-black uppercase tracking-wider text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded border border-emerald-300">
                             Transfer Target
                           </span>
-                          <h4 className="text-sm font-black text-slate-900 mt-1">
+                          <h4 className="text-xs sm:text-sm font-black text-slate-900 mt-1">
                             Send exactly <span className="text-emerald-700 font-mono">{cryptoAmount} {selectedCrypto.symbol}</span> (${usdAmount} USD)
                           </h4>
                         </div>
-                        <div className="w-8 h-8 relative flex items-center justify-center shrink-0">
-                          <Image src={selectedCrypto.icon} alt={selectedCrypto.name} width={28} height={28} className="object-contain" />
+                        <div className="w-7 h-7 relative flex items-center justify-center shrink-0">
+                          <Image src={selectedCrypto.icon} alt={selectedCrypto.name} width={24} height={24} className="object-contain" />
                         </div>
                       </div>
 
                       {/* Main QR Code & Address Box */}
-                      <div className="bg-slate-50 rounded-3xl p-6 border-2 border-slate-200 space-y-5 text-center sm:text-left">
-                        <div className="flex flex-col sm:flex-row items-center gap-6">
+                      <div className="bg-slate-50 rounded-2xl p-4 sm:p-5 border border-slate-200 space-y-4 text-center sm:text-left">
+                        <div className="flex flex-col sm:flex-row items-center gap-5">
                           
                           {/* Centered QR Code with Logo */}
-                          <div className="shrink-0 bg-white p-3 rounded-2xl border border-slate-200 shadow-xs">
+                          <div className="shrink-0 bg-white p-2.5 rounded-2xl border border-slate-200 shadow-xs">
                             <QRCodeWithLogo
                               value={qrPaymentUri}
-                              size={180}
+                              size={160}
                               logoSrc="/logo.png"
-                              logoSize={42}
+                              logoSize={36}
                             />
-                            <p className="text-[10px] text-center font-extrabold text-slate-400 mt-2 uppercase tracking-wider">
+                            <p className="text-[9px] text-center font-extrabold text-slate-400 mt-1.5 uppercase tracking-wider">
                               Scan with Wallet
                             </p>
                           </div>
 
                           {/* Instructions & Deposit Address */}
-                          <div className="flex-1 space-y-3.5 min-w-0">
+                          <div className="flex-1 space-y-3 min-w-0 w-full">
                             <div>
                               <span className="text-xs font-bold text-slate-500 block">
                                 Network: <strong className="text-slate-800">{selectedCrypto.network}</strong>
                               </span>
-                              <p className="text-xs text-slate-600 leading-relaxed mt-1">
+                              <p className="text-[11px] text-slate-600 leading-relaxed mt-1">
                                 Open MetaMask, Phantom, Coinbase, or Trust Wallet and scan the QR code or send funds to the address below.
                               </p>
                             </div>
@@ -836,23 +1170,23 @@ export default function DonateModal() {
                               <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
                                 Official Deposit Address:
                               </span>
-                              <div className="flex items-center gap-2 bg-white p-2.5 rounded-xl border border-slate-200 shadow-2xs">
+                              <div className="flex items-center gap-2 bg-white p-2 rounded-xl border border-slate-200 shadow-2xs">
                                 <code className="text-xs font-mono font-bold text-slate-900 truncate select-all flex-1 text-left">
                                   {selectedCrypto.address}
                                 </code>
                                 <button
                                   type="button"
                                   onClick={handleCopyAddress}
-                                  className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold text-xs rounded-lg transition-colors flex items-center gap-1 shrink-0 shadow-xs cursor-pointer"
+                                  className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold text-xs rounded-lg transition-colors flex items-center gap-1 shrink-0 shadow-xs cursor-pointer"
                                 >
                                   {copied ? (
                                     <>
-                                      <Check className="w-3.5 h-3.5 stroke-[3]" />
+                                      <Check className="w-3 h-3 stroke-[3]" />
                                       <span>Copied!</span>
                                     </>
                                   ) : (
                                     <>
-                                      <Copy className="w-3.5 h-3.5" />
+                                      <Copy className="w-3 h-3" />
                                       <span>Copy</span>
                                     </>
                                   )}
@@ -864,39 +1198,122 @@ export default function DonateModal() {
                         </div>
                       </div>
 
+                      {/* Proof of Payment Screenshot Dropzone */}
+                      <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                            <UploadCloud className="w-3.5 h-3.5 text-emerald-600" />
+                            Proof of Payment Screenshot (Optional)
+                          </span>
+                          <span className="text-[10px] text-slate-400 font-medium">
+                            Auto-shrunk WebP (≤1280px)
+                          </span>
+                        </div>
+
+                        {!proofPreview ? (
+                          <label className="block border-2 border-dashed border-slate-300 hover:border-emerald-500 rounded-xl p-4 text-center cursor-pointer transition-colors bg-white hover:bg-emerald-50/20 group">
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={handleProofSelected}
+                              disabled={isShrinking || submitting}
+                            />
+                            {isShrinking ? (
+                              <div className="flex flex-col items-center justify-center py-2 space-y-2">
+                                <Loader2 className="w-6 h-6 text-emerald-600 animate-spin" />
+                                <p className="text-xs font-bold text-slate-700">Compressing screenshot to WebP...</p>
+                              </div>
+                            ) : (
+                              <div className="flex flex-col items-center justify-center py-2 space-y-1.5">
+                                <div className="w-9 h-9 rounded-full bg-slate-100 group-hover:bg-emerald-100 text-slate-500 group-hover:text-emerald-700 flex items-center justify-center transition-colors">
+                                  <UploadCloud className="w-4 h-4" />
+                                </div>
+                                <p className="text-xs font-bold text-slate-800">
+                                  Attach transaction receipt screenshot
+                                </p>
+                                <p className="text-[10px] text-slate-400">
+                                  Drag & drop or tap to select • PNG, JPG, WebP
+                                </p>
+                              </div>
+                            )}
+                          </label>
+                        ) : (
+                          <div className="bg-white p-3 rounded-xl border border-slate-200 flex items-center justify-between gap-3">
+                            <div className="flex items-center gap-3 min-w-0">
+                              <div className="w-12 h-12 rounded-lg border border-slate-200 overflow-hidden shrink-0 relative bg-slate-100">
+                                <img
+                                  src={proofPreview}
+                                  alt="Payment Proof Preview"
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-xs font-bold text-slate-900 truncate">
+                                    {proofFile?.name || 'payment_proof.webp'}
+                                  </span>
+                                  <span className="text-[9px] font-bold bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded border border-emerald-200">
+                                    Compressed
+                                  </span>
+                                </div>
+                                <p className="text-[10px] text-slate-400 font-mono mt-0.5">
+                                  {proofOriginalSize && proofShrunkSize ? (
+                                    <>
+                                      {Math.round(proofOriginalSize / 1024)}KB → <strong className="text-emerald-700">{Math.round(proofShrunkSize / 1024)}KB</strong> ({Math.round((1 - proofShrunkSize / proofOriginalSize) * 100)}% saved)
+                                    </>
+                                  ) : (
+                                    'Ready for verification'
+                                  )}
+                                </p>
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={removeProof}
+                              disabled={submitting}
+                              className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer shrink-0"
+                              title="Remove screenshot"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+
                       {/* Step 3 Action Buttons */}
-                      <div className="space-y-2.5 pt-1">
+                      <div className="space-y-2 pt-1">
                         <div className="flex items-center justify-between gap-3">
                           <button
                             type="button"
                             onClick={() => goToStep(2)}
-                            className="px-5 py-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-2xl transition-colors flex items-center gap-1.5 cursor-pointer"
+                            className="px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer shrink-0"
                           >
                             <ArrowLeft className="w-4 h-4" />
-                            <span>Change Amount</span>
+                            <span>Amount</span>
                           </button>
 
                           <button
                             type="button"
                             onClick={handleConfirmSent}
                             disabled={submitting}
-                            className="flex-1 py-4 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white font-black text-xs sm:text-sm rounded-2xl transition-all shadow-lg shadow-emerald-600/25 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                            className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white font-black text-xs sm:text-sm rounded-xl transition-all shadow-md shadow-emerald-600/25 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                           >
                             {submitting ? (
                               <>
                                 <Loader2 className="w-4 h-4 animate-spin" />
-                                <span>Verifying & Recording Gift...</span>
+                                <span>Recording Gift...</span>
                               </>
                             ) : (
                               <>
-                                <CheckCircle2 className="w-5 h-5" />
+                                <CheckCircle2 className="w-4 h-4" />
                                 <span>I Have Sent The Donation 🚀</span>
                               </>
                             )}
                           </button>
                         </div>
 
-                        <div className="flex items-center justify-center gap-2 text-[11px] text-slate-400 font-medium text-center">
+                        <div className="flex items-center justify-center gap-2 text-[10px] text-slate-400 font-medium text-center">
                           <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                           <span>100% of proceeds disburse directly to verified project milestones.</span>
                         </div>
@@ -907,26 +1324,25 @@ export default function DonateModal() {
 
                 </AnimatePresence>
               </div>
-
-            </div>
+            </>
           ) : (
             /* ========================================================= */
             /* STEP 4: SUCCESS CELEBRATION & RECEIPT CONFIRMATION */
             /* ========================================================= */
-            <div className="p-8 sm:p-12 text-center space-y-6">
-              <div className="w-20 h-20 bg-emerald-50 text-emerald-600 rounded-3xl flex items-center justify-center mx-auto border-2 border-emerald-200 shadow-xl shadow-emerald-600/10">
-                <CheckCircle2 className="w-10 h-10" />
+            <div className="p-6 sm:p-10 text-center space-y-5 overflow-y-auto">
+              <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-3xl flex items-center justify-center mx-auto border-2 border-emerald-200 shadow-xl shadow-emerald-600/10">
+                <CheckCircle2 className="w-8 h-8" />
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <span className="inline-block text-xs font-bold text-emerald-800 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200 uppercase tracking-widest">
                   Gift Registered Successfully
                 </span>
-                <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+                <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
                   Thank You for Changing Lives!
                 </h2>
-                <p className="text-sm text-slate-600 max-w-md mx-auto leading-relaxed">
-                  Your generous contribution to <strong>{activeCause.title}</strong> has been registered. Our nodes will index the incoming transaction and disburse funds to verified milestones.
+                <p className="text-xs sm:text-sm text-slate-600 max-w-md mx-auto leading-relaxed">
+                  Your contribution to <strong>{activeCause.title}</strong> has been registered. Our nodes will index the transaction and disburse funds to verified milestones.
                 </p>
               </div>
 
@@ -958,13 +1374,25 @@ export default function DonateModal() {
                     </div>
                   </div>
                 )}
+                {(uploadedProofUrl || proofPreview) && (
+                  <div className="pt-2 border-t border-slate-200/80">
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">Payment Proof Status:</span>
+                    <div className="flex items-center gap-2 bg-white px-2.5 py-2 rounded-xl border border-slate-200">
+                      <FileCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <span className="text-xs font-bold text-slate-800 flex-1 truncate">Screenshot Submitted</span>
+                      <span className="text-[9px] font-bold bg-amber-50 text-amber-800 border border-amber-200 px-2 py-0.5 rounded-full">
+                        Escrow Node Validating
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="flex flex-col sm:flex-row gap-3 pt-2 max-w-md mx-auto">
                 <Link
                   href="/donors"
                   onClick={closeDonateModal}
-                  className="flex-1 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition-all shadow-md shadow-emerald-600/20 flex items-center justify-center gap-1.5"
+                  className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition-all shadow-md shadow-emerald-600/20 flex items-center justify-center gap-1.5"
                 >
                   <ShieldCheck className="w-4 h-4" />
                   <span>View Donor Leaderboard</span>
@@ -972,7 +1400,7 @@ export default function DonateModal() {
                 <button
                   type="button"
                   onClick={closeDonateModal}
-                  className="flex-1 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-colors border border-slate-200"
+                  className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-colors border border-slate-200 cursor-pointer"
                 >
                   Done
                 </button>

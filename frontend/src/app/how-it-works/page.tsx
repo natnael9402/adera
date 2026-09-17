@@ -70,7 +70,7 @@ export default function HowItWorks() {
             </div>
 
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight leading-tight">
-              How Adera <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-600">Works</span>
+              How Adera <span className="text-emerald-700">Works</span>
             </h1>
 
             <p className="text-base sm:text-lg text-slate-600 font-normal leading-relaxed">
@@ -192,7 +192,7 @@ export default function HowItWorks() {
           </div>
 
           {/* CTA Banner */}
-          <div className="bg-gradient-to-r from-emerald-600 to-teal-700 text-white rounded-3xl p-8 sm:p-12 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-6">
+          <div className="bg-slate-950 text-white rounded-3xl p-8 sm:p-12 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-6">
             <div className="space-y-2 text-center sm:text-left">
               <h3 className="text-2xl sm:text-3xl font-black">Ready to Make an Impact?</h3>
               <p className="text-sm text-emerald-100 max-w-lg">

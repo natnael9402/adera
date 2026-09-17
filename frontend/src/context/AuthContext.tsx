@@ -29,11 +29,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const t = localStorage.getItem('token');
+    const u = localStorage.getItem('user');
+    if (u) {
+      try {
+        setUser(JSON.parse(u));
+      } catch (e) {}
+    }
     if (t) {
       setToken(t);
       api.auth.me()
-        .then((u) => setUser(u))
-        .catch(() => localStorage.removeItem('token'))
+        .then((freshUser) => {
+          setUser(freshUser);
+          localStorage.setItem('user', JSON.stringify(freshUser));
+        })
+        .catch(() => {
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          setUser(null);
+          setToken(null);
+        })
         .finally(() => setLoading(false));
     } else {
       setLoading(false);
@@ -43,8 +57,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string) => {
     const res = await api.auth.login({ email, password });
     localStorage.setItem('token', res.token);
+    if (res.user) {
+      localStorage.setItem('user', JSON.stringify(res.user));
+      setUser(res.user);
+    }
     setToken(res.token);
-    setUser(res.user);
   };
 
   const signup = async (email: string, name: string, password: string) => {
@@ -53,12 +70,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const setAuthSession = (newToken: string, newUser: User) => {
     localStorage.setItem('token', newToken);
+    localStorage.setItem('user', JSON.stringify(newUser));
     setToken(newToken);
     setUser(newUser);
   };
 
   const logout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('user');
     setToken(null);
     setUser(null);
   };

@@ -69,7 +69,7 @@ export default function TeamPage() {
             </div>
 
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight leading-tight">
-              Meet the <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-600">Adera Team</span>
+              Meet the <span className="text-emerald-700">Adera Team</span>
             </h1>
 
             <p className="text-base sm:text-lg text-slate-600 font-normal leading-relaxed">
@@ -113,10 +113,10 @@ export default function TeamPage() {
               >
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${member.color} text-white font-black text-2xl flex items-center justify-center shadow-md group-hover:scale-105 transition-transform`}>
+                    <div className="w-16 h-16 rounded-2xl bg-slate-950 text-white font-black text-2xl flex items-center justify-center border border-slate-800 shadow-xs">
                       {member.avatar}
                     </div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-700 bg-slate-100 px-2.5 py-1 rounded-md border border-slate-200">
                       Core Lead
                     </span>
                   </div>

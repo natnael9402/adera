@@ -467,7 +467,7 @@ export default function ResellerDashboardPage() {
           <div className="p-4 space-y-6">
             
             {/* Shop Identifier Card */}
-            <div className="p-3.5 bg-gradient-to-br from-slate-900 to-slate-950 text-white rounded-2xl shadow-sm space-y-3">
+            <div className="p-3.5 bg-slate-950 text-white rounded-2xl border border-slate-800 shadow-xs space-y-3">
               <div className="flex items-center gap-3">
                 <StoreAvatar
                   name={shop?.name}
@@ -674,15 +674,15 @@ export default function ResellerDashboardPage() {
               </div>
 
               {/* 72h Crypto Escrow Banner */}
-              <div className="p-5 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-950 text-white rounded-3xl shadow-sm border border-slate-700 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="p-5 bg-slate-950 text-white rounded-3xl border border-slate-800 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div className="flex items-center gap-3.5">
-                  <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center justify-center shrink-0">
+                  <div className="w-10 h-10 rounded-2xl bg-slate-900 text-emerald-400 border border-slate-800 flex items-center justify-center shrink-0">
                     <ShieldCheck className="w-5 h-5" />
                   </div>
                   <div>
                     <h3 className="text-sm font-black text-white flex items-center gap-2">
                       <span>72-Hour Smart-Contract Escrow Protection</span>
-                      <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded border border-emerald-500/30 font-mono">
+                      <span className="text-[10px] bg-slate-900 text-emerald-400 px-2 py-0.5 rounded border border-slate-800 font-mono">
                         Zero Chargebacks
                       </span>
                     </h3>
@@ -1174,7 +1174,7 @@ export default function ResellerDashboardPage() {
           {/* ========================================================================= */}
           {activeTab === 'wallet' && (
             <div className="space-y-6 animate-fade-in">
-              <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-950 text-white p-6 sm:p-8 rounded-3xl border border-slate-700 shadow-md space-y-6">
+              <div className="bg-slate-950 text-white p-6 sm:p-8 rounded-3xl border border-slate-800 shadow-sm space-y-6">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
                     <span className="text-xs font-bold uppercase tracking-wider text-emerald-400 block">

@@ -14,7 +14,7 @@ import {
   Wand2, Edit3, BookOpen, Eye
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import Navbar from '@/components/Navbar';
+import AdminShell from '@/components/AdminShell';
 import AiStoryWriterModal from '@/components/AiStoryWriterModal';
 
 interface Post {
@@ -188,8 +188,8 @@ export default function PostsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans">
-      <Navbar />
+    <AdminShell>
+      
 
       {/* Floating Success Toast */}
       {toastMessage && (
@@ -199,33 +199,33 @@ export default function PostsPage() {
         </div>
       )}
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 flex-1 w-full space-y-6">
+      <div className="max-w-7xl mx-auto space-y-6">
         
         {/* Page Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight flex items-center gap-3">
-              <FileText className="w-8 h-8 text-primary-600" />
-              Manage Causes & Content
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 tracking-tight flex items-center gap-2.5">
+              <FileText className="w-6 h-6 sm:w-8 sm:h-8 text-primary-600 shrink-0" />
+              <span>Causes & Campaigns</span>
             </h1>
-            <p className="text-xs sm:text-sm text-slate-500 mt-1">
+            <p className="text-xs sm:text-sm text-slate-500 mt-0.5 sm:mt-1">
               Adjust live campaign goals, manipulate gathered funds with real-time sliders, and synthesize structured impact narratives.
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <Link
               href="/posts/new"
-              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-primary-600 hover:bg-primary-700 text-white font-bold rounded-xl transition-all shadow-md shadow-primary-600/20 text-xs cursor-pointer"
+              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-primary-600 hover:bg-primary-700 text-white font-bold rounded-xl transition-all shadow-md shadow-primary-600/20 text-xs cursor-pointer active:scale-95 shrink-0"
             >
               <Plus className="w-4 h-4" />
-              <span>Create New Cause</span>
+              <span>New Cause</span>
             </Link>
           </div>
         </div>
 
         {/* Filters and Search Bar */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="bg-white rounded-2xl border border-slate-200 p-3 sm:p-4 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4">
           
           {/* Search */}
           <div className="relative w-full sm:max-w-md">
@@ -268,9 +268,9 @@ export default function PostsPage() {
         </div>
 
         {/* Data Table Card */}
-        <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+        <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200 overflow-hidden shadow-sm">
+          <div className="overflow-x-auto custom-scrollbar">
+            <table className="w-full min-w-[760px] text-left border-collapse">
               <thead>
                 <tr className="border-b border-slate-200 bg-slate-50">
                   <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600">Cause Details</th>
@@ -364,7 +364,7 @@ export default function PostsPage() {
                           
                           <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden border border-slate-200/80">
                             <div 
-                              className="h-full bg-gradient-to-r from-emerald-600 to-teal-500 rounded-full transition-all duration-300" 
+                              className="h-full bg-emerald-600 rounded-full transition-all duration-300" 
                               style={{ width: `${Math.min(pct, 100)}%` }}
                             />
                           </div>
@@ -500,7 +500,7 @@ export default function PostsPage() {
                 initial={{ opacity: 0, scale: 0.95, y: 15 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 15 }}
-                className="bg-white rounded-3xl p-6 sm:p-8 max-w-2xl w-full border border-slate-200 shadow-2xl space-y-6 my-auto max-h-[92vh] flex flex-col"
+                className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-7 max-w-2xl w-full border border-slate-200 shadow-2xl space-y-4 sm:space-y-6 my-auto max-h-[92vh] flex flex-col"
               >
                 
                 {/* Modal Header */}
@@ -563,7 +563,7 @@ export default function PostsPage() {
                 {activeModalTab === 'funds' && (
                   <div className="overflow-y-auto space-y-5 pr-1 flex-1">
                     {/* Live Real-Time Public Preview Card */}
-                    <div className="p-5 bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-2xl shadow-inner space-y-3">
+                    <div className="p-5 bg-slate-950 text-white rounded-2xl border border-slate-800 shadow-xs space-y-3">
                       <div className="flex items-center justify-between text-xs">
                         <span className="text-slate-400 uppercase font-bold text-[10px] tracking-wider">
                           Public Portal Live Preview
@@ -586,9 +586,9 @@ export default function PostsPage() {
                       </div>
 
                       {/* Progress Bar Preview */}
-                      <div className="h-3 bg-slate-700 rounded-full overflow-hidden p-0.5 border border-slate-600">
+                      <div className="h-3 bg-slate-900 rounded-full overflow-hidden p-0.5 border border-slate-800">
                         <div 
-                          className="h-full bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-400 rounded-full transition-all duration-150"
+                          className="h-full bg-emerald-500 rounded-full transition-all duration-150"
                           style={{ width: `${Math.min(currentPercent, 100)}%` }}
                         />
                       </div>
@@ -817,11 +817,11 @@ export default function PostsPage() {
                 initial={{ opacity: 0, scale: 0.95, y: 10 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                className="bg-white rounded-3xl max-w-2xl w-full border border-slate-200 shadow-2xl overflow-hidden my-8"
+                className="bg-white rounded-2xl sm:rounded-3xl max-w-2xl w-full border border-slate-200 shadow-2xl overflow-hidden my-4 sm:my-8"
               >
                 
                 {/* Modal Header */}
-                <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/80">
+                <div className="p-4 sm:p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/80">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-2xl bg-emerald-100 border border-emerald-200 text-emerald-800 flex items-center justify-center text-lg shadow-2xs">
                       📸
@@ -988,7 +988,7 @@ export default function PostsPage() {
           initialGoal={editGoal || selectedPost?.goal || 25000}
         />
 
-      </main>
-    </div>
+      </div>
+    </AdminShell>
   );
 }

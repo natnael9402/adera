@@ -45,7 +45,7 @@ export default function PressPage() {
             </div>
 
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight leading-tight">
-              Adera in the <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-600">News</span>
+              Adera in the <span className="text-emerald-700">News</span>
             </h1>
 
             <p className="text-base sm:text-lg text-slate-600 font-normal leading-relaxed">

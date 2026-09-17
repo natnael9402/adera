@@ -42,10 +42,10 @@ export default async function FeaturedProducts() {
     <section className="py-20 lg:py-24 bg-white border-b border-slate-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
-        {/* Reseller Tiers Bar */}
-        <div className="mb-10 p-3.5 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 rounded-2xl text-white flex flex-col md:flex-row items-center justify-between gap-4 shadow-sm">
-          <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 text-xs font-black">
-            <span className="text-[11px] uppercase tracking-wider text-emerald-100 bg-black/20 px-2.5 py-1 rounded-md">
+        {/* Reseller Tiers Bar - Luxury Obsidian Minimalist */}
+        <div className="mb-10 p-3.5 bg-slate-950 rounded-xl text-white flex flex-col md:flex-row items-center justify-between gap-4 border border-slate-800 shadow-xs">
+          <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 text-xs font-semibold">
+            <span className="text-[10px] uppercase tracking-wider text-slate-400 bg-slate-900 border border-slate-800 px-2.5 py-0.5 rounded">
               Reseller Program
             </span>
             <div className="flex items-center gap-1.5">
@@ -70,24 +70,24 @@ export default async function FeaturedProducts() {
             href={`${process.env.NEXT_PUBLIC_STORE_URL || "https://shop.aderafoundation.com"}/reseller/register`}
             target="_blank"
             rel="noreferrer"
-            className="px-4 py-1.5 bg-white text-emerald-700 hover:bg-emerald-50 font-black text-xs uppercase tracking-wider rounded-full transition-colors shrink-0 shadow-xs"
+            className="px-3.5 py-1.5 bg-white text-slate-900 hover:bg-slate-100 font-bold text-xs uppercase tracking-wider rounded-lg transition-colors shrink-0"
           >
-            Register Your Shop
+            Become a Reseller
           </a>
         </div>
 
         {/* Section Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6 pb-8 border-b border-slate-100">
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-6 pb-8 border-b border-slate-100">
           <div className="max-w-2xl">
-            <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-md bg-primary-50 text-primary-700 text-xs font-bold uppercase tracking-wider mb-3 border border-primary-200">
-              <ShoppingBag className="w-3.5 h-3.5 text-primary-600" />
-              Adera Official Store
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-bold uppercase tracking-wider mb-3 border border-slate-200">
+              <ShoppingBag className="w-3.5 h-3.5 text-slate-700" />
+              Adera Store
             </span>
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-              Shop With <span className="text-primary-600">Purpose</span>
+            <h2 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
+              Shop to Support Causes
             </h2>
-            <p className="mt-3 text-base text-slate-600 font-normal leading-relaxed">
-              100% of profit proceeds directly fund on-chain verified causes. Support global initiatives with every purchase.
+            <p className="mt-2 text-sm sm:text-base text-slate-600 font-normal leading-relaxed">
+              100% of profits from every purchase directly fund verified community projects worldwide.
             </p>
           </div>
           
@@ -95,7 +95,7 @@ export default async function FeaturedProducts() {
             href={process.env.NEXT_PUBLIC_STORE_URL || "https://shop.aderafoundation.com"}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-700 text-white px-6 py-3.5 rounded-xl font-bold text-sm transition-all shadow-md shadow-primary-600/20 shrink-0 hover-lift"
+            className="inline-flex items-center justify-center gap-2 bg-slate-950 hover:bg-slate-800 text-white px-5 py-3 rounded-xl font-bold text-xs sm:text-sm transition-all shadow-xs shrink-0"
           >
             Visit Full Store
             <ArrowRight className="w-4 h-4" />
