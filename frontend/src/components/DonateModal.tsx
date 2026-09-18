@@ -306,6 +306,15 @@ export default function DonateModal() {
     }
   }, [isOpen, authUser, authToken]);
 
+  const filteredCauses = useMemo(() => {
+    if (!causeSearch.trim()) return allCauses;
+    const q = causeSearch.toLowerCase();
+    return allCauses.filter(c => 
+      c.title.toLowerCase().includes(q) || 
+      (c.category && c.category.toLowerCase().includes(q))
+    );
+  }, [allCauses, causeSearch]);
+
   if (!isOpen || !activeCause) return null;
 
   // Calculate live crypto amount
@@ -457,15 +466,6 @@ export default function DonateModal() {
   const raised = activeCause.raised || goal * 0.48;
   const percentFunded = Math.min(Math.round((raised / goal) * 100), 100);
   const coverImage = activeCause.image || '/causes/cause_water_1786200462466.jpg';
-
-  const filteredCauses = useMemo(() => {
-    if (!causeSearch.trim()) return allCauses;
-    const q = causeSearch.toLowerCase();
-    return allCauses.filter(c => 
-      c.title.toLowerCase().includes(q) || 
-      (c.category && c.category.toLowerCase().includes(q))
-    );
-  }, [allCauses, causeSearch]);
 
   const stepVariants: any = {
     enter: (dir: number) => ({
