@@ -161,7 +161,7 @@ const FALLBACK_CAUSES: CauseDonationTarget[] = [
 
 export default function DonateModal() {
   const { isOpen, activeCause, closeDonateModal, setActiveCause } = useDonate();
-  const { user: authUser, token: authToken, logout: authLogout } = useAuth();
+  const { user: authUser, token: authToken, logout: authLogout, setAuthSession } = useAuth();
 
   // Causes List & Dropdown State
   const [allCauses, setAllCauses] = useState<CauseDonationTarget[]>(FALLBACK_CAUSES);
@@ -192,6 +192,10 @@ export default function DonateModal() {
   const [showPassword, setShowPassword] = useState(false);
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [verificationCode, setVerificationCode] = useState('');
+  const [verifyLoading, setVerifyLoading] = useState(false);
+  const [resendStatus, setResendStatus] = useState<string | null>(null);
 
   // Payment Proof State (Canvas-shrunk WebP)
   const [proofFile, setProofFile] = useState<File | null>(null);
@@ -356,8 +360,8 @@ export default function DonateModal() {
     }
   };
 
-  // Instant In-Modal Authentication & Account Creation (Step 1)
-  const handleQuickAuth = async (e: React.FormEvent) => {
+  // Standard In-Modal Authentication (Step 1)
+  const handleAuthSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthError(null);
 
@@ -372,32 +376,91 @@ export default function DonateModal() {
 
     setAuthLoading(true);
     try {
-      let res;
       if (authMode === 'login') {
-        res = await api.auth.login({
+        const res = await api.auth.login({
           email: authEmail.trim(),
           password: authPassword,
         });
+
+        if (res.token && res.user) {
+          localStorage.setItem('token', res.token);
+          localStorage.setItem('user', JSON.stringify(res.user));
+          if (setAuthSession) setAuthSession(res.token, res.user);
+          setCurrentUser(res.user);
+          setDonorName(res.user.name || '');
+          setIsAnonymous(false);
+          goToStep(2);
+        }
       } else {
-        res = await api.auth.quickDonorAuth({
+        const res = await api.auth.signup({
           email: authEmail.trim(),
           name: authName.trim() || authEmail.split('@')[0],
           password: authPassword,
         });
-      }
 
-      if (res.token && res.user) {
+        if (res?.token && res?.user) {
+          localStorage.setItem('token', res.token);
+          localStorage.setItem('user', JSON.stringify(res.user));
+          if (setAuthSession) setAuthSession(res.token, res.user);
+          setCurrentUser(res.user);
+          setDonorName(res.user.name || '');
+          setIsAnonymous(false);
+          goToStep(2);
+        } else {
+          setIsVerifying(true);
+        }
+      }
+    } catch (err: any) {
+      const msg = err.message || 'Authentication failed. Please check your credentials.';
+      if (msg.toLowerCase().includes('verify your email') || msg.toLowerCase().includes('6-digit code')) {
+        setIsVerifying(true);
+      } else {
+        setAuthError(msg);
+      }
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const handleVerifyCodeSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!verificationCode || verificationCode.trim().length < 6) {
+      setAuthError('Please enter the complete 6-digit verification code.');
+      return;
+    }
+
+    setVerifyLoading(true);
+    setAuthError(null);
+    try {
+      const res = await api.auth.verifyCode({
+        email: authEmail.trim(),
+        code: verificationCode.trim(),
+      });
+      if (res?.token && res?.user) {
         localStorage.setItem('token', res.token);
         localStorage.setItem('user', JSON.stringify(res.user));
+        if (setAuthSession) setAuthSession(res.token, res.user);
         setCurrentUser(res.user);
         setDonorName(res.user.name || '');
         setIsAnonymous(false);
+        setIsVerifying(false);
         goToStep(2);
       }
     } catch (err: any) {
-      setAuthError(err.message || 'Authentication failed. Please check your credentials.');
+      setAuthError(err.message || 'Invalid or expired verification code.');
     } finally {
-      setAuthLoading(false);
+      setVerifyLoading(false);
+    }
+  };
+
+  const handleResendCode = async () => {
+    setResendStatus('Sending fresh code...');
+    try {
+      const res = await api.auth.resendVerification(authEmail.trim());
+      setResendStatus(res?.message || 'A new verification code has been sent to your email.');
+      setTimeout(() => setResendStatus(null), 4000);
+    } catch (err: any) {
+      setResendStatus(err.message || 'Failed to resend code');
     }
   };
 
@@ -797,79 +860,147 @@ export default function DonateModal() {
                         </div>
                       )}
 
-                      <form onSubmit={handleQuickAuth} className="space-y-3">
-                        {authMode === 'register' && (
+                      {isVerifying ? (
+                        <form onSubmit={handleVerifyCodeSubmit} className="space-y-4 pt-1">
+                          <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-xl text-xs space-y-1">
+                            <span className="font-bold text-emerald-950 block">6-Digit Verification Code Sent</span>
+                            <p className="text-emerald-800 text-[11px]">
+                              Please enter the 6-digit confirmation code dispatched to <strong>{authEmail}</strong>.
+                            </p>
+                          </div>
+
                           <div>
                             <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">
-                              Your Name
+                              Enter 6-Digit Code *
                             </label>
                             <input
+                              required
                               type="text"
-                              value={authName}
-                              onChange={(e) => setAuthName(e.target.value)}
-                              placeholder="e.g. Alex Johnson"
-                              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:outline-none focus:border-emerald-600 transition-colors"
+                              maxLength={6}
+                              value={verificationCode}
+                              onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, ''))}
+                              placeholder="123456"
+                              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-center font-mono text-xl tracking-widest font-black text-slate-900 focus:bg-white focus:outline-none focus:border-emerald-600 transition-colors"
+                              autoFocus
                             />
                           </div>
-                        )}
 
-                        <div>
-                          <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">
-                            Email Address *
-                          </label>
-                          <input
-                            required
-                            type="email"
-                            value={authEmail}
-                            onChange={(e) => setAuthEmail(e.target.value)}
-                            placeholder="donor@example.com"
-                            className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:outline-none focus:border-emerald-600 transition-colors"
-                          />
-                        </div>
-
-                        <div>
-                          <div className="flex items-center justify-between mb-1">
-                            <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700">
-                              Password *
-                            </label>
-                            <button
-                              type="button"
-                              onClick={() => setShowPassword(!showPassword)}
-                              className="text-[11px] text-slate-400 hover:text-slate-600 font-medium cursor-pointer"
-                            >
-                              {showPassword ? 'Hide' : 'Show'}
-                            </button>
-                          </div>
-                          <input
-                            required
-                            type={showPassword ? 'text' : 'password'}
-                            value={authPassword}
-                            onChange={(e) => setAuthPassword(e.target.value)}
-                            placeholder="At least 6 characters"
-                            className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:outline-none focus:border-emerald-600 transition-colors"
-                          />
-                        </div>
-
-                        <div className="pt-1">
                           <button
                             type="submit"
-                            disabled={authLoading}
+                            disabled={verifyLoading}
                             className="w-full py-3 bg-slate-950 hover:bg-slate-800 active:scale-[0.99] text-white font-bold text-xs sm:text-sm rounded-xl transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                           >
-                            {authLoading ? (
+                            {verifyLoading ? (
                               <>
                                 <Loader2 className="w-4 h-4 animate-spin" />
-                                <span>Verifying...</span>
+                                <span>Verifying Code...</span>
                               </>
                             ) : (
                               <>
-                                <span>{authMode === 'register' ? 'Continue to Payment' : 'Sign In & Continue'}</span>
+                                <span>Confirm & Continue to Donation</span>
                                 <ArrowRight className="w-4 h-4" />
                               </>
                             )}
                           </button>
-                        </div>
-                      </form>
+
+                          <div className="flex items-center justify-between text-xs pt-1">
+                            <button
+                              type="button"
+                              onClick={handleResendCode}
+                              className="text-emerald-700 hover:text-emerald-800 font-bold hover:underline cursor-pointer"
+                            >
+                              Resend code
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => { setIsVerifying(false); setAuthError(null); }}
+                              className="text-slate-500 hover:text-slate-800 font-medium cursor-pointer"
+                            >
+                              Change email
+                            </button>
+                          </div>
+
+                          {resendStatus && (
+                            <p className="text-[11px] text-emerald-700 font-medium text-center">
+                              {resendStatus}
+                            </p>
+                          )}
+                        </form>
+                      ) : (
+                        <form onSubmit={handleAuthSubmit} className="space-y-3">
+                          {authMode === 'register' && (
+                            <div>
+                              <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">
+                                Your Name
+                              </label>
+                              <input
+                                type="text"
+                                value={authName}
+                                onChange={(e) => setAuthName(e.target.value)}
+                                placeholder="e.g. Alex Johnson"
+                                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:outline-none focus:border-emerald-600 transition-colors"
+                              />
+                            </div>
+                          )}
+
+                          <div>
+                            <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">
+                              Email Address *
+                            </label>
+                            <input
+                              required
+                              type="email"
+                              value={authEmail}
+                              onChange={(e) => setAuthEmail(e.target.value)}
+                              placeholder="donor@example.com"
+                              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:outline-none focus:border-emerald-600 transition-colors"
+                            />
+                          </div>
+
+                          <div>
+                            <div className="flex items-center justify-between mb-1">
+                              <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700">
+                                Password *
+                              </label>
+                              <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="text-[11px] text-slate-400 hover:text-slate-600 font-medium cursor-pointer"
+                              >
+                                {showPassword ? 'Hide' : 'Show'}
+                              </button>
+                            </div>
+                            <input
+                              required
+                              type={showPassword ? 'text' : 'password'}
+                              value={authPassword}
+                              onChange={(e) => setAuthPassword(e.target.value)}
+                              placeholder="At least 6 characters"
+                              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:outline-none focus:border-emerald-600 transition-colors"
+                            />
+                          </div>
+
+                          <div className="pt-1">
+                            <button
+                              type="submit"
+                              disabled={authLoading}
+                              className="w-full py-3 bg-slate-950 hover:bg-slate-800 active:scale-[0.99] text-white font-bold text-xs sm:text-sm rounded-xl transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                            >
+                              {authLoading ? (
+                                <>
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                  <span>Checking...</span>
+                                </>
+                              ) : (
+                                <>
+                                  <span>{authMode === 'register' ? 'Continue to Payment' : 'Sign In & Continue'}</span>
+                                  <ArrowRight className="w-4 h-4" />
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        </form>
+                      )}
                     </motion.div>
                   )}
 

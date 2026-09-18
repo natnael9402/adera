@@ -11,7 +11,7 @@ import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../prisma/prisma.service';
 import { MailService } from '../mail/mail.service';
 import { ActivityLogsService } from '../activity-logs/activity-logs.service';
-import { SignupDto, LoginDto, VerifyCodeDto, UpdateProfileDto } from './dto/auth.dto';
+import { SignupDto, LoginDto, VerifyCodeDto, UpdateProfileDto, QuickDonorDto } from './dto/auth.dto';
 
 @Injectable()
 export class AuthService {
@@ -84,6 +84,87 @@ export class AuthService {
       message: 'Account created. Please enter the 6-digit verification code sent to your email.',
       email: user.email,
       userId: user.id,
+    };
+  }
+
+  async quickDonor(dto: QuickDonorDto, clientIp?: string, userAgent?: string) {
+    const normalizedEmail = dto.email.toLowerCase().trim();
+    let user = await this.prisma.user.findUnique({ where: { email: normalizedEmail } });
+
+    if (user) {
+      if (dto.password) {
+        const valid = await bcrypt.compare(dto.password, user.password);
+        if (!valid) {
+          throw new BadRequestException('An account with this email already exists. Please enter the correct password to sign in.');
+        }
+      } else {
+        throw new BadRequestException('An account with this email already exists. Please enter your password to sign in.');
+      }
+
+      if (!user.verified) {
+        user = await this.prisma.user.update({
+          where: { id: user.id },
+          data: { verified: true, lastLoginAt: new Date() },
+        });
+      } else {
+        user = await this.prisma.user.update({
+          where: { id: user.id },
+          data: { lastLoginAt: new Date() },
+        });
+      }
+
+      await this.activityLogs.log({
+        type: 'DONOR_LOGIN',
+        actorName: user.name,
+        actorEmail: user.email,
+        userId: user.id,
+        ipAddress: clientIp,
+        userAgent: userAgent,
+        summary: `Donor signed in via quick donor auth: ${user.name} (${user.email})`,
+        status: 'SUCCESS',
+      });
+    } else {
+      const rawPassword = dto.password && dto.password.length >= 6
+        ? dto.password
+        : Math.random().toString(36).slice(-8) + 'Aa1!';
+      const hashed = await bcrypt.hash(rawPassword, 10);
+      const displayName = (dto.name && dto.name.trim()) ? dto.name.trim() : normalizedEmail.split('@')[0];
+
+      user = await this.prisma.user.create({
+        data: {
+          email: normalizedEmail,
+          name: displayName,
+          password: hashed,
+          role: 'USER',
+          verified: true,
+          lastLoginAt: new Date(),
+        },
+      });
+
+      await this.activityLogs.log({
+        type: 'DONOR_SIGNUP',
+        actorName: user.name,
+        actorEmail: user.email,
+        userId: user.id,
+        ipAddress: clientIp,
+        userAgent: userAgent,
+        summary: `New donor registered via quick donor auth: ${user.name} (${user.email})`,
+        status: 'SUCCESS',
+      });
+    }
+
+    const token = this.jwt.sign({ sub: user.id, role: user.role });
+    return {
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        phone: user.phone,
+        avatar: user.avatar,
+        savedAddress: user.savedAddress,
+      },
     };
   }
 

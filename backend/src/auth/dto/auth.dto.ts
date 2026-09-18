@@ -64,3 +64,16 @@ export class UpdateProfileDto {
   @MinLength(6)
   newPassword?: string;
 }
+
+export class QuickDonorDto {
+  @IsEmail()
+  email: string;
+
+  @IsOptional()
+  @IsString()
+  name?: string;
+
+  @IsOptional()
+  @IsString()
+  password?: string;
+}

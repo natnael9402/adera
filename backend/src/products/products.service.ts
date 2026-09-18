@@ -2,7 +2,7 @@ import { Injectable, NotFoundException, OnModuleInit } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { Product, Prisma } from '@prisma/client';
-import { runProductMigration } from '../../scripts/seed-1000-products';
+import { runProductMigration } from '../scripts/seed-1000-products';
 
 export interface ProductFilterQuery {
   search?: string;

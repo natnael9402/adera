@@ -2,7 +2,7 @@ import { PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 import * as fs from 'fs';
 import * as path from 'path';
-import { runProductMigration } from '../scripts/seed-1000-products';
+import { runProductMigration } from '../src/scripts/seed-1000-products';
 
 const prisma = new PrismaClient();
 

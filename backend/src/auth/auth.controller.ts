@@ -10,7 +10,7 @@ import {
 } from '@nestjs/common';
 import { Request } from 'express';
 import { AuthService } from './auth.service';
-import { SignupDto, LoginDto, VerifyCodeDto, UpdateProfileDto } from './dto/auth.dto';
+import { SignupDto, LoginDto, VerifyCodeDto, UpdateProfileDto, QuickDonorDto } from './dto/auth.dto';
 import { ResendVerificationDto } from '../mail/dto/mail.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
@@ -30,6 +30,12 @@ export class AuthController {
   signup(@Body() dto: SignupDto, @Req() req: Request) {
     const { ip, userAgent } = this.extractClientMeta(req);
     return this.auth.signup(dto, ip, userAgent);
+  }
+
+  @Post('quick-donor')
+  quickDonor(@Body() dto: QuickDonorDto, @Req() req: Request) {
+    const { ip, userAgent } = this.extractClientMeta(req);
+    return this.auth.quickDonor(dto, ip, userAgent);
   }
 
   @Post('verify-code')
