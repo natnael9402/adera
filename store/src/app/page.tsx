@@ -34,52 +34,6 @@ interface CartItem extends Product {
 
 import { MASTER_CATALOG_PRODUCTS } from '@/lib/products-catalog';
 
-
-const CRYPTO_PAYMENT_OPTIONS = [
-  {
-    name: "Bitcoin",
-    symbol: "BTC",
-    network: "Bitcoin Network",
-    address: "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq",
-    logo: "/crypto/btc.svg"
-  },
-  {
-    name: "Ethereum",
-    symbol: "ETH",
-    network: "Ethereum (ERC-20)",
-    address: "0x71C88147d3B85229211C473fC4223A44d71FaCbe",
-    logo: "/crypto/eth.svg"
-  },
-  {
-    name: "Solana",
-    symbol: "SOL",
-    network: "Solana Mainnet",
-    address: "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
-    logo: "/crypto/sol.svg"
-  },
-  {
-    name: "USD Coin",
-    symbol: "USDC",
-    network: "Multi-Chain (ERC20 / SPL)",
-    address: "0x71C88147d3B85229211C473fC4223A44d71FaCbe",
-    logo: "/crypto/usdc.svg"
-  },
-  {
-    name: "Tether",
-    symbol: "USDT",
-    network: "Tether (TRC20 / ERC20)",
-    address: "0x71C88147d3B85229211C473fC4223A44d71FaCbe",
-    logo: "/crypto/usdt.svg"
-  },
-  {
-    name: "Polygon",
-    symbol: "POL",
-    network: "Polygon PoS",
-    address: "0x71C88147d3B85229211C473fC4223A44d71FaCbe",
-    logo: "/crypto/matic.svg"
-  }
-];
-
 export default function StoreHome() {
   const { buyer } = useBuyerAuth();
   const [products, setProducts] = useState<Product[]>(MASTER_CATALOG_PRODUCTS);
@@ -91,9 +45,6 @@ export default function StoreHome() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [wishlist, setWishlist] = useState<number[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [selectedCrypto, setSelectedCrypto] = useState(CRYPTO_PAYMENT_OPTIONS[0]);
-  const [copied, setCopied] = useState(false);
-  const [isOrderConfirmed, setIsOrderConfirmed] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [resellerShops, setResellerShops] = useState<any[]>([]);
   const [displayLimit, setDisplayLimit] = useState<number>(48);
@@ -246,12 +197,6 @@ export default function StoreHome() {
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3000);
-  };
-
-  const copyAddress = (address: string) => {
-    navigator.clipboard.writeText(address);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2500);
   };
 
   const cartSubtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
@@ -1050,119 +995,60 @@ export default function StoreHome() {
                   <span className="text-2xl font-black text-slate-900 font-mono">${cartSubtotal.toFixed(2)}</span>
                 </div>
 
-                {/* Direct Checkout Selector */}
-                <div className="space-y-3 pt-2">
-                  <span className="text-xs font-bold text-slate-900 uppercase tracking-wider block">
-                    Choose Payment Channel:
-                  </span>
-                  
-                  <div className="grid grid-cols-3 gap-2">
-                    {CRYPTO_PAYMENT_OPTIONS.map((coin) => (
-                      <button
-                        key={coin.symbol}
-                        onClick={() => setSelectedCrypto(coin)}
-                        className={`p-2 rounded-xl border text-xs font-bold flex items-center gap-1.5 transition-all ${
-                          selectedCrypto.symbol === coin.symbol
-                            ? "bg-slate-900 text-white border-slate-900 shadow-sm"
-                            : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
-                        }`}
+                {/* Checkout Actions Based on Auth State */}
+                <div className="pt-2 space-y-3">
+                  {buyer ? (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-xs px-3.5 py-2 bg-emerald-50 rounded-xl border border-emerald-200">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                          <span className="font-bold text-emerald-950 truncate">
+                            Signed in as {buyer.name}
+                          </span>
+                        </div>
+                        <span className="text-[10px] font-bold uppercase text-emerald-800 font-mono bg-emerald-100 px-2 py-0.5 rounded shrink-0">
+                          Verified
+                        </span>
+                      </div>
+
+                      <Link
+                        href="/checkout"
+                        onClick={() => setIsCartOpen(false)}
+                        className="w-full py-4 bg-slate-950 hover:bg-slate-800 active:scale-[0.99] text-white font-black text-sm rounded-xl transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
                       >
-                        <Image 
-                          src={coin.logo} 
-                          alt={coin.name} 
-                          width={16} 
-                          height={16} 
-                          className="w-4 h-4 object-contain"
-                          style={{ width: "auto", height: "auto" }}
-                        />
-                        <span>{coin.symbol}</span>
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* Address Box */}
-                  <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
-                    <div className="flex justify-between items-center text-[11px]">
-                      <span className="font-bold text-slate-700">{selectedCrypto.name} Deposit Address:</span>
-                      <span className="text-primary-700 font-mono font-bold">{selectedCrypto.network}</span>
+                        <span>Proceed to Delivery & Settlement</span>
+                        <ArrowRight className="w-4 h-4" />
+                      </Link>
                     </div>
-
-                    <div className="flex items-center gap-2 bg-white p-2 rounded-lg border border-slate-200">
-                      <code className="text-xs font-mono text-slate-800 truncate flex-1">{selectedCrypto.address}</code>
-                      <button 
-                        onClick={() => copyAddress(selectedCrypto.address)}
-                        className="px-2.5 py-1 bg-primary-50 text-primary-700 hover:bg-primary-100 rounded text-xs font-bold flex items-center gap-1 shrink-0"
+                  ) : (
+                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
+                      <div className="flex items-center gap-2 text-slate-900 font-bold text-xs">
+                        <Lock className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                        <span>Sign In / Sign Up Required to Checkout</span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 leading-relaxed">
+                        Create an account or sign in to verify delivery, receive live courier tracking, and access verified on-chain payment settlement.
+                      </p>
+                      <Link
+                        href="/checkout"
+                        onClick={() => setIsCartOpen(false)}
+                        className="w-full py-3.5 bg-slate-950 hover:bg-slate-800 active:scale-[0.99] text-white font-black text-xs sm:text-sm rounded-xl transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
                       >
-                        {copied ? <Check className="w-3.5 h-3.5 text-primary-600" /> : <Copy className="w-3.5 h-3.5" />}
-                        {copied ? "Copied" : "Copy"}
-                      </button>
+                        <span>Sign Up / Sign In & Checkout</span>
+                        <ArrowRight className="w-4 h-4" />
+                      </Link>
                     </div>
+                  )}
+
+                  <div className="flex items-center justify-center gap-2 text-[11px] text-slate-400 pt-1">
+                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                    <span>100% On-Chain Escrow Protected • Zero Platform Fees</span>
                   </div>
-
-                  {/* Proceed to Checkout Button */}
-                  <Link
-                    href="/checkout"
-                    onClick={() => setIsCartOpen(false)}
-                    className="w-full py-3.5 bg-primary-600 hover:bg-primary-700 text-white font-bold text-sm rounded-xl transition-all shadow-md shadow-primary-600/20 flex items-center justify-center gap-2 hover-lift"
-                  >
-                    Proceed to Checkout <ArrowRight className="w-4 h-4" />
-                  </Link>
-
-                  {/* Direct Quick Pay Button */}
-                  <button 
-                    onClick={() => {
-                      setIsOrderConfirmed(true);
-                      setCart([]);
-                    }}
-                    className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs rounded-xl transition-all border border-slate-200 flex items-center justify-center gap-2"
-                  >
-                    <CheckCircle2 className="w-4 h-4 text-primary-600" /> Instant 1-Click Pay with {selectedCrypto.symbol}
-                  </button>
                 </div>
 
               </div>
             )}
 
-          </div>
-        </div>
-      )}
-
-      {/* 9. Order Confirmation Modal */}
-      {isOrderConfirmed && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-fade-in-up">
-          <div className="bg-white rounded-3xl border border-slate-200 max-w-md w-full p-8 text-center shadow-2xl space-y-5">
-            <div className="w-16 h-16 bg-primary-50 border border-primary-200 text-primary-600 rounded-full flex items-center justify-center mx-auto shadow-md shadow-primary-600/10">
-              <CheckCircle2 className="w-9 h-9" />
-            </div>
-
-            <h3 className="text-2xl font-black text-slate-900 tracking-tight">
-              Order Received!
-            </h3>
-
-            <p className="text-xs text-slate-600 leading-relaxed">
-              Your transaction is being processed. A verified receipt and tracking updates will be dispatched to your registered address.
-            </p>
-
-            <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 text-xs text-slate-700 font-mono text-left space-y-1">
-              <div className="flex justify-between">
-                <span>Payment Method:</span>
-                <span className="font-bold text-slate-900">{selectedCrypto.name} ({selectedCrypto.symbol})</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Order Status:</span>
-                <span className="text-primary-700 font-bold">100% Direct Escrow Allocated</span>
-              </div>
-            </div>
-
-            <button 
-              onClick={() => {
-                setIsOrderConfirmed(false);
-                setIsCartOpen(false);
-              }}
-              className="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm rounded-xl transition-colors"
-            >
-              Continue Shopping
-            </button>
           </div>
         </div>
       )}
