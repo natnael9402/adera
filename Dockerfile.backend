@@ -12,6 +12,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY backend/ ./
 RUN npx prisma generate
 RUN npm run build
+RUN mkdir -p dist/src && (cp dist/main.js dist/src/main.js 2>/dev/null || true) && (cp dist/src/main.js dist/main.js 2>/dev/null || true)
 
 FROM base AS runner
 WORKDIR /app
@@ -26,4 +27,4 @@ COPY --from=builder /app/scripts ./scripts
 COPY backend/*.js ./
 
 EXPOSE 5001
-CMD ["sh", "-c", "npx prisma db push --accept-data-loss || true; node dist/src/main.js"]
+CMD ["sh", "-c", "npx prisma db push --accept-data-loss || true; if [ -f dist/main.js ]; then node dist/main.js; else node dist/src/main.js; fi"]
