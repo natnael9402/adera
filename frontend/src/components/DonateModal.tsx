@@ -401,12 +401,6 @@ export default function DonateModal() {
     }
   };
 
-  const handleAnonymousContinue = () => {
-    setIsAnonymous(true);
-    setDonorName('Anonymous Donor');
-    goToStep(2);
-  };
-
   const handleSignOut = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
@@ -417,6 +411,10 @@ export default function DonateModal() {
 
   // Step 2 Submission (Proceed to QR Code)
   const handleProceedToQR = () => {
+    if (!currentUser) {
+      goToStep(1);
+      return;
+    }
     if (usdAmount <= 0) {
       alert('Please select or enter a valid donation amount.');
       return;
@@ -426,6 +424,10 @@ export default function DonateModal() {
 
   // Step 3 Submission (Confirm Payment Sent)
   const handleConfirmSent = async () => {
+    if (!currentUser) {
+      goToStep(1);
+      return;
+    }
     setSubmitting(true);
     const mockTxHash = `0x${Array.from({length: 64}, () => Math.floor(Math.random()*16).toString(16)).join('')}`;
     setConfirmedTxHash(mockTxHash);
@@ -708,7 +710,7 @@ export default function DonateModal() {
                     {currentUser ? `Step 0${currentStep - 1} of 02:` : `Step 0${currentStep} of 03:`}
                   </span>
                   <span className="text-xs font-bold text-slate-800">
-                    {currentStep === 1 && 'Donor Identification'}
+                    {currentStep === 1 && 'Account Required'}
                     {currentStep === 2 && 'Payment & Amount'}
                     {currentStep === 3 && 'Verification & Transfer'}
                   </span>
@@ -755,10 +757,10 @@ export default function DonateModal() {
                           <span>Direct On-Chain Allocation</span>
                         </div>
                         <h3 className="text-lg font-black text-slate-900 tracking-tight">
-                          Donor Information
+                          Donor Account Required
                         </h3>
                         <p className="text-xs text-slate-500">
-                          Provide your details for verified tax receipts and milestone proofs, or proceed anonymously.
+                          Please sign in or create an account to donate. This ensures verified tax receipts, proof tracking, and milestone updates.
                         </p>
                       </div>
 
@@ -848,7 +850,7 @@ export default function DonateModal() {
                           />
                         </div>
 
-                        <div className="pt-1 space-y-2.5">
+                        <div className="pt-1">
                           <button
                             type="submit"
                             disabled={authLoading}
@@ -866,17 +868,6 @@ export default function DonateModal() {
                               </>
                             )}
                           </button>
-
-                          <div className="text-center pt-1 border-t border-slate-100">
-                            <button
-                              type="button"
-                              onClick={handleAnonymousContinue}
-                              className="text-xs font-semibold text-slate-500 hover:text-slate-800 transition-colors inline-flex items-center gap-1 cursor-pointer py-1"
-                            >
-                              <span>Skip & donate anonymously (no account needed)</span>
-                              <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
-                            </button>
-                          </div>
                         </div>
                       </form>
                     </motion.div>
