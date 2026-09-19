@@ -8,7 +8,8 @@ import {
   X, Heart, Copy, Check, ShieldCheck, ArrowRight, ArrowLeft,
   Lock, Coins, CheckCircle2, DollarSign, Wallet, 
   QrCode, User, Mail, Eye, EyeOff, Loader2, Sparkles, LogOut, AlertCircle,
-  ChevronDown, Search, CreditCard, RefreshCw, UploadCloud, Trash2, FileCheck
+  ChevronDown, Search, CreditCard, RefreshCw, UploadCloud, Trash2, FileCheck,
+  Clock, AlertTriangle, ArrowUpRight
 } from 'lucide-react';
 import { useDonate, CauseDonationTarget } from '@/context/DonateContext';
 import { useAuth } from '@/context/AuthContext';
@@ -472,8 +473,8 @@ export default function DonateModal() {
     goToStep(1);
   };
 
-  // Step 2 Submission (Proceed to QR Code)
-  const handleProceedToQR = () => {
+  // Step 2 Submission (Proceed to Selected Payment Channel Page)
+  const handleProceedToPayment = () => {
     if (!currentUser) {
       goToStep(1);
       return;
@@ -484,6 +485,7 @@ export default function DonateModal() {
     }
     goToStep(3);
   };
+  const handleProceedToQR = handleProceedToPayment;
 
   // Step 3 Submission (Confirm Payment Sent)
   const handleConfirmSent = async () => {
@@ -774,8 +776,15 @@ export default function DonateModal() {
                   </span>
                   <span className="text-xs font-bold text-slate-800">
                     {currentStep === 1 && 'Account Required'}
-                    {currentStep === 2 && 'Payment & Amount'}
-                    {currentStep === 3 && 'Verification & Transfer'}
+                    {currentStep === 2 && 'Donation Amount & Channel'}
+                    {currentStep === 3 && (
+                      selectedMethod === 'crypto'
+                        ? 'Crypto Transfer & Address'
+                        : selectedMethod === 'card'
+                        ? 'Card Gateway Status'
+                        : 'Digital Wallets Status'
+                    )}
+                    {currentStep === 4 && 'Impact Certificate'}
                   </span>
                 </div>
 
@@ -1045,113 +1054,14 @@ export default function DonateModal() {
                         </div>
                       )}
 
-                      {/* 1. Payment Methods: Compact, No Overlaps */}
-                      <div className="space-y-1.5">
-                        <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700">
-                          1. Payment Channel
-                        </label>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                          
-                          {/* Option 1: Crypto (Active) */}
-                          <div
-                            onClick={() => setSelectedMethod('crypto')}
-                            className="p-3 rounded-2xl border-2 border-emerald-600 bg-emerald-50/60 shadow-2xs flex items-center justify-between cursor-pointer"
-                          >
-                            <div className="flex items-center gap-2.5">
-                              <div className="flex -space-x-1.5">
-                                <div className="w-5 h-5 rounded-full bg-amber-500 text-white font-black text-[9px] flex items-center justify-center border border-white">₿</div>
-                                <div className="w-5 h-5 rounded-full bg-blue-500 text-white font-black text-[9px] flex items-center justify-center border border-white">$</div>
-                                <div className="w-5 h-5 rounded-full bg-indigo-500 text-white font-black text-[9px] flex items-center justify-center border border-white">Ξ</div>
-                              </div>
-                              <div>
-                                <div className="text-xs font-black text-slate-900 leading-tight">Instant Crypto</div>
-                                <div className="text-[10px] text-emerald-800 font-semibold font-mono">0% Fee • On-Chain</div>
-                              </div>
-                            </div>
-                            <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-600 text-white shrink-0">
-                              Active
-                            </span>
-                          </div>
-
-                          {/* Option 2: Credit Card (Coming Soon) */}
-                          <div className="p-3 rounded-2xl border border-slate-200 bg-slate-50/60 opacity-60 flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <CreditCard className="w-4 h-4 text-slate-400 shrink-0" />
-                              <div>
-                                <div className="text-xs font-bold text-slate-600 leading-tight">Credit Card</div>
-                                <div className="text-[10px] text-slate-400">Visa / Mastercard</div>
-                              </div>
-                            </div>
-                            <span className="text-[9px] font-mono uppercase px-1.5 py-0.5 rounded bg-slate-200 text-slate-600">
-                              Soon
-                            </span>
-                          </div>
-
-                          {/* Option 3: PayPal / Apple Pay (Coming Soon) */}
-                          <div className="p-3 rounded-2xl border border-slate-200 bg-slate-50/60 opacity-60 flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <Wallet className="w-4 h-4 text-slate-400 shrink-0" />
-                              <div>
-                                <div className="text-xs font-bold text-slate-600 leading-tight">Digital Wallets</div>
-                                <div className="text-[10px] text-slate-400">Apple / PayPal</div>
-                              </div>
-                            </div>
-                            <span className="text-[9px] font-mono uppercase px-1.5 py-0.5 rounded bg-slate-200 text-slate-600">
-                              Soon
-                            </span>
-                          </div>
-
-                        </div>
-                      </div>
-
-                      {/* 2. Asset Selection: 5-Col Grid Fits Perfectly Everywhere */}
-                      <div className="space-y-1.5">
-                        <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700">
-                          2. Supported Currency / Asset
-                        </label>
-
-                        <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
-                          {DEFAULT_CRYPTO_OPTIONS.map((crypto) => {
-                            const isSelected = selectedCrypto.symbol === crypto.symbol;
-                            return (
-                              <button
-                                key={crypto.symbol}
-                                type="button"
-                                onClick={() => setSelectedCrypto(crypto)}
-                                className={`p-2 rounded-xl border-2 flex flex-col items-center justify-center gap-1 transition-all text-center cursor-pointer ${
-                                  isSelected
-                                    ? 'border-emerald-600 bg-emerald-50 text-emerald-950 ring-2 ring-emerald-500/20 shadow-xs'
-                                    : 'border-slate-200 bg-white hover:border-slate-300 text-slate-700'
-                                }`}
-                              >
-                                <div className="w-6 h-6 relative flex items-center justify-center">
-                                  <Image
-                                    src={crypto.icon}
-                                    alt={crypto.name}
-                                    width={22}
-                                    height={22}
-                                    className="object-contain"
-                                    style={{ width: 'auto', height: 'auto' }}
-                                  />
-                                </div>
-                                <span className="text-xs font-black font-mono leading-none">
-                                  {crypto.symbol}
-                                </span>
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-
-                      {/* 3. Donation Amount & Converter */}
+                      {/* 1. Donation Amount & Presets */}
                       <div className="space-y-2">
                         <div className="flex items-center justify-between">
                           <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700">
-                            3. Donation Amount
+                            1. Select Donation Amount
                           </label>
-                          <span className="text-xs font-mono font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200">
-                            ≈ {cryptoAmount} {selectedCrypto.symbol}
+                          <span className="text-xs font-mono font-black text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-lg border border-emerald-200">
+                            ${usdAmount} USD
                           </span>
                         </div>
 
@@ -1189,6 +1099,114 @@ export default function DonateModal() {
                         </div>
                       </div>
 
+                      {/* 2. Payment Channel: 3 Distinct Interactive Options */}
+                      <div className="space-y-1.5 pt-1">
+                        <div className="flex items-center justify-between">
+                          <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700">
+                            2. Choose Payment Channel
+                          </label>
+                          <span className="text-[10px] text-slate-400 font-medium">
+                            Select channel to proceed
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                          
+                          {/* Option 1: Instant Crypto (Active) */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedMethod('crypto');
+                              goToStep(3);
+                            }}
+                            className={`p-3 sm:p-3.5 rounded-2xl border-2 transition-all flex items-center justify-between text-left cursor-pointer group ${
+                              selectedMethod === 'crypto'
+                                ? 'border-emerald-600 bg-emerald-50/70 shadow-xs ring-2 ring-emerald-500/20'
+                                : 'border-slate-200 bg-white hover:border-emerald-400 hover:bg-emerald-50/20'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <div className="flex -space-x-1.5 shrink-0">
+                                <div className="w-5 h-5 rounded-full bg-amber-500 text-white font-black text-[9px] flex items-center justify-center border border-white">₿</div>
+                                <div className="w-5 h-5 rounded-full bg-blue-500 text-white font-black text-[9px] flex items-center justify-center border border-white">$</div>
+                                <div className="w-5 h-5 rounded-full bg-indigo-500 text-white font-black text-[9px] flex items-center justify-center border border-white">Ξ</div>
+                              </div>
+                              <div className="min-w-0">
+                                <div className="text-xs font-black text-slate-900 leading-tight truncate">Instant Crypto</div>
+                                <div className="text-[10px] text-emerald-800 font-semibold font-mono truncate">0% Fee • 5 Chains</div>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1 shrink-0 ml-1">
+                              <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-600 text-white">
+                                Active
+                              </span>
+                              <ArrowRight className="w-3.5 h-3.5 text-emerald-600 group-hover:translate-x-0.5 transition-transform" />
+                            </div>
+                          </button>
+
+                          {/* Option 2: Credit / Debit Card (Interactive Maintenance Page) */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedMethod('card');
+                              goToStep(3);
+                            }}
+                            className={`p-3 sm:p-3.5 rounded-2xl border-2 transition-all flex items-center justify-between text-left cursor-pointer group ${
+                              selectedMethod === 'card'
+                                ? 'border-amber-600 bg-amber-50/70 shadow-xs ring-2 ring-amber-500/20'
+                                : 'border-slate-200 bg-white hover:border-amber-400 hover:bg-amber-50/20'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center shrink-0 border border-slate-200">
+                                <CreditCard className="w-3.5 h-3.5 text-slate-600" />
+                              </div>
+                              <div className="min-w-0">
+                                <div className="text-xs font-black text-slate-900 leading-tight truncate">Debit / Credit</div>
+                                <div className="text-[10px] text-slate-500 truncate">Visa • Mastercard</div>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1 shrink-0 ml-1">
+                              <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300">
+                                Maintenance
+                              </span>
+                              <ArrowRight className="w-3.5 h-3.5 text-amber-600 group-hover:translate-x-0.5 transition-transform" />
+                            </div>
+                          </button>
+
+                          {/* Option 3: PayPal / Apple Pay (Interactive Coming Soon Page) */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedMethod('paypal');
+                              goToStep(3);
+                            }}
+                            className={`p-3 sm:p-3.5 rounded-2xl border-2 transition-all flex items-center justify-between text-left cursor-pointer group ${
+                              selectedMethod === 'paypal'
+                                ? 'border-slate-800 bg-slate-50 shadow-xs ring-2 ring-slate-500/20'
+                                : 'border-slate-200 bg-white hover:border-slate-400 hover:bg-slate-50'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center shrink-0 border border-slate-200">
+                                <Wallet className="w-3.5 h-3.5 text-slate-600" />
+                              </div>
+                              <div className="min-w-0">
+                                <div className="text-xs font-black text-slate-900 leading-tight truncate">Digital Wallets</div>
+                                <div className="text-[10px] text-slate-500 truncate">Apple Pay • PayPal</div>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1 shrink-0 ml-1">
+                              <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-300">
+                                Soon
+                              </span>
+                              <ArrowRight className="w-3.5 h-3.5 text-slate-600 group-hover:translate-x-0.5 transition-transform" />
+                            </div>
+                          </button>
+
+                        </div>
+                      </div>
+
                       {/* Public Recognition Checkbox */}
                       <div className="flex items-center justify-between bg-slate-50 px-3.5 py-2 rounded-xl border border-slate-200">
                         <span className="text-xs font-bold text-slate-700">
@@ -1220,10 +1238,16 @@ export default function DonateModal() {
 
                         <button
                           type="button"
-                          onClick={handleProceedToQR}
+                          onClick={handleProceedToPayment}
                           className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white font-black text-xs sm:text-sm rounded-xl transition-all shadow-md shadow-emerald-600/25 flex items-center justify-center gap-2 cursor-pointer"
                         >
-                          <span>Proceed to QR Code & Address</span>
+                          <span>
+                            {selectedMethod === 'crypto'
+                              ? 'Proceed to Crypto Transfer & Address'
+                              : selectedMethod === 'card'
+                              ? 'Proceed with Credit / Debit Card'
+                              : 'Proceed with Digital Wallets'}
+                          </span>
                           <ArrowRight className="w-4 h-4" />
                         </button>
                       </div>
@@ -1232,11 +1256,11 @@ export default function DonateModal() {
                   )}
 
                   {/* ========================================================= */}
-                  {/* STEP 3: DEDICATED QR CODE & WALLET TRANSFER SCREEN */}
+                  {/* STEP 3: DEDICATED PAYMENT CHANNEL VIEW */}
                   {/* ========================================================= */}
                   {currentStep === 3 && (
                     <motion.div
-                      key="step-3"
+                      key={`step-3-${selectedMethod}`}
                       custom={direction}
                       variants={stepVariants}
                       initial="enter"
@@ -1244,203 +1268,423 @@ export default function DonateModal() {
                       exit="exit"
                       className="space-y-4 max-w-xl mx-auto"
                     >
-                      {/* Top Payment Target Notice */}
-                      <div className="p-3 bg-emerald-50/80 border border-emerald-200 rounded-xl flex items-center justify-between">
-                        <div>
-                          <span className="text-[9px] font-black uppercase tracking-wider text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded border border-emerald-300">
-                            Transfer Target
-                          </span>
-                          <h4 className="text-xs sm:text-sm font-black text-slate-900 mt-1">
-                            Send exactly <span className="text-emerald-700 font-mono">{cryptoAmount} {selectedCrypto.symbol}</span> (${usdAmount} USD)
-                          </h4>
-                        </div>
-                        <div className="w-7 h-7 relative flex items-center justify-center shrink-0">
-                          <Image src={selectedCrypto.icon} alt={selectedCrypto.name} width={24} height={24} className="object-contain" />
-                        </div>
-                      </div>
-
-                      {/* Main QR Code & Address Box */}
-                      <div className="bg-slate-50 rounded-2xl p-4 sm:p-5 border border-slate-200 space-y-4 text-center sm:text-left">
-                        <div className="flex flex-col sm:flex-row items-center gap-5">
-                          
-                          {/* Centered QR Code with Logo */}
-                          <div className="shrink-0 bg-white p-2.5 rounded-2xl border border-slate-200 shadow-xs">
-                            <QRCodeWithLogo
-                              value={qrPaymentUri}
-                              size={160}
-                              logoSrc="/logo.png"
-                              logoSize={36}
-                            />
-                            <p className="text-[9px] text-center font-extrabold text-slate-400 mt-1.5 uppercase tracking-wider">
-                              Scan with Wallet
-                            </p>
+                      {/* ------------------------------------------------------------- */}
+                      {/* BRANCH A: DEDICATED CRYPTO TRANSFER & WALLET ADDRESS SCREEN */}
+                      {/* ------------------------------------------------------------- */}
+                      {selectedMethod === 'crypto' && (
+                        <div className="space-y-4">
+                          {/* Crypto Asset Selector Grid */}
+                          <div>
+                            <div className="flex items-center justify-between mb-1.5">
+                              <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">
+                                Select Crypto Asset
+                              </span>
+                              <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded border border-emerald-300">
+                                Live Rates • 0% Platform Fee
+                              </span>
+                            </div>
+                            <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
+                              {DEFAULT_CRYPTO_OPTIONS.map((crypto) => {
+                                const isSelected = selectedCrypto.symbol === crypto.symbol;
+                                return (
+                                  <button
+                                    key={crypto.symbol}
+                                    type="button"
+                                    onClick={() => setSelectedCrypto(crypto)}
+                                    className={`p-2 rounded-xl border text-center transition-all cursor-pointer flex flex-col items-center gap-1 ${
+                                      isSelected
+                                        ? 'border-emerald-600 bg-emerald-50/80 text-emerald-900 ring-2 ring-emerald-500/20 shadow-xs'
+                                        : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700 hover:border-slate-300'
+                                    }`}
+                                  >
+                                    <div className="w-5 h-5 relative flex items-center justify-center">
+                                      <Image src={crypto.icon} alt={crypto.name} width={20} height={20} className="object-contain" />
+                                    </div>
+                                    <div className="leading-tight">
+                                      <span className="text-xs font-black block">{crypto.symbol}</span>
+                                      <span className="text-[9px] text-slate-400 font-mono block">
+                                        ${crypto.rate >= 1000 ? `${(crypto.rate / 1000).toFixed(1)}k` : crypto.rate.toFixed(0)}
+                                      </span>
+                                    </div>
+                                  </button>
+                                );
+                              })}
+                            </div>
                           </div>
 
-                          {/* Instructions & Deposit Address */}
-                          <div className="flex-1 space-y-3 min-w-0 w-full">
+                          {/* Top Payment Target Notice */}
+                          <div className="p-3 bg-emerald-50/80 border border-emerald-200 rounded-xl flex items-center justify-between">
                             <div>
-                              <span className="text-xs font-bold text-slate-500 block">
-                                Network: <strong className="text-slate-800">{selectedCrypto.network}</strong>
+                              <span className="text-[9px] font-black uppercase tracking-wider text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded border border-emerald-300">
+                                Transfer Target
                               </span>
-                              <p className="text-[11px] text-slate-600 leading-relaxed mt-1">
-                                Open MetaMask, Phantom, Coinbase, or Trust Wallet and scan the QR code or send funds to the address below.
-                              </p>
+                              <h4 className="text-xs sm:text-sm font-black text-slate-900 mt-1">
+                                Send exactly <span className="text-emerald-700 font-mono">{cryptoAmount} {selectedCrypto.symbol}</span> (${usdAmount} USD)
+                              </h4>
+                            </div>
+                            <div className="w-7 h-7 relative flex items-center justify-center shrink-0">
+                              <Image src={selectedCrypto.icon} alt={selectedCrypto.name} width={24} height={24} className="object-contain" />
+                            </div>
+                          </div>
+
+                          {/* Main QR Code & Address Box */}
+                          <div className="bg-slate-50 rounded-2xl p-4 sm:p-5 border border-slate-200 space-y-4 text-center sm:text-left">
+                            <div className="flex flex-col sm:flex-row items-center gap-5">
+                              
+                              {/* Centered QR Code with Logo */}
+                              <div className="shrink-0 bg-white p-2.5 rounded-2xl border border-slate-200 shadow-xs">
+                                <QRCodeWithLogo
+                                  value={qrPaymentUri}
+                                  size={160}
+                                  logoSrc="/logo.png"
+                                  logoSize={36}
+                                />
+                                <p className="text-[9px] text-center font-extrabold text-slate-400 mt-1.5 uppercase tracking-wider">
+                                  Scan with Wallet
+                                </p>
+                              </div>
+
+                              {/* Instructions & Deposit Address */}
+                              <div className="flex-1 space-y-3 min-w-0 w-full">
+                                <div>
+                                  <span className="text-xs font-bold text-slate-500 block">
+                                    Network: <strong className="text-slate-800">{selectedCrypto.network}</strong>
+                                  </span>
+                                  <p className="text-[11px] text-slate-600 leading-relaxed mt-1">
+                                    Open MetaMask, Phantom, Coinbase, or Trust Wallet and scan the QR code or send funds to the address below.
+                                  </p>
+                                </div>
+
+                                {/* Plain Text Address Box */}
+                                <div className="space-y-1">
+                                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                    Official Deposit Address:
+                                  </span>
+                                  <div className="flex items-center gap-2 bg-white p-2 rounded-xl border border-slate-200 shadow-2xs">
+                                    <code className="text-xs font-mono font-bold text-slate-900 truncate select-all flex-1 text-left">
+                                      {selectedCrypto.address}
+                                    </code>
+                                    <button
+                                      type="button"
+                                      onClick={handleCopyAddress}
+                                      className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold text-xs rounded-lg transition-colors flex items-center gap-1 shrink-0 shadow-xs cursor-pointer"
+                                    >
+                                      {copied ? (
+                                        <>
+                                          <Check className="w-3 h-3 stroke-[3]" />
+                                          <span>Copied!</span>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <Copy className="w-3 h-3" />
+                                          <span>Copy</span>
+                                        </>
+                                      )}
+                                    </button>
+                                  </div>
+                                </div>
+
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Proof of Payment Screenshot Dropzone */}
+                          <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200 space-y-3">
+                            <div className="flex items-center justify-between">
+                              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                                <UploadCloud className="w-3.5 h-3.5 text-emerald-600" />
+                                Proof of Payment Screenshot (Optional)
+                              </span>
+                              <span className="text-[10px] text-slate-400 font-medium">
+                                Auto-shrunk WebP (≤1280px)
+                              </span>
                             </div>
 
-                            {/* Plain Text Address Box */}
-                            <div className="space-y-1">
-                              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                                Official Deposit Address:
-                              </span>
-                              <div className="flex items-center gap-2 bg-white p-2 rounded-xl border border-slate-200 shadow-2xs">
-                                <code className="text-xs font-mono font-bold text-slate-900 truncate select-all flex-1 text-left">
-                                  {selectedCrypto.address}
-                                </code>
+                            {!proofPreview ? (
+                              <label className="block border-2 border-dashed border-slate-300 hover:border-emerald-500 rounded-xl p-4 text-center cursor-pointer transition-colors bg-white hover:bg-emerald-50/20 group">
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  className="hidden"
+                                  onChange={handleProofSelected}
+                                  disabled={isShrinking || submitting}
+                                />
+                                {isShrinking ? (
+                                  <div className="flex flex-col items-center justify-center py-2 space-y-2">
+                                    <Loader2 className="w-6 h-6 text-emerald-600 animate-spin" />
+                                    <p className="text-xs font-bold text-slate-700">Compressing screenshot to WebP...</p>
+                                  </div>
+                                ) : (
+                                  <div className="flex flex-col items-center justify-center py-2 space-y-1.5">
+                                    <div className="w-9 h-9 rounded-full bg-slate-100 group-hover:bg-emerald-100 text-slate-500 group-hover:text-emerald-700 flex items-center justify-center transition-colors">
+                                      <UploadCloud className="w-4 h-4" />
+                                    </div>
+                                    <p className="text-xs font-bold text-slate-800">
+                                      Attach transaction receipt screenshot
+                                    </p>
+                                    <p className="text-[10px] text-slate-400">
+                                      Drag & drop or tap to select • PNG, JPG, WebP
+                                    </p>
+                                  </div>
+                                )}
+                              </label>
+                            ) : (
+                              <div className="bg-white p-3 rounded-xl border border-slate-200 flex items-center justify-between gap-3">
+                                <div className="flex items-center gap-3 min-w-0">
+                                  <div className="w-12 h-12 rounded-lg border border-slate-200 overflow-hidden shrink-0 relative bg-slate-100">
+                                    <img
+                                      src={proofPreview}
+                                      alt="Payment Proof Preview"
+                                      className="w-full h-full object-cover"
+                                    />
+                                  </div>
+                                  <div className="min-w-0">
+                                    <div className="flex items-center gap-1.5">
+                                      <span className="text-xs font-bold text-slate-900 truncate">
+                                        {proofFile?.name || 'payment_proof.webp'}
+                                      </span>
+                                      <span className="text-[9px] font-bold bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded border border-emerald-200">
+                                        Compressed
+                                      </span>
+                                    </div>
+                                    <p className="text-[10px] text-slate-400 font-mono mt-0.5">
+                                      {proofOriginalSize && proofShrunkSize ? (
+                                        <>
+                                          {Math.round(proofOriginalSize / 1024)}KB → <strong className="text-emerald-700">{Math.round(proofShrunkSize / 1024)}KB</strong> ({Math.round((1 - proofShrunkSize / proofOriginalSize) * 100)}% saved)
+                                        </>
+                                      ) : (
+                                        'Ready for verification'
+                                      )}
+                                    </p>
+                                  </div>
+                                </div>
                                 <button
                                   type="button"
-                                  onClick={handleCopyAddress}
-                                  className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold text-xs rounded-lg transition-colors flex items-center gap-1 shrink-0 shadow-xs cursor-pointer"
+                                  onClick={removeProof}
+                                  disabled={submitting}
+                                  className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer shrink-0"
+                                  title="Remove screenshot"
                                 >
-                                  {copied ? (
-                                    <>
-                                      <Check className="w-3 h-3 stroke-[3]" />
-                                      <span>Copied!</span>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <Copy className="w-3 h-3" />
-                                      <span>Copy</span>
-                                    </>
-                                  )}
+                                  <Trash2 className="w-4 h-4" />
                                 </button>
                               </div>
+                            )}
+                          </div>
+
+                          {/* Step 3 Crypto Action Buttons */}
+                          <div className="space-y-2 pt-1">
+                            <div className="flex items-center justify-between gap-3">
+                              <button
+                                type="button"
+                                onClick={() => goToStep(2)}
+                                className="px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer shrink-0"
+                              >
+                                <ArrowLeft className="w-4 h-4" />
+                                <span>Change Amount</span>
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={handleConfirmSent}
+                                disabled={submitting}
+                                className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white font-black text-xs sm:text-sm rounded-xl transition-all shadow-md shadow-emerald-600/25 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                              >
+                                {submitting ? (
+                                  <>
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                    <span>Recording Gift...</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <CheckCircle2 className="w-4 h-4" />
+                                    <span>I Have Sent The Donation 🚀</span>
+                                  </>
+                                )}
+                              </button>
                             </div>
 
+                            <div className="flex items-center justify-center gap-2 text-[10px] text-slate-400 font-medium text-center">
+                              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                              <span>100% of proceeds disburse directly to verified project milestones.</span>
+                            </div>
                           </div>
                         </div>
-                      </div>
+                      )}
 
-                      {/* Proof of Payment Screenshot Dropzone */}
-                      <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200 space-y-3">
-                        <div className="flex items-center justify-between">
-                          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
-                            <UploadCloud className="w-3.5 h-3.5 text-emerald-600" />
-                            Proof of Payment Screenshot (Optional)
-                          </span>
-                          <span className="text-[10px] text-slate-400 font-medium">
-                            Auto-shrunk WebP (≤1280px)
-                          </span>
-                        </div>
+                      {/* ------------------------------------------------------------- */}
+                      {/* BRANCH B: DEDICATED CREDIT / DEBIT CARD MAINTENANCE SCREEN */}
+                      {/* ------------------------------------------------------------- */}
+                      {selectedMethod === 'card' && (
+                        <div className="space-y-4">
+                          {/* Alert Notice Header */}
+                          <div className="bg-amber-50/90 border-2 border-amber-200/80 rounded-2xl p-5 text-center space-y-3">
+                            <div className="w-12 h-12 rounded-2xl bg-amber-100 border border-amber-300 text-amber-800 flex items-center justify-center mx-auto shadow-xs">
+                              <AlertTriangle className="w-6 h-6 stroke-[2.2]" />
+                            </div>
 
-                        {!proofPreview ? (
-                          <label className="block border-2 border-dashed border-slate-300 hover:border-emerald-500 rounded-xl p-4 text-center cursor-pointer transition-colors bg-white hover:bg-emerald-50/20 group">
-                            <input
-                              type="file"
-                              accept="image/*"
-                              className="hidden"
-                              onChange={handleProofSelected}
-                              disabled={isShrinking || submitting}
-                            />
-                            {isShrinking ? (
-                              <div className="flex flex-col items-center justify-center py-2 space-y-2">
-                                <Loader2 className="w-6 h-6 text-emerald-600 animate-spin" />
-                                <p className="text-xs font-bold text-slate-700">Compressing screenshot to WebP...</p>
-                              </div>
-                            ) : (
-                              <div className="flex flex-col items-center justify-center py-2 space-y-1.5">
-                                <div className="w-9 h-9 rounded-full bg-slate-100 group-hover:bg-emerald-100 text-slate-500 group-hover:text-emerald-700 flex items-center justify-center transition-colors">
-                                  <UploadCloud className="w-4 h-4" />
-                                </div>
-                                <p className="text-xs font-bold text-slate-800">
-                                  Attach transaction receipt screenshot
-                                </p>
-                                <p className="text-[10px] text-slate-400">
-                                  Drag & drop or tap to select • PNG, JPG, WebP
-                                </p>
-                              </div>
-                            )}
-                          </label>
-                        ) : (
-                          <div className="bg-white p-3 rounded-xl border border-slate-200 flex items-center justify-between gap-3">
-                            <div className="flex items-center gap-3 min-w-0">
-                              <div className="w-12 h-12 rounded-lg border border-slate-200 overflow-hidden shrink-0 relative bg-slate-100">
-                                <img
-                                  src={proofPreview}
-                                  alt="Payment Proof Preview"
-                                  className="w-full h-full object-cover"
-                                />
-                              </div>
-                              <div className="min-w-0">
-                                <div className="flex items-center gap-1.5">
-                                  <span className="text-xs font-bold text-slate-900 truncate">
-                                    {proofFile?.name || 'payment_proof.webp'}
+                            <div className="space-y-1">
+                              <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider text-amber-900 bg-amber-200/80 px-2.5 py-0.5 rounded-full border border-amber-300">
+                                <Clock className="w-3 h-3" />
+                                Gateway Upgrade in Progress
+                              </span>
+                              <h3 className="text-base sm:text-lg font-black text-slate-900">
+                                Direct Card Processing Temporarily Down
+                              </h3>
+                              <p className="text-xs text-slate-600 max-w-md mx-auto leading-relaxed">
+                                Our international card settlement gateway is undergoing scheduled infrastructure upgrades to eliminate 3.8% banking fees on non-profit gifts.
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Transparent Comparison Box */}
+                          <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200 space-y-2.5">
+                            <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">
+                              Payment Channel Comparison
+                            </span>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                              {/* Card info */}
+                              <div className="p-3 rounded-xl bg-white border border-slate-200 space-y-1 opacity-75">
+                                <div className="flex items-center justify-between">
+                                  <span className="font-bold text-slate-700 flex items-center gap-1.5">
+                                    <CreditCard className="w-3.5 h-3.5 text-slate-500" />
+                                    Debit / Credit Card
                                   </span>
-                                  <span className="text-[9px] font-bold bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded border border-emerald-200">
-                                    Compressed
+                                  <span className="text-[9px] font-bold uppercase text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded">
+                                    Paused
                                   </span>
                                 </div>
-                                <p className="text-[10px] text-slate-400 font-mono mt-0.5">
-                                  {proofOriginalSize && proofShrunkSize ? (
-                                    <>
-                                      {Math.round(proofOriginalSize / 1024)}KB → <strong className="text-emerald-700">{Math.round(proofShrunkSize / 1024)}KB</strong> ({Math.round((1 - proofShrunkSize / proofOriginalSize) * 100)}% saved)
-                                    </>
-                                  ) : (
-                                    'Ready for verification'
-                                  )}
+                                <p className="text-[11px] text-slate-500">
+                                  3.8% processor fee + bank settlement delay
+                                </p>
+                              </div>
+
+                              {/* Crypto info */}
+                              <div className="p-3 rounded-xl bg-emerald-50/80 border border-emerald-300 space-y-1">
+                                <div className="flex items-center justify-between">
+                                  <span className="font-bold text-emerald-900 flex items-center gap-1.5">
+                                    <Coins className="w-3.5 h-3.5 text-emerald-600" />
+                                    Instant Crypto
+                                  </span>
+                                  <span className="text-[9px] font-bold uppercase text-emerald-800 bg-emerald-200 px-1.5 py-0.5 rounded">
+                                    Active 100%
+                                  </span>
+                                </div>
+                                <p className="text-[11px] text-emerald-700 font-medium">
+                                  0% intermediary fee • Direct milestone proof
                                 </p>
                               </div>
                             </div>
+                          </div>
+
+                          {/* Dedicated Action Buttons */}
+                          <div className="space-y-2 pt-2">
+                            {/* Direct switch to Crypto with prefilled amount */}
                             <button
                               type="button"
-                              onClick={removeProof}
-                              disabled={submitting}
-                              className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer shrink-0"
-                              title="Remove screenshot"
+                              onClick={() => setSelectedMethod('crypto')}
+                              className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white font-black text-xs sm:text-sm rounded-xl transition-all shadow-md shadow-emerald-600/25 flex items-center justify-center gap-2 cursor-pointer"
                             >
-                              <Trash2 className="w-4 h-4" />
+                              <span>Donate ${usdAmount} via Crypto Instead (0% Fee)</span>
+                              <ArrowRight className="w-4 h-4" />
+                            </button>
+
+                            {/* Back to payment selection */}
+                            <button
+                              type="button"
+                              onClick={() => goToStep(2)}
+                              className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                            >
+                              <ArrowLeft className="w-3.5 h-3.5" />
+                              <span>Back to Payment Methods</span>
                             </button>
                           </div>
-                        )}
-                      </div>
 
-                      {/* Step 3 Action Buttons */}
-                      <div className="space-y-2 pt-1">
-                        <div className="flex items-center justify-between gap-3">
-                          <button
-                            type="button"
-                            onClick={() => goToStep(2)}
-                            className="px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer shrink-0"
-                          >
-                            <ArrowLeft className="w-4 h-4" />
-                            <span>Amount</span>
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={handleConfirmSent}
-                            disabled={submitting}
-                            className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white font-black text-xs sm:text-sm rounded-xl transition-all shadow-md shadow-emerald-600/25 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-                          >
-                            {submitting ? (
-                              <>
-                                <Loader2 className="w-4 h-4 animate-spin" />
-                                <span>Recording Gift...</span>
-                              </>
-                            ) : (
-                              <>
-                                <CheckCircle2 className="w-4 h-4" />
-                                <span>I Have Sent The Donation 🚀</span>
-                              </>
-                            )}
-                          </button>
+                          <div className="flex items-center justify-center gap-2 text-[10px] text-slate-400 font-medium text-center">
+                            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                            <span>Adera Foundation issues formal tax certificates for all validated gifts.</span>
+                          </div>
                         </div>
+                      )}
 
-                        <div className="flex items-center justify-center gap-2 text-[10px] text-slate-400 font-medium text-center">
-                          <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                          <span>100% of proceeds disburse directly to verified project milestones.</span>
+                      {/* ------------------------------------------------------------- */}
+                      {/* BRANCH C: DEDICATED DIGITAL WALLETS (APPLE PAY / PAYPAL) SCREEN */}
+                      {/* ------------------------------------------------------------- */}
+                      {selectedMethod === 'paypal' && (
+                        <div className="space-y-4">
+                          {/* Alert Notice Header */}
+                          <div className="bg-slate-50 border-2 border-slate-200 rounded-2xl p-5 text-center space-y-3">
+                            <div className="w-12 h-12 rounded-2xl bg-slate-200/80 border border-slate-300 text-slate-700 flex items-center justify-center mx-auto shadow-xs">
+                              <Wallet className="w-6 h-6 stroke-[2]" />
+                            </div>
+
+                            <div className="space-y-1">
+                              <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider text-slate-700 bg-slate-200 px-2.5 py-0.5 rounded-full border border-slate-300">
+                                <Clock className="w-3 h-3" />
+                                Coming Soon
+                              </span>
+                              <h3 className="text-base sm:text-lg font-black text-slate-900">
+                                Digital Wallets Integration in Progress
+                              </h3>
+                              <p className="text-xs text-slate-600 max-w-md mx-auto leading-relaxed">
+                                One-touch Apple Pay, Google Pay, and PayPal support is currently in non-profit verification and will be activated shortly.
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Roadmap Features */}
+                          <div className="bg-white rounded-2xl p-4 border border-slate-200 space-y-2.5">
+                            <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">
+                              What We Are Building
+                            </span>
+
+                            <div className="space-y-2 text-xs">
+                              <div className="flex items-center gap-2.5 p-2 rounded-xl bg-slate-50 border border-slate-100">
+                                <div className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 font-bold text-[10px]">✓</div>
+                                <div className="min-w-0">
+                                  <span className="font-bold text-slate-800 block">1-Tap Biometric Giving</span>
+                                  <span className="text-[10px] text-slate-500">Touch ID & Face ID donor instant verification.</span>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2.5 p-2 rounded-xl bg-slate-50 border border-slate-100">
+                                <div className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 font-bold text-[10px]">✓</div>
+                                <div className="min-w-0">
+                                  <span className="font-bold text-slate-800 block">Recurring Monthly Support</span>
+                                  <span className="text-[10px] text-slate-500">Continuous milestone micro-donations directly from your device.</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Dedicated Action Buttons */}
+                          <div className="space-y-2 pt-2">
+                            {/* Direct switch to Crypto with prefilled amount */}
+                            <button
+                              type="button"
+                              onClick={() => setSelectedMethod('crypto')}
+                              className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white font-black text-xs sm:text-sm rounded-xl transition-all shadow-md shadow-emerald-600/25 flex items-center justify-center gap-2 cursor-pointer"
+                            >
+                              <span>Donate ${usdAmount} via Crypto Instead (Active Now)</span>
+                              <ArrowRight className="w-4 h-4" />
+                            </button>
+
+                            {/* Back to payment selection */}
+                            <button
+                              type="button"
+                              onClick={() => goToStep(2)}
+                              className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                            >
+                              <ArrowLeft className="w-3.5 h-3.5" />
+                              <span>Back to Payment Methods</span>
+                            </button>
+                          </div>
+
+                          <div className="flex items-center justify-center gap-2 text-[10px] text-slate-400 font-medium text-center">
+                            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                            <span>100% transparent on-chain milestone delivery across all Ethiopian initiatives.</span>
+                          </div>
                         </div>
-                      </div>
-
+                      )}
                     </motion.div>
                   )}
 
