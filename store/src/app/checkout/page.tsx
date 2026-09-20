@@ -335,20 +335,44 @@ export default function CheckoutPage() {
           setAuthLoading(false);
           return;
         }
-        await signup({
+        const res = await signup({
           name: authName.trim(),
           email: authEmail.trim(),
           password: authPassword,
           phone: authPhone.trim() || undefined,
         });
-        setIsVerifying(true);
+        if (res?.user) {
+          setEmail(res.user.email);
+          if (res.user.name) {
+            const parts = res.user.name.trim().split(' ');
+            setFirstName(parts[0] || '');
+            setLastName(parts.slice(1).join(' ') || '');
+          }
+          goToStep(2);
+        } else {
+          // Auto-login fallback
+          const loginRes = await login(authEmail.trim(), authPassword);
+          if (loginRes?.user) {
+            setEmail(loginRes.user.email);
+            if (loginRes.user.name) {
+              const parts = loginRes.user.name.trim().split(' ');
+              setFirstName(parts[0] || '');
+              setLastName(parts.slice(1).join(' ') || '');
+            }
+            goToStep(2);
+          }
+        }
       }
     } catch (err: any) {
-      const msg = err.message || 'Authentication failed. Please check your credentials.';
-      if (msg.toLowerCase().includes('verify your email') || msg.toLowerCase().includes('6-digit code')) {
-        setIsVerifying(true);
+      const msg = err.message || '';
+      if (msg.toLowerCase().includes('wrong password') || msg.toLowerCase().includes('incorrect password')) {
+        setAuthError('Wrong password. Please check your password and try again.');
+      } else if (msg.toLowerCase().includes('wrong email') || msg.toLowerCase().includes('no account found') || msg.toLowerCase().includes('not found')) {
+        setAuthError('Wrong email. No account found with this email address.');
+      } else if (msg.toLowerCase().includes('already exists')) {
+        setAuthError('An account with this email already exists. Please click "Sign In to Existing Account".');
       } else {
-        setAuthError(msg);
+        setAuthError(msg || 'Authentication failed. Please check your credentials.');
       }
     } finally {
       setAuthLoading(false);

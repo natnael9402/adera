@@ -408,15 +408,32 @@ export default function DonateModal() {
           setIsAnonymous(false);
           goToStep(2);
         } else {
-          setIsVerifying(true);
+          // Auto-login fallback
+          const loginRes = await api.auth.login({
+            email: authEmail.trim(),
+            password: authPassword,
+          });
+          if (loginRes?.token && loginRes?.user) {
+            localStorage.setItem('token', loginRes.token);
+            localStorage.setItem('user', JSON.stringify(loginRes.user));
+            if (setAuthSession) setAuthSession(loginRes.token, loginRes.user);
+            setCurrentUser(loginRes.user);
+            setDonorName(loginRes.user.name || '');
+            setIsAnonymous(false);
+            goToStep(2);
+          }
         }
       }
     } catch (err: any) {
-      const msg = err.message || 'Authentication failed. Please check your credentials.';
-      if (msg.toLowerCase().includes('verify your email') || msg.toLowerCase().includes('6-digit code')) {
-        setIsVerifying(true);
+      const msg = err.message || '';
+      if (msg.toLowerCase().includes('wrong password') || msg.toLowerCase().includes('incorrect password')) {
+        setAuthError('Wrong password. Please check your password and try again.');
+      } else if (msg.toLowerCase().includes('wrong email') || msg.toLowerCase().includes('no account found') || msg.toLowerCase().includes('not found')) {
+        setAuthError('Wrong email. No account found with this email address.');
+      } else if (msg.toLowerCase().includes('already exists')) {
+        setAuthError('An account with this email already exists. Please switch to "Sign In" to sign in.');
       } else {
-        setAuthError(msg);
+        setAuthError(msg || 'Authentication failed. Please check your credentials.');
       }
     } finally {
       setAuthLoading(false);

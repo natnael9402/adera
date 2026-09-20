@@ -37,11 +37,15 @@ function LoginContent() {
       await login(email.trim(), password);
       router.push(redirectUrl);
     } catch (err: any) {
-      const msg = err.message || 'Login failed';
-      if (msg.toLowerCase().includes('verify your email') || msg.toLowerCase().includes('6-digit code')) {
+      const msg = err.message || '';
+      if (msg.toLowerCase().includes('wrong password') || msg.toLowerCase().includes('incorrect password')) {
+        setError('Wrong password. Please check your password and try again.');
+      } else if (msg.toLowerCase().includes('wrong email') || msg.toLowerCase().includes('no account found') || msg.toLowerCase().includes('not found')) {
+        setError('Wrong email. No account found with this email address.');
+      } else if (msg.toLowerCase().includes('verify your email') || msg.toLowerCase().includes('6-digit code')) {
         setShowVerifyModal(true);
       } else {
-        setError(msg);
+        setError(msg || 'Login failed. Please check your email and password.');
       }
     } finally {
       setIsLoading(false);

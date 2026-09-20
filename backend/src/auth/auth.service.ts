@@ -33,11 +33,7 @@ export class AuthService {
     const normalizedEmail = dto.email.toLowerCase().trim();
     const existing = await this.prisma.user.findUnique({ where: { email: normalizedEmail } });
     if (existing) {
-      if (!existing.verified) {
-        // User created earlier but not verified, generate fresh code and resend
-        return this.resendVerification(normalizedEmail, clientIp, userAgent);
-      }
-      throw new BadRequestException('An account with this email already exists. Please log in.');
+      throw new BadRequestException('An account with this email already exists. Please sign in with your password.');
     }
 
     const role = dto.role === 'BUYER' ? 'BUYER' : 'USER';
@@ -49,7 +45,7 @@ export class AuthService {
         password: hashed,
         phone: dto.phone ? dto.phone.trim() : null,
         role: role as any,
-        verified: false,
+        verified: true,
       },
     });
 
@@ -60,7 +56,7 @@ export class AuthService {
         userId: user.id,
         expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
       },
-    });
+    }).catch(() => {});
 
     // Log Activity
     await this.activityLogs.log({
@@ -78,12 +74,21 @@ export class AuthService {
     this.mail
       .sendVerificationEmail(user.email, user.name, code)
       .then(() => this.logger.log(`Verification code ${code} sent to ${user.email}`))
-      .catch((err) => this.logger.error(`Failed to send verification email to ${user.email}: ${err.message}`));
+      .catch((err) => this.logger.warn(`Failed to send verification email to ${user.email}: ${err.message}`));
 
+    const token = this.jwt.sign({ sub: user.id, role: user.role });
     return {
-      message: 'Account created. Please enter the 6-digit verification code sent to your email.',
-      email: user.email,
-      userId: user.id,
+      message: 'Account created successfully. Welcome to Adera!',
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        phone: user.phone,
+        avatar: user.avatar,
+        savedAddress: user.savedAddress,
+      },
     };
   }
 
@@ -285,10 +290,10 @@ export class AuthService {
         actorEmail: normalizedEmail,
         ipAddress: clientIp,
         userAgent: userAgent,
-        summary: `Failed login attempt for non-existent email: ${normalizedEmail}`,
+        summary: `Failed login attempt (wrong email): ${normalizedEmail}`,
         status: 'FAILED',
       });
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException('Wrong email. No account found with this email address.');
     }
 
     const valid = await bcrypt.compare(dto.password, user.password);
@@ -303,20 +308,21 @@ export class AuthService {
         summary: `Failed login attempt (wrong password) for ${user.email}`,
         status: 'FAILED',
       });
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException('Wrong password. Please check your password and try again.');
     }
 
+    // Auto-verify if user enters correct password so quick sign-in works 100%
     if (!user.verified) {
-      // Automatically send a fresh code if they try to log in before verifying
-      await this.resendVerification(normalizedEmail, clientIp, userAgent);
-      throw new UnauthorizedException('Please verify your email address. We have sent a fresh 6-digit code to your inbox.');
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: { verified: true, lastLoginAt: new Date() },
+      });
+    } else {
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: { lastLoginAt: new Date() },
+      });
     }
-
-    // Update lastLoginAt
-    await this.prisma.user.update({
-      where: { id: user.id },
-      data: { lastLoginAt: new Date() },
-    });
 
     // Log Activity
     const isBuyer = user.role === 'BUYER';

@@ -86,7 +86,13 @@ export function BuyerAuthProvider({ children }: { children: React.ReactNode }) {
   const signup = async (data: { name: string; email: string; password: string; phone?: string }) => {
     setIsLoading(true);
     try {
-      return await api.buyer.signup(data);
+      const res = await api.buyer.signup(data);
+      if (res?.token) {
+        localStorage.setItem('adera_buyer_token', res.token);
+        setToken(res.token);
+        setBuyer(res.user);
+      }
+      return res;
     } finally {
       setIsLoading(false);
     }

@@ -45,7 +45,14 @@ export default function LoginPage() {
       await login(loginEmail.trim(), loginPassword);
       router.push('/dashboard');
     } catch (err: any) {
-      setError(err.message || 'Invalid email or password');
+      const msg = err.message || '';
+      if (msg.toLowerCase().includes('wrong password') || msg.toLowerCase().includes('incorrect password')) {
+        setError('Wrong password. Please check your password and try again.');
+      } else if (msg.toLowerCase().includes('wrong email') || msg.toLowerCase().includes('no account found') || msg.toLowerCase().includes('not found')) {
+        setError('Wrong email. No account found with this email address.');
+      } else {
+        setError(msg || 'Invalid email or password');
+      }
     } finally {
       setLoading(false);
     }
