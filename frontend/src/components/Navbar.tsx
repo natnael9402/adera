@@ -3,9 +3,10 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Menu, X, Heart, LayoutDashboard, LogOut, PlusCircle, Globe, ShoppingBag, ShieldCheck } from 'lucide-react';
+import { Menu, X, Heart, LayoutDashboard, LogOut, PlusCircle, Globe, ShoppingBag, ShieldCheck, Wallet } from 'lucide-react';
 import { useAuth } from "@/context/AuthContext";
 import { useDonate } from "@/context/DonateContext";
+import { useWallet } from "@/context/WalletContext";
 import NotificationCenter from "./NotificationCenter";
 
 const navLinks = [
@@ -20,6 +21,7 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const { user, logout } = useAuth();
   const { openDonateModal } = useDonate();
+  const { balance } = useWallet();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -84,15 +86,24 @@ export default function Navbar() {
               <span>List a Cause</span>
             </Link>
 
+            {/* Philanthropic Wallet Pill */}
+            <Link
+              href="/donate?tab=funds"
+              className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-slate-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/80 rounded-xl transition-all"
+              title="Philanthropic Wallet Balance"
+            >
+              <Wallet className="w-3.5 h-3.5 text-emerald-700" />
+              <span className="font-black text-emerald-950">${balance.toFixed(2)}</span>
+            </Link>
+
             {/* Instant Donate Button */}
-            <button
-              type="button"
-              onClick={() => openDonateModal()}
+            <Link
+              href="/donate"
               className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-extrabold text-white bg-emerald-600 hover:bg-emerald-700 active:scale-95 rounded-xl transition-all shadow-md shadow-emerald-600/20 cursor-pointer"
             >
               <Heart className="w-3.5 h-3.5 fill-white/30" />
               <span>Donate Now</span>
-            </button>
+            </Link>
 
             {/* Notifications Center */}
             <NotificationCenter />
@@ -130,14 +141,21 @@ export default function Navbar() {
           {/* Mobile Hamburger Button */}
           <div className="flex md:hidden items-center gap-2">
             <NotificationCenter />
-            <button
-              type="button"
-              onClick={() => openDonateModal()}
+            <Link
+              href="/donate"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-xl text-xs font-bold"
+              title="Philanthropic Wallet"
+            >
+              <Wallet className="w-3.5 h-3.5 text-emerald-700" />
+              <span>${balance.toFixed(0)}</span>
+            </Link>
+            <Link
+              href="/donate"
               className="p-2 bg-emerald-600 text-white rounded-xl shadow-xs"
               title="Instant Donate"
             >
               <Heart className="w-4 h-4 fill-white/30" />
-            </button>
+            </Link>
             <button
               onClick={() => setMobileOpen(!mobileOpen)}
               className="p-2 text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-xl transition-colors"
@@ -163,17 +181,14 @@ export default function Navbar() {
             ))}
 
             <div className="pt-2 border-t border-slate-100 flex flex-col gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setMobileOpen(false);
-                  openDonateModal();
-                }}
+              <Link
+                href="/donate"
+                onClick={() => setMobileOpen(false)}
                 className="w-full py-2.5 bg-emerald-600 text-white font-extrabold text-xs rounded-xl shadow-xs flex items-center justify-center gap-2"
               >
                 <Heart className="w-4 h-4 fill-white/30" />
-                <span>Donate Now (Card, PayPal, Crypto)</span>
-              </button>
+                <span>Donate & Philanthropic Wallet (${balance.toFixed(2)})</span>
+              </Link>
 
               <a
                 href={process.env.NEXT_PUBLIC_STORE_URL || "https://shop.aderafoundation.com"}

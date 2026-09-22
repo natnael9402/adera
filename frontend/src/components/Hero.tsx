@@ -46,15 +46,14 @@ export default function Hero() {
 
             {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center lg:justify-start gap-3 w-full sm:w-auto pt-1">
-              <button
-                type="button"
-                onClick={() => openDonateModal()}
+              <Link
+                href="/donate"
                 className="inline-flex items-center justify-center gap-2 px-6 py-3.5 text-sm sm:text-base font-bold text-white bg-slate-950 hover:bg-slate-800 active:scale-[0.98] rounded-xl transition-all shadow-xs cursor-pointer"
               >
                 <Heart className="w-4 h-4 text-emerald-400" />
                 <span>Donate Now</span>
                 <ArrowRight className="w-4 h-4" />
-              </button>
+              </Link>
               
               <Link
                 href="/causes/new"

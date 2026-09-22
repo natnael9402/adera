@@ -493,15 +493,24 @@ export default function CauseDetailPage() {
 
                 <div className="h-px bg-slate-100 my-4" />
 
-                {/* Direct Instant Donation Modal Trigger */}
-                <button
-                  type="button"
-                  onClick={() => openDonateModal(post)}
-                  className="w-full py-4 px-4 bg-slate-950 hover:bg-slate-800 active:scale-[0.99] text-white font-extrabold text-xs sm:text-sm rounded-2xl transition-all shadow-md shadow-emerald-600/20 hover:shadow-lg hover:shadow-emerald-600/25 flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <Heart className="w-4 h-4 fill-white/30" />
-                  <span>Donate with Card, PayPal, or Crypto</span>
-                </button>
+                {/* Direct Instant Donation CTA */}
+                <div className="flex flex-col gap-2">
+                  <Link
+                    href={`/donate?cause=${post.id}`}
+                    className="w-full py-4 px-4 bg-slate-950 hover:bg-slate-800 active:scale-[0.99] text-white font-extrabold text-xs sm:text-sm rounded-2xl transition-all shadow-md shadow-emerald-600/20 hover:shadow-lg hover:shadow-emerald-600/25 flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <Heart className="w-4 h-4 text-emerald-400 fill-white/30" />
+                    <span>Donate with Philanthropic Wallet or Crypto</span>
+                  </Link>
+
+                  <button
+                    type="button"
+                    onClick={() => openDonateModal(post)}
+                    className="w-full py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <span>Quick Modal (Card, PayPal, Crypto)</span>
+                  </button>
+                </div>
 
                 {/* Accepted Payment Badges */}
                 <div className="flex items-center justify-center gap-2 py-1 flex-wrap border-b border-slate-100 pb-3">

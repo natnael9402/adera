@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Poppins } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
+import { WalletProvider } from "@/context/WalletContext";
 import { DonateProvider } from "@/context/DonateContext";
 import DonateModal from "@/components/DonateModal";
 
@@ -37,10 +38,12 @@ export default function RootLayout({
     <html lang="en" className={`${inter.variable} ${poppins.variable}`}>
       <body className="min-h-screen bg-white text-slate-900 antialiased font-[var(--font-inter)]">
         <AuthProvider>
-          <DonateProvider>
-            {children}
-            <DonateModal />
-          </DonateProvider>
+          <WalletProvider>
+            <DonateProvider>
+              {children}
+              <DonateModal />
+            </DonateProvider>
+          </WalletProvider>
         </AuthProvider>
       </body>
     </html>
