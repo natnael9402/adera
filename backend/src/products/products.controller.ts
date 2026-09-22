@@ -6,6 +6,16 @@ import { CreateProductDto } from './dto/create-product.dto';
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
 
+  @Get('seed-4890')
+  seed4890Get() {
+    return this.productsService.seed4890Catalog();
+  }
+
+  @Post('seed-4890')
+  seed4890Post() {
+    return this.productsService.seed4890Catalog();
+  }
+
   @Post('seed-1000')
   seed1000() {
     return this.productsService.seed1000Catalog();

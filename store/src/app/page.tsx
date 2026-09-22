@@ -74,7 +74,7 @@ export default function StoreHome() {
       .then(res => res.json())
       .then(data => {
         const items = Array.isArray(data) ? data : data?.items || [];
-        if (items.length > 0) {
+        if (items.length >= 4890) {
           const sanitized = items.map((p: any, idx: number) => {
             if (!p.image || p.image.includes('/products/') || p.image.includes('banggoods') || p.image.includes('placeholder')) {
               const fallback = MASTER_CATALOG_PRODUCTS[idx % MASTER_CATALOG_PRODUCTS.length];
@@ -83,6 +83,16 @@ export default function StoreHome() {
             return p;
           });
           setProducts(sanitized);
+        } else if (items.length > 0 && items.length < 4890) {
+          // If backend has fewer than 4890, keep 4890 products and auto-seed backend in background
+          fetch(`${apiUrl}/products/seed-4890`, { method: 'POST' })
+            .then(() => fetch(`${apiUrl}/products`, { cache: 'no-store' }))
+            .then(res => res.json())
+            .then(newData => {
+              const fresh = Array.isArray(newData) ? newData : newData?.items || [];
+              if (fresh.length >= 4890) setProducts(fresh);
+            })
+            .catch(() => {});
         }
       })
       .catch((err) => {
@@ -90,7 +100,7 @@ export default function StoreHome() {
         api.products.list()
           .then(data => {
             const items = Array.isArray(data) ? data : (data as any)?.items || [];
-            if (items.length > 0) {
+            if (items.length >= 4890) {
               const sanitized = items.map((p: any, idx: number) => {
                 if (!p.image || p.image.includes('/products/') || p.image.includes('banggoods') || p.image.includes('placeholder')) {
                   const fallback = MASTER_CATALOG_PRODUCTS[idx % MASTER_CATALOG_PRODUCTS.length];

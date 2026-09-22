@@ -1,3 +1,7 @@
+import scrapedTechImagesRaw from './tech-images-scraped.json';
+
+const scrapedTechImages: Record<string, string[]> = scrapedTechImagesRaw as Record<string, string[]>;
+
 export interface Product {
   id: number;
   name: string;
@@ -17,669 +21,737 @@ export interface Product {
   importedDetails?: any;
 }
 
-// 12 Distinct Categories with Dedicated 88+ Unique High-Resolution Image Photo IDs per Category
-const CATEGORY_IMAGE_REGISTRY: Record<string, string[]> = {
+const TECH_IMAGE_REGISTRY: Record<string, string[]> = {
+  'Smartphones & Mobile Flagships': [
+    'photo-1592750475338-74b7b21085ab', 'photo-1511707171634-5f897ff02aa9', 'photo-1565849904461-04a58ad377e0', 'photo-1510557880182-3d4d3cba35a5',
+    'photo-1574944985070-8f3ebc6b79d2', 'photo-1589492477829-5e65395b66cc', 'photo-1598327105666-5b89351aff97', 'photo-1530319067432-f2a729c03db5',
+    'photo-1567581935884-3349723552ca', 'photo-1570891836654-d356347c9e7a', 'photo-1601784551446-20c9e07cdbdb', 'photo-1591337676887-a217a6970a8a',
+  ],
+  'Tablets & Mobile Slates': [
+    'photo-1544244015-0df4b3ffc6b0', 'photo-1580910051074-3eb694886505', 'photo-1561154464-82e9adf32764', 'photo-1550029402-226115b7c579',
+    'photo-1569770218135-bea267ed7e84', 'photo-1585060544812-6b45742d762f', 'photo-1536412597336-ade7b523ecfc', 'photo-1541345023926-55d6e0853f4b',
+  ],
+  'Mobile Gadgets & MagSafe Gear': [
+    'photo-1609091839311-d5365f9ff1c5', 'photo-1622445262464-84b1b0722dd2', 'photo-1583863788434-e58a36330cf0', 'photo-1580927752452-89d86da3fa0a',
+    'photo-1558618666-fcd25c85cd64', 'photo-1600080972464-8e5f35f63d08', 'photo-1544716278-ca5e3f4abd8c', 'photo-1518770660439-4636190af475',
+  ],
   'Laptops & Computers': [
     'photo-1517336714731-489689fd1ca8', 'photo-1593642632823-8f785ba67e45', 'photo-1588872657578-7efd1f1555ed', 'photo-1525547719571-a2d4ac8945e2',
     'photo-1603302576837-37561b2e2302', 'photo-1541807084-5c52b6b3adef', 'photo-1496181133206-80ce9b88a853', 'photo-1516321318423-f06f85e504b3',
-    'photo-1531297484001-80022131f5a1', 'photo-1585060544812-6b45742d762f', 'photo-1498050108023-c5249f4df085', 'photo-1527443224154-c4a3942d3acf',
-    'photo-1563770660941-20978e870e26', 'photo-1593642702821-c8da6771f0c6', 'photo-1593642634315-48f5414c3ad9', 'photo-1593642634443-44adaa06623a',
-    'photo-1587614382346-4ec70e388b28', 'photo-1611186871348-b1ce696e52c9', 'photo-1515378791036-0648a3ef77b2', 'photo-1484788984921-03950022c9ef',
-    'photo-1547082299-de196ea013d6', 'photo-1550745165-9bc0b252726f', 'photo-1517059224940-d4af9eec41b7', 'photo-1522199755839-a2bacb67c546',
-    'photo-1512499617640-c74ae3a79d37', 'photo-1519389950473-47ba0277781c', 'photo-1544716278-ca5e3f4abd8c', 'photo-1593642532400-2682810df593',
-    'photo-1593642532744-e377ab2570bc', 'photo-1593642532842-98d0fd5ebc1a', 'photo-1593642532973-d31b6557fa68', 'photo-1618424181497-157f25b6ddd5',
-    'photo-1587829741301-dc798b83add3', 'photo-1595225476474-87563907a212', 'photo-1618384887929-16ec33fab9ef', 'photo-1629429408209-1f912961dbd8'
   ],
-  'Smartphones & Tablets': [
-    'photo-1592750475338-74b7b21085ab', 'photo-1511707171634-5f897ff02aa9', 'photo-1544244015-0df4b3ffc6b0', 'photo-1580910051074-3eb694886505',
-    'photo-1565849904461-04a58ad377e0', 'photo-1510557880182-3d4d3cba35a5', 'photo-1574944985070-8f3ebc6b79d2', 'photo-1589492477829-5e65395b66cc',
-    'photo-1598327105666-5b89351aff97', 'photo-1530319067432-f2a729c03db5', 'photo-1567581935884-3349723552ca', 'photo-1570891836654-d356347c9e7a',
-    'photo-1601784551446-20c9e07cdbdb', 'photo-1591337676887-a217a6970a8a', 'photo-1584438784894-089d6a62b8fa', 'photo-1565630916779-e303be97b6f5',
-    'photo-1523206489230-c012c64b2b48', 'photo-1533228892404-e0c1f6c43c16', 'photo-1556656793-08538906a9f8', 'photo-1572569511254-d8f925fe2cbb',
-    'photo-1592899677977-9c10ca588bbd', 'photo-1605236453806-6ff36851218e', 'photo-1609692814858-f7cd2f0afe44', 'photo-1616348436168-de43ad0db179',
-    'photo-1616469829941-c7200edec809', 'photo-1546054454-aa26e2b734c7', 'photo-1575695342320-d2d2d2f9b73f', 'photo-1585771724684-38269d6639fd',
-    'photo-1561154464-82e9adf32764', 'photo-1550029402-226115b7c579', 'photo-1569770218135-bea267ed7e84', 'photo-1585060544812-6b45742d762f',
-    'photo-1536412597336-ade7b523ecfc', 'photo-1541345023926-55d6e0853f4b', 'photo-1512941937669-90a1b58e7e9c', 'photo-1584006682522-dc17d6c0d9ac'
+  'Monitors & Displays': [
+    'photo-1527443224154-c4a3942d3acf', 'photo-1585792180666-f7347c490ee2', 'photo-1593642532744-e377ab2570bc', 'photo-1547082299-de196ea013d6',
+  ],
+  'Keyboards & Mice': [
+    'photo-1587829741301-dc798b83add3', 'photo-1618384887929-16ec33fab9ef', 'photo-1527864550417-7fd91fc51a46', 'photo-1595225476474-87563907a212',
   ],
   'Audio & Headphones': [
     'photo-1505740420928-5e560c06d30e', 'photo-1583394838336-acd977736f90', 'photo-1546435770-a3e426bf472b', 'photo-1484704849700-f032a568e944',
-    'photo-1572536147248-ac59a8abfa4b', 'photo-1590658268037-6bf12165a8df', 'photo-1618366712010-f4ae9c647dcb', 'photo-1598331668826-20cecc596b86',
-    'photo-1524678606370-a47ad25cb82a', 'photo-1578319439584-104c94d37305', 'photo-1545454675-3531b543be5d', 'photo-1508700115892-45ecd05ae2ad',
-    'photo-1563245372-f21724e3856d', 'photo-1511379938547-c1f69419868d', 'photo-1516715094483-75da7dee9758', 'photo-1520170350707-b2da599700a8',
+  ],
+  'Earbuds & Portable Speakers': [
     'photo-1590658006821-04f4008d5717', 'photo-1577174881658-0f30ed549adc', 'photo-1585298723682-7115561c51b7', 'photo-1608156639585-34a0a562a0cf',
-    'photo-1590658189679-b1d62c3f8152', 'photo-1520523839898-5071270409a8', 'photo-1543512214-318c7553f230', 'photo-1558089687-f282ffcbc126',
-    'photo-1519671482749-fd09be7ccebf', 'photo-1507676184212-d03ab07a01bf', 'photo-1528148343865-51218c4a13e6', 'photo-1564424555153-04228f0aa7ee',
-    'photo-1588872657578-7efd1f1555ed', 'photo-1514525253161-7a46d19cd819', 'photo-1516321318423-f06f85e504b3', 'photo-1524678606370-a47ad25cb82a',
-    'photo-1578319439584-104c94d37305', 'photo-1545454675-3531b543be5d', 'photo-1508700115892-45ecd05ae2ad', 'photo-1505740420928-5e560c06d30e'
   ],
-  'Cameras & Drones': [
+  'Cameras, Drones & Creators': [
     'photo-1516035069371-29a1b244cc32', 'photo-1502920917128-1aa500764cbd', 'photo-1527011046414-4781f1f94f8c', 'photo-1508614589041-895b88991e3e',
-    'photo-1512790182412-b19e6d62bc39', 'photo-1526170375885-4d8ecf77b99f', 'photo-1495707902641-75cac588d2e9', 'photo-1507679799987-c73779587ccf',
-    'photo-1510127034890-ba27508e9f1c', 'photo-1533090161767-e6ffed986c88', 'photo-1471341971476-ae15ff5dd4ea', 'photo-1500648767791-00dcc994a43e',
-    'photo-1516724562728-afc824a36e84', 'photo-1513694203232-719a280e022f', 'photo-1564466809058-bf4114d55352', 'photo-1507646227500-4d389b0012be',
-    'photo-1520390138845-fd2d229dd553', 'photo-1486406146926-c627a92ad1ab', 'photo-1516962215378-7fa2e137ae93', 'photo-1514565131-fce0801e5785',
-    'photo-1524781289445-ddf8f5695861', 'photo-1517420704952-d9f39e95b43e', 'photo-1579783902614-a3fb3927b675', 'photo-1505739998589-00fc191ce01d',
-    'photo-1581591524425-c7e0978865fc', 'photo-1569683795645-b62e50fbf103', 'photo-1588497859490-85d1c17db96d', 'photo-1512790182412-b19e6d62bc39',
-    'photo-1508614589041-895b88991e3e', 'photo-1502920917128-1aa500764cbd', 'photo-1527011046414-4781f1f94f8c', 'photo-1516035069371-29a1b244cc32',
-    'photo-1526170375885-4d8ecf77b99f', 'photo-1495707902641-75cac588d2e9', 'photo-1507679799987-c73779587ccf', 'photo-1510127034890-ba27508e9f1c'
   ],
-  'Gaming & VR': [
+  'Gaming Handhelds & VR': [
     'photo-1606813907291-d86efa9b94db', 'photo-1607604276583-eef5d076aa5f', 'photo-1622979135225-d2ba269bc1df', 'photo-1598550476439-6847785fcea6',
-    'photo-1550745165-9bc0b252726f', 'photo-1538481199705-c710c4e965fc', 'photo-1580234811497-9df7fd2f357e', 'photo-1592840496694-26d035b52b48',
-    'photo-1612287233207-6f81b190f779', 'photo-1542751371-adc38448a05e', 'photo-1511512578047-dfb367046420', 'photo-1563089145-599997674d42',
-    'photo-1551103782-8ab07afd45c1', 'photo-1614680376593-902f749f7ffc', 'photo-1579586337278-3befd40fd17a', 'photo-1593305841991-05c297ba4575',
-    'photo-1560253023-3ec5d502959f', 'photo-1518770660439-4636190af475', 'photo-1526738549149-8e07eca6c147', 'photo-1593118247619-e2d6f056869e',
-    'photo-1578632767115-351597cf2477', 'photo-1592155931584-901ac15763e3', 'photo-1552824792-ecab8a55639d', 'photo-1600080972464-8e5f35f63d08',
-    'photo-1550751827-4bd374c3f58b', 'photo-1586182987320-4f376899f750', 'photo-1546410531-bb4caa6b424d', 'photo-1595225476474-87563907a212',
-    'photo-1618384887929-16ec33fab9ef', 'photo-1606813907291-d86efa9b94db', 'photo-1607604276583-eef5d076aa5f', 'photo-1622979135225-d2ba269bc1df',
-    'photo-1598550476439-6847785fcea6', 'photo-1580234811497-9df7fd2f357e', 'photo-1592840496694-26d035b52b48', 'photo-1612287233207-6f81b190f779'
   ],
-  'Home & Kitchen': [
+  'Smart Home & Robotics': [
     'photo-1556911220-e15b29be8c8f', 'photo-1584269600464-37b1b58a9fe7', 'photo-1544816155-12df9643f363', 'photo-1578643463396-0997cb5328c1',
-    'photo-1517256064527-09c73fc73e38', 'photo-1520970014086-2208d157c9e2', 'photo-1574269909862-7e1d70bb8078', 'photo-1585515320310-259814833e62',
-    'photo-1590794056226-79ef3a8147e1', 'photo-1507089947368-19c1da9775ae', 'photo-1513694203232-719a280e022f', 'photo-1556909114-f6e7ad7d3136',
-    'photo-1583847268964-b28dc8f51f92', 'photo-1516455590571-18256e5bb9ff', 'photo-1517668808822-9ebb02f2a0e6', 'photo-1585338107529-13afc5f02586',
-    'photo-1585670210693-e7fdd16b142e', 'photo-1570222094114-d054a817e56b', 'photo-1584990347449-a2e6f4773c52', 'photo-1546548970-71785318a17b',
-    'photo-1513519245088-0e12902e5a38', 'photo-1505691938895-1758d7feb511', 'photo-1586023492125-27b2c045efd7', 'photo-1555041469-a586c61ea9bc',
-    'photo-1524758631624-e2822e304c36', 'photo-1517256064527-09c73fc73e38', 'photo-1584269600464-37b1b58a9fe7', 'photo-1544816155-12df9643f363',
-    'photo-1578643463396-0997cb5328c1', 'photo-1520970014086-2208d157c9e2', 'photo-1574269909862-7e1d70bb8078', 'photo-1585515320310-259814833e62',
-    'photo-1590794056226-79ef3a8147e1', 'photo-1556909114-f6e7ad7d3136', 'photo-1583847268964-b28dc8f51f92', 'photo-1556911220-e15b29be8c8f'
   ],
-  'Watches & Wearables': [
-    'photo-1523275335684-37898b6baf30', 'photo-1524805444758-089113d48a6d', 'photo-1542496658-e33a6d0d50f6', 'photo-1509042239860-f550ce710b93',
-    'photo-1533139502658-0198f920d8e8', 'photo-1619134778706-7015533a6150', 'photo-1522335789203-aabd1fc54bc9', 'photo-1548036328-c9fa89d128fa',
-    'photo-1526045612212-70caf35c14df', 'photo-1511370235399-1802cae1d32f', 'photo-1539185441755-769473a23570', 'photo-1517841905240-472988babdf9',
-    'photo-1508057198894-247b23fe5ade', 'photo-1524592094714-0f0654e20314', 'photo-1535557142533-b5e1cc6e2a5d', 'photo-1546868871-7041f2a55e12',
-    'photo-1516962215378-7fa2e137ae93', 'photo-1547996160-71dfabbce5fa', 'photo-1518131672697-613becd4fab5', 'photo-1579818276162-4113cb678869',
-    'photo-1594534475808-b18fc33b045e', 'photo-1523275335684-37898b6baf30', 'photo-1524805444758-089113d48a6d', 'photo-1542496658-e33a6d0d50f6',
-    'photo-1533139502658-0198f920d8e8', 'photo-1619134778706-7015533a6150', 'photo-1548036328-c9fa89d128fa', 'photo-1526045612212-70caf35c14df',
-    'photo-1511370235399-1802cae1d32f', 'photo-1539185441755-769473a23570', 'photo-1517841905240-472988babdf9', 'photo-1508057198894-247b23fe5ade',
-    'photo-1524592094714-0f0654e20314', 'photo-1523275335684-37898b6baf30', 'photo-1524805444758-089113d48a6d', 'photo-1542496658-e33a6d0d50f6'
-  ],
-  'Fashion & Footwear': [
-    'photo-1542291026-7eec264c27ff', 'photo-1552346154-21d32810aba3', 'photo-1556906781-9a412961c28c', 'photo-1543163521-1bf539c55dd2',
-    'photo-1595950653106-6c9ebd614d3a', 'photo-1560769629-975ec94e6a86', 'photo-1584735935682-2f2b69dff9d2', 'photo-1525966222134-fcfa99b8ae77',
-    'photo-1515955656352-a1fa3ffcd111', 'photo-1600185365926-3a2ce3cdb9eb', 'photo-1597045566677-8cf032ed6634', 'photo-1575537302964-96cd47c06b1b',
-    'photo-1514989940723-e8e51635b782', 'photo-1549298916-b41d501d3772', 'photo-1562183241-b937e95585b6', 'photo-1576995853123-5a10305d93c0',
-    'photo-1591047139829-d91aecb6caea', 'photo-1551028719-00167b16eac5', 'photo-1548036328-c9fa89d128fa', 'photo-1553062407-98eeb64c6a62',
-    'photo-1516762689617-e1cffcef479d', 'photo-1490481651871-ab68de25d43d', 'photo-1512436991641-6745cdb1723f', 'photo-1509631179647-0177331693ae',
-    'photo-1445205170230-053b83016050', 'photo-1489987707025-afc232f7ea0f', 'photo-1523381210434-271e8be1f52b', 'photo-1503342217505-b0a15ec3261c',
-    'photo-1542291026-7eec264c27ff', 'photo-1552346154-21d32810aba3', 'photo-1556906781-9a412961c28c', 'photo-1595950653106-6c9ebd614d3a',
-    'photo-1560769629-975ec94e6a86', 'photo-1600185365926-3a2ce3cdb9eb', 'photo-1597045566677-8cf032ed6634', 'photo-1575537302964-96cd47c06b1b'
-  ],
-  'Outdoor & Sports': [
-    'photo-1510312305653-8ed496efae75', 'photo-1485965120184-e220f721d03e', 'photo-1535131749006-b7f58c99034b', 'photo-1506126613408-eca07ce68773',
-    'photo-1517649763962-0c623266ddc0', 'photo-1551698618-1dfe5d97d256', 'photo-1516214104703-d870798883c5', 'photo-1541534741688-6078c6bfb5c5',
-    'photo-1476480862126-209bfaa8edc8', 'photo-1522878129833-838a904a0e9e', 'photo-1507034589631-9433cc6bc453', 'photo-1534438327276-14e5300c3a48',
-    'photo-1517838277536-f5f99be501cd', 'photo-1526778548025-fa2f459cd5c1', 'photo-1501555088652-021faa106b9b', 'photo-1470246973918-29a93221c455',
-    'photo-1544367567-0f2fcb009e0b', 'photo-1517836357463-d25dfeac3438', 'photo-1518611012118-696072aa579a', 'photo-1506197603052-3cc9c3a201bd',
-    'photo-1508873696983-2df5703bc30f', 'photo-1507525428034-b723cf961d3e', 'photo-1527631746610-bca00a040d60', 'photo-1510312305653-8ed496efae75',
-    'photo-1485965120184-e220f721d03e', 'photo-1535131749006-b7f58c99034b', 'photo-1506126613408-eca07ce68773', 'photo-1517649763962-0c623266ddc0',
-    'photo-1551698618-1dfe5d97d256', 'photo-1516214104703-d870798883c5', 'photo-1541534741688-6078c6bfb5c5', 'photo-1522878129833-838a904a0e9e',
-    'photo-1507034589631-9433cc6bc453', 'photo-1534438327276-14e5300c3a48', 'photo-1517838277536-f5f99be501cd', 'photo-1485965120184-e220f721d03e'
-  ],
-  'Health & Fitness': [
-    'photo-1540420773420-3366772f4999', 'photo-1584308666744-24d5c474f2ae', 'photo-1518611012118-696072aa579a', 'photo-1571019613454-1cb2f99b2d8b',
-    'photo-1583454110551-21f2fa2afe61', 'photo-1574680096145-d05b474e2155', 'photo-1576678927484-cc907957088c', 'photo-1517838277536-f5f99be501cd',
-    'photo-1584735935682-2f2b69dff9d2', 'photo-1517836357463-d25dfeac3438', 'photo-1571019614242-c5c5dee9f50b', 'photo-1538805060514-97d9cc17730c',
-    'photo-1512290903422-ea4253977577', 'photo-1584017911766-d451b3d0e843', 'photo-1576091160550-2173dba999ef', 'photo-1583947215259-38e31be8751f',
-    'photo-1505576399279-565b52d4ac71', 'photo-1544367567-0f2fcb009e0b', 'photo-1522898467493-49726bf01db6', 'photo-1576091160399-112ba8d25d1d',
-    'photo-1518611012118-696072aa579a', 'photo-1571019613454-1cb2f99b2d8b', 'photo-1583454110551-21f2fa2afe61', 'photo-1574680096145-d05b474e2155',
-    'photo-1576678927484-cc907957088c', 'photo-1584735935682-2f2b69dff9d2', 'photo-1517836357463-d25dfeac3438', 'photo-1571019614242-c5c5dee9f50b',
-    'photo-1538805060514-97d9cc17730c', 'photo-1512290903422-ea4253977577', 'photo-1576091160550-2173dba999ef', 'photo-1505576399279-565b52d4ac71',
-    'photo-1540420773420-3366772f4999', 'photo-1584308666744-24d5c474f2ae', 'photo-1518611012118-696072aa579a', 'photo-1583454110551-21f2fa2afe61'
-  ],
-  'Office & Workspace': [
-    'photo-1524758631624-e2822e304c36', 'photo-1586717791821-3f44a563fa4c', 'photo-1593062096033-9a26b09da705', 'photo-1518455027359-f3f8164ba6bd',
-    'photo-1527864550417-7fd91fc51a46', 'photo-1587829741301-dc798b83add3', 'photo-1616486338812-3dadae4b4ace', 'photo-1585792180666-f7347c490ee2',
-    'photo-1505797149-43b0069ec26b', 'photo-1511556532299-8f662fc26c06', 'photo-1587614387466-0a72ca909e16', 'photo-1587614382200-a0a1f0a149c7',
-    'photo-1587614387455-87b6a4a4b4bb', 'photo-1587614387433-87b6a4a4b4bb', 'photo-1593642532400-2682810df593', 'photo-1507679799987-c73779587ccf',
-    'photo-1497366216548-37526070297c', 'photo-1497215728101-856f4ea42174', 'photo-1517502884422-41eaead166d4', 'photo-1504384308090-c894fdcc538d',
-    'photo-1542744173-8e7e53415bb0', 'photo-1522071820081-009f0129c71c', 'photo-1517245386807-bb43f82c33c4', 'photo-1498050108023-c5249f4df085',
-    'photo-1524758631624-e2822e304c36', 'photo-1586717791821-3f44a563fa4c', 'photo-1593062096033-9a26b09da705', 'photo-1518455027359-f3f8164ba6bd',
-    'photo-1527864550417-7fd91fc51a46', 'photo-1587829741301-dc798b83add3', 'photo-1616486338812-3dadae4b4ace', 'photo-1505797149-43b0069ec26b',
-    'photo-1511556532299-8f662fc26c06', 'photo-1587614387466-0a72ca909e16', 'photo-1587614382200-a0a1f0a149c7', 'photo-1587614387455-87b6a4a4b4bb'
-  ],
-  'Power & Tech Gear': [
-    'photo-1609091839311-d5365f9ff1c5', 'photo-1622445262464-84b1b0722dd2', 'photo-1583863788434-e58a36330cf0', 'photo-1580927752452-89d86da3fa0a',
-    'photo-1558618666-fcd25c85cd64', 'photo-1600080972464-8e5f35f63d08', 'photo-1544716278-ca5e3f4abd8c', 'photo-1518770660439-4636190af475',
+  'Storage & PC Hardware': [
     'photo-1591488320449-011701bb6704', 'photo-1612815154858-60aa4c59eaa6', 'photo-1546868871-7041f2a55e12', 'photo-1588508065123-287b28e013da',
-    'photo-1583394838336-acd977736f90', 'photo-1616486338812-3dadae4b4ace', 'photo-1592899677977-9c10ca588bbd', 'photo-1598327105666-5b89351aff97',
-    'photo-1541807084-5c52b6b3adef', 'photo-1550009158-9ebf69173e03', 'photo-1517059224940-d4af9eec41b7', 'photo-1527443224154-c4a3942d3acf',
-    'photo-1591799264318-7e6ef8ddb7ea', 'photo-1607604276583-eef5d076aa5f', 'photo-1550745165-9bc0b252726f', 'photo-1526738549149-8e07eca6c147',
-    'photo-1519389950473-47ba0277781c', 'photo-1581092160607-ee22621dd758', 'photo-1581092335397-9583fe92d232', 'photo-1581092580497-e0d23cbdf1dc',
-    'photo-1581091226825-a6a2a5aee158', 'photo-1581093458791-9f3c3900df4b', 'photo-1581092795360-fd1ca04f0952', 'photo-1581092162384-8987c1d64718',
-    'photo-1581093588401-fbb62a02f120', 'photo-1581093806997-124204d9fa9d', 'photo-1581094794329-c8112a89af12', 'photo-1581093583449-8255a7d46e76'
-  ]
+  ],
+  'Power Stations & Solar Tech': [
+    'photo-1609091839311-d5365f9ff1c5', 'photo-1622445262464-84b1b0722dd2', 'photo-1583863788434-e58a36330cf0', 'photo-1580927752452-89d86da3fa0a',
+  ],
+  'Smartwatches & Wearables': [
+    'photo-1523275335684-37898b6baf30', 'photo-1524805444758-089113d48a6d', 'photo-1542496658-e33a6d0d50f6', 'photo-1509042239860-f550ce710b93',
+  ],
 };
 
-const CATEGORIES_DATA = [
+function getCategoryImages(catName: string, queryKeys: string | string[]): string[] {
+  const keys = Array.isArray(queryKeys) ? queryKeys : [queryKeys];
+  const scraped: string[] = [];
+  for (const k of keys) {
+    if (scrapedTechImages[k]) {
+      scraped.push(...scrapedTechImages[k]);
+    }
+  }
+  const registered = (TECH_IMAGE_REGISTRY[catName] || []).map(
+    id => `https://images.unsplash.com/${id}?auto=format&fit=crop&w=800&q=80`
+  );
+  const combined = [...scraped, ...registered];
+  return combined.length > 0 ? combined : registered;
+}
+
+// 1. SMARTPHONES & MOBILE FLAGSHIPS: 1,100 Distinct Authentic Items
+const SMARTPHONE_BRANDS_MODELS = [
   {
-    category: 'Laptops & Computers',
-    brandPool: ['Apple', 'Dell', 'Lenovo', 'ASUS', 'HP', 'Razer', 'Alienware', 'Acer', 'MSI', 'LG', 'Samsung'],
-    templates: [
-      {
-        titlePrefix: 'MacBook Pro 16" Liquid Retina XDR',
-        variants: ['M3 Pro 18GB/512GB Space Black', 'M3 Max 36GB/1TB Silver', 'M3 Max 64GB/2TB Space Black', 'M4 Max 48GB/1TB Space Black', 'M3 Pro 36GB/512GB Silver'],
-        description: 'Apple Silicon supercharged for pros. Extreme dynamic range display, 22-hour battery life, and pro studio connectivity.',
-        specsBase: { Display: '16.2" Liquid Retina XDR 120Hz', Memory: 'Unified High-Bandwidth', Ports: '3x Thunderbolt 4, HDMI, MagSafe 3', Battery: 'Up to 22 Hours' },
-        priceRange: [2299, 3899],
-        discountRange: [10, 20],
-      },
-      {
-        titlePrefix: 'MacBook Air 15" Liquid Retina Display',
-        variants: ['M3 16GB/512GB Midnight', 'M3 8GB/256GB Starlight', 'M3 24GB/1TB Space Gray', 'M2 16GB/512GB Silver'],
-        description: 'Strikingly thin design with up to 18 hours of battery life and an expansive 15.3-inch Liquid Retina display.',
-        specsBase: { Display: '15.3" Liquid Retina', Processor: 'Apple M3 8-core CPU', Weight: '3.3 lbs (1.51 kg)', Audio: '6-Speaker Sound System' },
-        priceRange: [1199, 1899],
-        discountRange: [12, 22],
-      },
-      {
-        titlePrefix: 'Dell XPS 16 InfinityEdge OLED Laptop',
-        variants: ['Intel Core Ultra 9 32GB/1TB RTX 4070 Platinum', 'Intel Core Ultra 7 16GB/512GB RTX 4060 Graphite', 'Intel Core Ultra 7 32GB/1TB RTX 4070 OLED'],
-        description: 'Futuristic seamless glass touch pad, capacitive touch function row, and 4K+ OLED InfinityEdge display.',
-        specsBase: { Display: '16.3" 4K+ OLED Touch 90Hz', Graphics: 'NVIDIA GeForce RTX 4070 8GB', RAM: '32GB LPDDR5X', Storage: '1TB NVMe PCIe 4.0' },
-        priceRange: [2199, 3199],
-        discountRange: [15, 25],
-      },
-      {
-        titlePrefix: 'Lenovo ThinkPad X1 Carbon Gen 12',
-        variants: ['Intel Core Ultra 7 32GB/1TB WUXGA Carbon Fiber', 'Intel Core Ultra 5 16GB/512GB Black', 'Intel Core Ultra 7 64GB/2TB 2.8K OLED'],
-        description: 'Ultralight executive business flagship. MIL-STD 810H durability, TrackPoint, and AI-boosted thermal management.',
-        specsBase: { Processor: 'Intel Core Ultra 7 155H with Intel AI Boost', Weight: '2.42 lbs (1.09 kg)', Battery: '57Whr Rapid Charge', Security: 'Fingerprint & IR Camera' },
-        priceRange: [1699, 2799],
-        discountRange: [18, 30],
-      },
-      {
-        titlePrefix: 'ASUS ROG Zephyrus G16 Gaming Laptop',
-        variants: ['OLED 240Hz Intel Core Ultra 9 RTX 4080 Eclipse Gray', 'OLED 240Hz Intel Core Ultra 7 RTX 4070 Platinum White', 'OLED 240Hz AMD Ryzen 9 AI RTX 4090'],
-        description: 'Precision-crafted CNC aluminum chassis with ROG Nebula OLED display and supreme vapor chamber cooling.',
-        specsBase: { Display: '16" 2.5K OLED 240Hz 0.2ms', GPU: 'NVIDIA GeForce RTX 4080 12GB GDDR6', Audio: '6-speaker array with Dolby Atmos' },
-        priceRange: [1999, 3499],
-        discountRange: [10, 18],
-      },
-      {
-        titlePrefix: 'Razer Blade 16 Dual-Mode Mini-LED',
-        variants: ['Intel Core i9-14900HX 32GB/2TB RTX 4090 Anodized Black', 'Intel Core i9-14900HX 32GB/1TB RTX 4080 Mercury White', 'Intel Core i9-14900HX 64GB/4TB RTX 4090'],
-        description: 'The worlds first dual-mode mini-LED display switching between 4K 120Hz creator mode and FHD+ 240Hz pro gaming.',
-        specsBase: { Display: '16" Dual-Mode Mini-LED 4K/FHD+', Cooling: 'Patented Vapor Chamber', Build: 'T6 CNC Milled Aluminum' },
-        priceRange: [2999, 4299],
-        discountRange: [8, 15],
-      },
+    brand: 'Apple',
+    imgKeys: ['iphone', 'smartphone', 'mobile-technology'],
+    chipset: 'Apple A18 Pro / A17 Pro Bionic',
+    models: [
+      { name: 'iPhone 16 Pro Max Titanium 5G', basePrice: 1199, desc: 'Grade 5 Titanium frame with A18 Pro silicon, 48MP Fusion camera with 5x optical telephoto, Camera Control button, and 33-hour battery.' },
+      { name: 'iPhone 16 Pro Super Retina XDR 120Hz', basePrice: 999, desc: 'Apple A18 Pro chip, ProMotion 120Hz display with thinner borders, 48MP Ultra Wide sensor, and studio-quality 4-mic array.' },
+      { name: 'iPhone 16 Plus Dynamic Island OLED', basePrice: 899, desc: 'Expansive 6.7-inch Super Retina XDR display, A18 silicon with Apple Intelligence, customizable Action button, and marathon battery.' },
+      { name: 'iPhone 16 Ceramic Shield 5G', basePrice: 799, desc: 'Next-generation Ceramic Shield front, A18 chip, 48MP 2-in-1 camera system with 2x optical-quality telephoto, and Spatial Video.' },
+      { name: 'iPhone 15 Pro Max A17 Pro Titanium', basePrice: 1099, desc: 'Aerospace-grade titanium design with revolutionary A17 Pro chip, Action button, USB-C 10Gbps data speeds, and 5x optical zoom.' },
+      { name: 'iPhone 15 Pro Action Button Flagship', basePrice: 899, desc: 'Lightweight titanium construction with A17 Pro GPU hardware ray tracing and versatile 48MP main camera system.' },
+      { name: 'iPhone 15 Dynamic Island USB-C', basePrice: 699, desc: 'Color-infused durable back glass with Dynamic Island, 48MP Main camera, and universal USB-C charging connector.' },
+      { name: 'iPhone 14 Pro Max Deep Purple Flagship', basePrice: 799, desc: 'A16 Bionic powerhouse with Always-On display, Dynamic Island, Crash Detection, and Photonic Engine computational imaging.' },
     ],
   },
   {
-    category: 'Smartphones & Tablets',
-    brandPool: ['Apple', 'Samsung', 'Google', 'OnePlus', 'Microsoft', 'Motorola', 'Xiaomi'],
-    templates: [
-      {
-        titlePrefix: 'Apple iPhone 16 Pro Max Unlocked',
-        variants: ['256GB Natural Titanium', '512GB Desert Titanium', '1TB Black Titanium', '128GB White Titanium'],
-        description: 'Grade 5 Titanium design with A18 Pro chip, 48MP Fusion camera system, Camera Control button, and immense battery life.',
-        specsBase: { Display: '6.9" Super Retina XDR ProMotion 120Hz', Chip: 'A18 Pro with 6-core GPU', MainCamera: '48MP Fusion 5x Telephoto' },
-        priceRange: [1199, 1599],
-        discountRange: [5, 12],
-      },
-      {
-        titlePrefix: 'Samsung Galaxy S24 Ultra 5G AI Phone',
-        variants: ['512GB Titanium Gray Unlocked', '256GB Titanium Black Unlocked', '1TB Titanium Violet with S-Pen'],
-        description: 'Galaxy AI is here. Circle to Search, Live Translate, Note Assist, 200MP Quad Tele camera, and embedded S-Pen stylus.',
-        specsBase: { Display: '6.8" Dynamic AMOLED 2X 2600 nits', Processor: 'Snapdragon 8 Gen 3 for Galaxy', Camera: '200MP + 50MP 5x Optical' },
-        priceRange: [1149, 1549],
-        discountRange: [15, 25],
-      },
-      {
-        titlePrefix: 'Google Pixel 9 Pro XL Unlocked',
-        variants: ['256GB Obsidian', '512GB Porcelain', '128GB Hazel', '1TB Rose Quartz'],
-        description: 'Engineered by Google with Tensor G4, Gemini Live AI integration, Pro triple camera with 30x Super Res Zoom, and 7 years of updates.',
-        specsBase: { Display: '6.8" Super Actua Display 3000 nits', Chip: 'Google Tensor G4 with Titan M2', RAM: '16GB High Performance' },
-        priceRange: [999, 1399],
-        discountRange: [10, 20],
-      },
-      {
-        titlePrefix: 'Apple iPad Pro 13" Tandem OLED',
-        variants: ['M4 Chip 256GB Wi-Fi Space Black', 'M4 Chip 512GB Wi-Fi + Cellular Silver', 'M4 Chip 1TB Nano-Texture Glass Space Black'],
-        description: 'Unbelievably thin 5.1mm profile with breakthrough Ultra Retina XDR tandem OLED display and next-generation M4 performance.',
-        specsBase: { Display: '13" Ultra Retina XDR Tandem OLED', Chip: 'Apple M4 10-core CPU', Thickness: '5.1 mm Ultra Slim' },
-        priceRange: [1299, 2199],
-        discountRange: [8, 15],
-      },
-      {
-        titlePrefix: 'Samsung Galaxy Z Fold 6 5G',
-        variants: ['512GB Silver Shadow', '256GB Navy', '1TB Crafted Black Unlocked'],
-        description: 'Slimmer, lighter, and more durable foldable with dual screens, Armor Aluminum frame, and multi-window multitasking.',
-        specsBase: { MainDisplay: '7.6" Dynamic AMOLED 2X 120Hz', CoverDisplay: '6.3" Dynamic AMOLED 2X', Durability: 'IP48 Water Resistant' },
-        priceRange: [1799, 2299],
-        discountRange: [12, 22],
-      },
+    brand: 'Samsung Galaxy',
+    imgKeys: ['samsung-galaxy', 'foldable-phone', 'smartphone'],
+    chipset: 'Snapdragon 8 Gen 3 for Galaxy',
+    models: [
+      { name: 'Galaxy S24 Ultra 5G AI Smartphone', basePrice: 1299, desc: 'Titanium frame with integrated S Pen stylus, Galaxy AI Live Translate, 200MP Quad Tele camera, and Gorilla Armor anti-reflective glass.' },
+      { name: 'Galaxy S24+ 5G QHD+ Dynamic AMOLED 2X', basePrice: 999, desc: 'Armor Aluminum 2.0 with Snapdragon 8 Gen 3, 12GB RAM, 4900mAh battery, and seamless Galaxy AI photo editing.' },
+      { name: 'Galaxy S24 5G Compact AI Flagship', basePrice: 799, desc: 'One-hand friendly 6.2-inch 120Hz Dynamic AMOLED 2X with 2600 nits peak brightness and Galaxy AI Circle to Search.' },
+      { name: 'Galaxy Z Fold6 AI Slim Armor Foldable', basePrice: 1899, desc: 'Expansive 7.6-inch Dynamic AMOLED 2X tablet screen folding into a pocketable device with dual-rail hinge and Ray Tracing.' },
+      { name: 'Galaxy Z Flip6 AI Compact FlexCam', basePrice: 1099, desc: 'Pocket-sized folding flagship with 3.4-inch FlexWindow, 50MP main camera, vapor chamber cooling, and 4000mAh battery.' },
+      { name: 'Galaxy S23 Ultra 200MP Space Zoom Flagship', basePrice: 949, desc: 'Snapdragon 8 Gen 2 Mobile Platform for Galaxy with embedded S Pen, 100x Space Zoom, and Expert RAW astro-hyperlapse.' },
+      { name: 'Galaxy S23 FE 5G High-Performance Edition', basePrice: 599, desc: 'Flagship-grade 50MP camera, vibrant 120Hz Dynamic AMOLED display, and all-day intelligent battery at accessible pricing.' },
+      { name: 'Galaxy A55 5G Metal Frame Super AMOLED', basePrice: 429, desc: 'Premium metal flat frame with 50MP OIS camera, Samsung Knox Vault security, and IP67 water/dust resistance.' },
+    ],
+  },
+  {
+    brand: 'Google Pixel',
+    imgKeys: ['google-pixel', 'smartphone', 'android-phone'],
+    chipset: 'Google Tensor G4 & Titan M2 Security',
+    models: [
+      { name: 'Pixel 9 Pro XL Google AI Smartphone', basePrice: 1099, desc: 'Custom Google Tensor G4 with 16GB RAM, Super Res Zoom 30x, Magic Eraser, and 7 years of direct OS updates.' },
+      { name: 'Pixel 9 Pro Compact Super Res Zoom Phone', basePrice: 999, desc: 'Pro-grade triple camera system in a compact 6.3-inch Super Actua display with 3000 nits peak brightness and Gemini Nano.' },
+      { name: 'Pixel 9 Google Tensor G4 Smartphone', basePrice: 799, desc: '6.3-inch Actua display, 50MP dual rear camera, Gemini AI built-in, and satellite SOS emergency messaging.' },
+      { name: 'Pixel 9 Pro Fold Dual-Screen AI Foldable', basePrice: 1799, desc: 'Google thinnest foldable with 8-inch Super Actua Flex inner display, fluid multi-tasking Split Screen, and Tensor G4.' },
+      { name: 'Pixel 8 Pro Temperature Sensor Flagship', basePrice: 749, desc: 'Polished aluminum frame with matte back glass, built-in object temperature sensor, Best Take, and Audio Magic Eraser.' },
+      { name: 'Pixel 8a AI Compact Smartphone', basePrice: 499, desc: 'Tensor G3 power with 120Hz Actua display, IP67 durability, 64MP quad PD camera, and 24+ hour battery.' },
+    ],
+  },
+  {
+    brand: 'OnePlus',
+    imgKeys: ['smartphone', 'cellphone', 'android-phone'],
+    chipset: 'Qualcomm Snapdragon 8 Gen 3',
+    models: [
+      { name: 'OnePlus 12 Hasselblad Flagship 5G', basePrice: 799, desc: 'Snapdragon 8 Gen 3 with 5400mAh dual-cell battery, 80W SUPERVOOC fast charging, and 4th Gen Hasselblad Camera.' },
+      { name: 'OnePlus Open Dual-Screen Foldable Flagship', basePrice: 1699, desc: 'Lightweight aerospace titanium hinge, dual 120Hz 2K ProXDR displays, Open Canvas multitasking, and Sony LYT-T808 sensor.' },
+      { name: 'OnePlus 12R Extreme Performance Edition', basePrice: 499, desc: 'Snapdragon 8 Gen 2 powerhouse with 5500mAh largest-ever battery, 1.5K 120Hz 4th Gen LTPO display, and 100W charging.' },
+      { name: 'OnePlus 11 5G Dual-SIM Flagship', basePrice: 599, desc: 'Hasselblad camera with Sony IMX890, 100W flash charging, Dolby Vision AMOLED, and Cryo-velocity VC cooling.' },
+      { name: 'OnePlus Nord 4 All-Metal Unibody 5G', basePrice: 399, desc: 'Slim 7.99mm aircraft-grade unibody aluminum with Snapdragon 7+ Gen 3, 5500mAh battery, and 6 years of software support.' },
+      { name: 'OnePlus Open Apex Edition Crimson Shadow', basePrice: 1899, desc: 'Luxurious vegan leather back with 1TB UFS 4.0 storage, 16GB LPDDR5X RAM, VIP privacy slider, and AI smart eraser.' },
+    ],
+  },
+  {
+    brand: 'Xiaomi & POCO',
+    imgKeys: ['android-phone', 'cellphone', 'smartphone'],
+    chipset: 'Snapdragon 8 Gen 3 / Dimensity 9300',
+    models: [
+      { name: 'Xiaomi 14 Ultra Leica Quad-Camera Master', basePrice: 1299, desc: '1-inch Sony LYT-900 sensor with stepless f/1.63-f/4.0 variable aperture, dual periscope zoom, and 90W HyperCharge.' },
+      { name: 'Xiaomi 14 Pro Snapdragon 8 Gen 3 Flagship', basePrice: 899, desc: 'Xiaomi Ceramic Glass with 120Hz WQHD+ LTPO OLED, 120W wired + 50W wireless charging, and Leica Summilux lens.' },
+      { name: 'Xiaomi 13T Pro Leica Optics 144Hz AMOLED', basePrice: 649, desc: 'MediaTek Dimensity 9200+ with 144Hz CrystalRes AMOLED, 50MP Leica professional optical camera, and IP68 resistance.' },
+      { name: 'POCO F6 Pro Snapdragon 8 Gen 2 Gaming Phone', basePrice: 499, desc: 'WQHD+ 120Hz Flow AMOLED with 4000 nits, LiquidCool 4.0 with Iceloop, 120W HyperCharge, and Light Fusion 800 sensor.' },
+      { name: 'POCO X6 Pro Dimensity 8300-Ultra Beast', basePrice: 349, desc: 'TSMC 4nm processor with WildBoost Optimization 2.0, 64MP OIS triple camera, and 67W turbo charging.' },
+      { name: 'Redmi Note 13 Pro+ 5G 200MP Curved AMOLED', basePrice: 399, desc: '200MP ultra-clear main camera with OIS, 1.5K 120Hz curved display, IP68 water resistance, and 120W HyperCharge.' },
+    ],
+  },
+  {
+    brand: 'Asus ROG',
+    imgKeys: ['phone-screen', 'android-phone', 'smartphone'],
+    chipset: 'Overclocked Snapdragon 8 Gen 3',
+    models: [
+      { name: 'ROG Phone 8 Pro Ultimate Esports Gaming Phone', basePrice: 1199, desc: 'AniMe Matrix mini-LED rear display, AirTrigger ultrasonic buttons, 165Hz Samsung AMOLED, and AeroActive Cooler X.' },
+      { name: 'ROG Phone 8 Snapdragon 8 Gen 3 Gaming Flagship', basePrice: 999, desc: 'IP68 water resistant gaming phone with 6-axis hybrid gimbal stabilizer, 5500mAh split battery, and 65W HyperCharge.' },
+      { name: 'ROG Phone 7 Ultimate AeroActive Portal Edition', basePrice: 1099, desc: 'Motorized thermal air intake portal directing airflow directly onto cooling fins for sustained esports framerates.' },
+      { name: 'Zenfone 11 Ultra LTPO AMOLED Flagship', basePrice: 899, desc: '6.78-inch 144Hz LTPO AMOLED, 50MP Sony IMX890 gimbal camera, AI Call Translator, and 5500mAh 2-day battery.' },
+      { name: 'Zenfone 10 Compact One-Hand Flagship', basePrice: 699, desc: 'Sub-6-inch compact beast with 6-Axis Hybrid Gimbal Stabilizer 2.0, Snapdragon 8 Gen 2, and 144Hz AMOLED.' },
+    ],
+  },
+  {
+    brand: 'Sony Xperia',
+    imgKeys: ['mobile-phone', 'smartphone', 'phone-screen'],
+    chipset: 'Snapdragon 8 Gen 3 Mobile Platform',
+    models: [
+      { name: 'Xperia 1 VI Continuous Optical Zoom Flagship', basePrice: 1399, desc: 'True 85mm-170mm continuous optical telephoto lens with Exmor T sensor, BRAVIA AI picture tuning, and 2-day battery.' },
+      { name: 'Xperia 5 V Compact Studio Cinema Phone', basePrice: 899, desc: 'Compact pro camera phone with Exmor T dual lens system, 3.5mm hi-res headphone jack, and front-facing stereo speakers.' },
+      { name: 'Xperia Pro-I 1.0-Type Exmor RS Sensor Phone', basePrice: 1199, desc: 'Dedicated 1.0-type image sensor with phase-detection AF, dual physical shutter buttons, and professional 4K 120fps video.' },
+      { name: 'Xperia 10 VI Ultra-Lightweight 5000mAh Phone', basePrice: 449, desc: 'Only 164g featherlight body with 2-day marathon battery life, front stereo speakers, and Corning Gorilla Glass Victus.' },
+      { name: 'Xperia 1 V 4K HDR 120Hz OLED Studio Phone', basePrice: 1099, desc: 'World premier 4K HDR 120Hz 21:9 OLED display with S-Cinetone for mobile, specialized gaming gear, and Hi-Res Audio.' },
+    ],
+  },
+  {
+    brand: 'Nothing',
+    imgKeys: ['cellphone', 'mobile-technology', 'smartphone'],
+    chipset: 'Snapdragon 778G+ / Dimensity 7350 Pro',
+    models: [
+      { name: 'Nothing Phone (2) Glyph Interface Flagship', basePrice: 649, desc: 'Iconic transparent back with 33 addressable Glyph LED zones, Snapdragon 8+ Gen 1, dual 50MP Sony sensors, and Nothing OS 2.5.' },
+      { name: 'Nothing Phone (2a) Transparent Design 5G', basePrice: 349, desc: 'Custom Dimensity 7200 Pro chipset with 120Hz flexible AMOLED, 50MP OIS camera, and 45W fast charging.' },
+      { name: 'Nothing Phone (2a) Plus Dimensity 7350 Pro', basePrice: 399, desc: 'Metallic finish with 50MP selfie camera, 4K video recording on front & back, and turbocharged 50W wired charging.' },
+      { name: 'CMF Phone 1 Modular Interchangeable Cover Phone', basePrice: 239, desc: 'Customizable rear case with modular accessory mounting point, 120Hz Super AMOLED, and MediaTek Dimensity 7300.' },
+    ],
+  },
+  {
+    brand: 'Motorola',
+    imgKeys: ['foldable-phone', 'cellphone', 'smartphone'],
+    chipset: 'Snapdragon 8s Gen 3 / 8 Gen 2',
+    models: [
+      { name: 'Motorola Razr+ 2024 Dual-Screen Flex Flagship', basePrice: 999, desc: 'Massive 4.0-inch external pOLED display, teardrop zero-gap hinge, Moto AI camera features, and Dolby Atmos stereo.' },
+      { name: 'Motorola Razr 2024 OLED Clamshell Foldable', basePrice: 699, desc: 'Premium vegan leather clamshell with 3.6-inch cover screen, 6.9-inch 120Hz main display, and 30W TurboPower charging.' },
+      { name: 'Edge 50 Ultra Pantone Certified Wooden Back Phone', basePrice: 999, desc: 'Real natural Nordic wood back panel with 64MP periscope telephoto, 125W TurboPower, and 50W wireless charging.' },
+      { name: 'Edge 50 Pro 125W TurboPower 144Hz pOLED', basePrice: 699, desc: 'World first Pantone validated display and camera, 144Hz curved screen, and IP68 underwater protection.' },
+      { name: 'ThinkPhone by Motorola Military Grade Carbon Fiber', basePrice: 599, desc: 'Aramid fiber unibody with aircraft-grade aluminum frame, ThinkShield enterprise security, and seamless PC integration.' },
+    ],
+  },
+  {
+    brand: 'Nubia RedMagic',
+    imgKeys: ['android-phone', 'phone-screen', 'smartphone'],
+    chipset: 'Snapdragon 8 Gen 3 Leading Version (3.4GHz)',
+    models: [
+      { name: 'RedMagic 9S Pro ICE 13.5 Cooling Fan Gaming Phone', basePrice: 749, desc: 'Under-display 16MP camera with 22,000 RPM internal RGB cooling fan, 520Hz shoulder triggers, and 6500mAh 80W battery.' },
+      { name: 'RedMagic 9 Pro+ Esports Titan 24GB RAM Edition', basePrice: 899, desc: 'Monster 24GB LPDDR5X RAM + 1TB UFS 4.0 storage, flat zero-camera-bump back glass, and 165W ultra-fast flash charging.' },
+      { name: 'Nubia Z60 Ultra Leading Edition Under-Display Cam', basePrice: 649, desc: 'True bezel-less 1.5K AMOLED with NeoVision under-display camera, 35mm optical street lens, and IP68 waterproof body.' },
+      { name: 'Nubia Z60S Pro Satellite Edition Outdoor Flagship', basePrice: 569, desc: 'Two-way satellite communication with 35mm custom primary lens, 5100mAh battery, and snapdragon 8 Gen 2 platform.' },
+      { name: 'RedMagic 8S Pro Snapdragon 8+ Gen 2 Beast', basePrice: 649, desc: 'Bezel-less 120Hz gaming screen with vapor chamber liquid cooling, dual stereo x-axis linear motors, and DTS:X Ultra.' },
+    ],
+  },
+  {
+    brand: 'Honor',
+    imgKeys: ['smartphone', 'mobile-technology', 'foldable-phone'],
+    chipset: 'Snapdragon 8 Gen 3 / MagicOS 8.0',
+    models: [
+      { name: 'Honor Magic6 Pro Falcon Periscope Telephoto Phone', basePrice: 1199, desc: '180MP periscope telephoto camera with 2.5x optical/100x digital zoom, 5600mAh silicon-carbon battery, and NanoCrystal Shield.' },
+      { name: 'Honor Magic V3 Slimmest Dual-Screen Foldable', basePrice: 1799, desc: 'Impossibly slender 9.2mm folded thickness, aerospace Super Steel hinge, IPX8 water resistance, and Harcourt portrait studio.' },
+      { name: 'Honor 200 Pro Studio Harcourt Portrait Phone', basePrice: 699, desc: 'Co-engineered with Studio Harcourt Paris for iconic black-and-white portraits, 100W wired + 66W wireless charging.' },
+      { name: 'Honor Magic V2 Ultra-Slim Titanium Foldable', basePrice: 1499, desc: 'Titanium alloy hinge certified for 400,000 folds with dual 120Hz LTPO displays and dual silicon-carbon 5000mAh battery.' },
+      { name: 'Honor 90 200MP Zero-Risk Dimming AMOLED', basePrice: 449, desc: '3840Hz risk-free ultra-high frequency PWM dimming display with 200MP ultra-clear camera and 50MP front selfie cam.' },
+    ],
+  },
+  {
+    brand: 'Vivo',
+    imgKeys: ['cellphone', 'android-phone', 'smartphone'],
+    chipset: 'Dimensity 9300+ / Snapdragon 8 Gen 3',
+    models: [
+      { name: 'Vivo X100 Pro Zeiss APO Telephoto Camera Phone', basePrice: 999, desc: 'Zeiss APO certified floating telephoto lens with 1-inch Sony IMX989 sensor, V3 imaging chip, and 100W dual-cell flash charge.' },
+      { name: 'Vivo X Fold3 Pro Snapdragon 8 Gen 3 Foldable', basePrice: 1599, desc: 'Dual 3D ultrasonic fingerprint scanners, carbon fiber ultra-lightweight hinge, IPX8 water resistance, and 5700mAh battery.' },
+      { name: 'Vivo X100 Ultra 200MP Zeiss Periscope Master', basePrice: 1299, desc: 'World-first 200MP 1/1.4-inch Samsung HP9 telephoto camera with Blueprint imaging algorithm and CIPA 4.5 gimbal stabilization.' },
+      { name: 'Vivo V30 Pro Zeiss Portrait Studio 5G', basePrice: 499, desc: 'Aura Light portrait system with trio of 50MP Zeiss cameras, slim 7.45mm body, and 5000mAh 4-year durable battery.' },
+      { name: 'iQOO 12 Pro 144Hz 2K E7 AMOLED Gaming Flagship', basePrice: 799, desc: 'Q1 dedicated e-sports display chip, BMW M Motorsport racing stripe edition, 120W FlashCharge, and 64MP periscope telephoto.' },
+    ],
+  },
+  {
+    brand: 'Rugged & Tactical Outdoor',
+    imgKeys: ['mobile-phone', 'smartphone', 'gadgets'],
+    chipset: 'MediaTek Dimensity 8200 / Qualcomm Rugged Platform',
+    models: [
+      { name: 'CAT S75 Satellite SOS Rugged Outdoor Smartphone', basePrice: 599, desc: 'Direct Bullitt satellite 2-way messaging where cell towers fail, IP69K high-pressure steam proof, and 1.8m steel drop certified.' },
+      { name: 'Unihertz Tank 3 Pro 23800mAh DLP Projector Phone', basePrice: 649, desc: 'Integrated 100-lumen 120Hz DLP laser projector, massive 23,800mAh power station battery, 120W charge, and 200MP night camera.' },
+      { name: 'AGM G2 Guardian Thermal Imaging Monocular Phone', basePrice: 999, desc: 'Long-range thermal monocular detecting heat signatures up to 500 meters, 108MP camera, 109dB speaker, and 7000mAh battery.' },
+      { name: 'Doogee V30T 5G Dimensity 1080 Rugged Phone', basePrice: 429, desc: 'Ceramic finish with dual stereo speakers, 10800mAh battery, 66W fast charge, 108MP camera, and Night Vision infrared sensor.' },
+      { name: 'Ulefone Armor 24 22000mAh 1000LM Camping Light Phone', basePrice: 459, desc: 'Built-in 1000 lumen camping floodlight, 22,000mAh battery supporting 66W reverse power bank output, and IP68/IP69K rating.' },
+    ],
+  },
+];
+
+const SMARTPHONE_VARIANTS = [
+  { label: '128GB Storage / Midnight Black / Factory Unlocked', priceDelta: -80, specs: { Storage: '128GB High-Speed NVMe', Color: 'Midnight Black', Network: '5G Dual SIM Unlocked' } },
+  { label: '128GB Storage / Starlight Silver / Factory Unlocked', priceDelta: -80, specs: { Storage: '128GB High-Speed NVMe', Color: 'Starlight Silver', Network: '5G Dual SIM Unlocked' } },
+  { label: '256GB Storage / Natural Titanium / Factory Unlocked', priceDelta: 0, specs: { Storage: '256GB UFS 4.0 Storage', Color: 'Natural Titanium', Network: '5G Sub-6 & mmWave Global' } },
+  { label: '256GB Storage / Phantom Black / Factory Unlocked', priceDelta: 0, specs: { Storage: '256GB UFS 4.0 Storage', Color: 'Phantom Black', Network: '5G Dual eSIM Global' } },
+  { label: '256GB Storage / Deep Navy Blue / Dual SIM Global', priceDelta: 10, specs: { Storage: '256GB High-Speed UFS', Color: 'Deep Navy Blue', Network: 'Dual Physical SIM + eSIM' } },
+  { label: '512GB Storage / Desert Gold / Factory Unlocked', priceDelta: 180, specs: { Storage: '512GB UFS 4.0 Storage', Color: 'Desert Sand Gold', Network: '5G Global Unlocked' } },
+  { label: '512GB Storage / Obsidian Titanium / Factory Unlocked', priceDelta: 180, specs: { Storage: '512GB Pro Storage', Color: 'Obsidian Titanium', Network: 'Wi-Fi 7 + 5G Advanced' } },
+  { label: '512GB Storage / Emerald Green / Dual SIM Global', priceDelta: 190, specs: { Storage: '512GB UFS 4.0 Storage', Color: 'Emerald Green', Network: 'Dual Physical SIM + eSIM' } },
+  { label: '1TB Ultra Storage / Titanium Gray / Factory Unlocked', priceDelta: 380, specs: { Storage: '1TB Extreme Internal Storage', Color: 'Titanium Gray', Camera: 'ProRAW & 8K 60fps Recording' } },
+  { label: '1TB Ultra Storage / Ceramic White / Factory Unlocked', priceDelta: 380, specs: { Storage: '1TB Extreme Internal Storage', Color: 'Ceramic White', Camera: 'ProRAW & 8K 60fps Recording' } },
+  { label: '256GB Storage / Lavender Violet / Dual eSIM Global', priceDelta: 20, specs: { Storage: '256GB UFS 4.0 Storage', Color: 'Lavender Violet', Charging: 'Wireless Fast Charge Ready' } },
+  { label: '512GB Storage / Cyber Neon Edition / 16GB High-Speed RAM', priceDelta: 220, specs: { RAM: '16GB LPDDR5X Overclocked', Storage: '512GB UFS 4.0', Edition: 'Cyber Neon Gaming Edition' } },
+  { label: '1TB Ultimate / 24GB Esports RAM / Aero Cooler Bundled', priceDelta: 450, specs: { RAM: '24GB Ultra-High LPDDR5X', Storage: '1TB UFS 4.0', Cooling: 'AeroActive External Cooler Included' } },
+  { label: '256GB Storage / Frost Silver / 5G Global Dual SIM', priceDelta: 15, specs: { Storage: '256GB High-Speed UFS', Color: 'Frost Silver', Connectivity: 'Wi-Fi 7 Tri-Band' } },
+  { label: '512GB Storage / Sunset Orange / 120W GaN Super Charger Bundled', priceDelta: 210, specs: { Storage: '512GB High-Speed UFS', Color: 'Sunset Orange', Charger: '120W GaN Fast Charger Included' } },
+  { label: 'Satellite SOS Enabled / 256GB / Rugged Ballistic Bumper Case', priceDelta: 60, specs: { Storage: '256GB Heavy-Duty Storage', Features: 'Two-Way Satellite SOS', Case: 'Military Drop Case Bundled' } },
+];
+
+const OTHER_TECH_CATEGORIES = [
+  {
+    category: 'Tablets & Mobile Slates',
+    target: 295,
+    queryKey: ['tablet', 'smartphone'],
+    prefix: 'TAB',
+    brands: ['Apple iPad', 'Samsung Galaxy Tab', 'OnePlus', 'Xiaomi', 'Lenovo Legion', 'Microsoft Surface', 'Google'],
+    models: [
+      { name: 'iPad Pro 13-Inch M4 Ultra Retina Tandem OLED', basePrice: 1299, desc: 'Impossibly thin 5.1mm chassis powered by breakthrough Apple M4 silicon with dual-stack Tandem OLED display and 120Hz ProMotion.' },
+      { name: 'iPad Pro 11-Inch M4 Breakthrough Silicon', basePrice: 999, desc: 'Ultra-portable powerhouse with 11-inch Ultra Retina XDR display, hardware ray tracing, studio mics, and LiDAR scanner.' },
+      { name: 'iPad Air 13-Inch M2 Liquid Retina Display', basePrice: 799, desc: 'Spacious 13-inch display with Apple M2 chip, Landscape stereo speakers, Apple Pencil Pro support, and all-day battery.' },
+      { name: 'iPad Air 11-Inch M2 Supercharged Tablet', basePrice: 599, desc: 'Featherlight tablet with Apple M2 performance, Touch ID in top button, 12MP front/rear cameras, and USB-C.' },
+      { name: 'iPad Mini 6 All-Screen Design A15 Bionic', basePrice: 499, desc: 'Pocketable 8.3-inch Liquid Retina display with True Tone, A15 Bionic chip, and magnetic Apple Pencil 2 attachment.' },
+      { name: 'Galaxy Tab S9 Ultra 14.6" Dynamic AMOLED 2X', basePrice: 1199, desc: 'Colossal 14.6-inch tablet with IP68 water resistance, Snapdragon 8 Gen 2, bundled low-latency S Pen, and Quad AKG speakers.' },
+      { name: 'Galaxy Tab S9+ 12.4" IP68 Waterproof Tablet', basePrice: 999, desc: 'Vibrant 12.4-inch AMOLED 2X display with Armor Aluminum frame, Vision Booster, and multi-window productivity.' },
+      { name: 'Galaxy Tab S9 FE 10.9" S Pen Included Slate', basePrice: 449, desc: 'IP68 water and dust resistant slate with long-lasting 8000mAh battery, dual speakers, and 90Hz smooth screen.' },
+      { name: 'OnePlus Pad 2 3K 144Hz Snapdragon 8 Gen 3 Slate', basePrice: 549, desc: 'Industry-leading 7:5 ReadFit 3K display with 6 speakers, 67W SUPERVOOC charging, and seamless phone cross-screen.' },
+      { name: 'Xiaomi Pad 6S Pro 12.4" 144Hz 3K 120W HyperCharge', basePrice: 599, desc: 'Snapdragon 8 Gen 2 with 3:2 productivity ratio, 10,000mAh battery, 120W wired charging, and Xiaomi HyperOS.' },
+      { name: 'Lenovo Legion Tab 8.8" QHD 144Hz Gaming Slate', basePrice: 499, desc: 'Compact dual USB-C gaming tablet with Legion ColdFront vapor chamber and pure display gaming performance.' },
+      { name: 'Surface Pro 11 Copilot+ PC Snapdragon X Elite', basePrice: 999, desc: 'Next-gen AI 2-in-1 slate with 45 TOPS NPU, OLED touchscreen, all-day battery life, and Surface Slim Pen haptics.' },
+    ],
+    variants: [
+      { label: '128GB Wi-Fi / Matte Space Gray', priceDelta: 0, specs: { Storage: '128GB Flash', Network: 'Wi-Fi 6E / Wi-Fi 7' } },
+      { label: '256GB Wi-Fi / Starlight Silver Edition', priceDelta: 100, specs: { Storage: '256GB Flash', Display: 'High Refresh Rate' } },
+      { label: '512GB Wi-Fi / Desert Gold Finish', priceDelta: 250, specs: { Storage: '512GB Flash', Productivity: 'Split View Multitasking' } },
+      { label: '1TB Ultra Storage / OLED Nano-Texture Glass', priceDelta: 500, specs: { Storage: '1TB High-End Flash', Glass: 'Anti-Glare Nano-Texture' } },
+      { label: '256GB 5G Cellular + Wi-Fi Unlocked', priceDelta: 170, specs: { Storage: '256GB Flash', Connectivity: '5G LTE Unlocked SIM' } },
+      { label: 'With Magnetic Bluetooth Keyboard Case & Stylus Pen', priceDelta: 120, specs: { Accessories: 'Detachable Trackpad Keyboard + Active Stylus' } },
+    ],
+  },
+  {
+    category: 'Mobile Gadgets & MagSafe Gear',
+    target: 295,
+    queryKey: ['phone-accessories', 'gadgets', 'mobile-technology'],
+    prefix: 'MGD',
+    brands: ['DJI', 'Insta360', 'Rode', 'Anker', 'Shargeek', 'Belkin', 'Peak Design', 'Moft', 'ESR', 'Moment'],
+    models: [
+      { name: 'Osmo Mobile 6 Smart 3-Axis Phone Gimbal Stabilizer', basePrice: 159, desc: 'Compact foldable smartphone stabilizer with built-in extension rod, ActiveTrack 6.0, quick launch, and gesture control.' },
+      { name: 'Flow Pro AI 3-Axis Tracking Gimbal with Apple DockKit', basePrice: 159, desc: 'First gimbal with Apple DockKit native camera tracking, Deep Track 3.0, built-in tripod, and selfie light shoe.' },
+      { name: 'Mic 2 Dual-Channel Wireless Lavalier System + Case', basePrice: 349, desc: '32-bit float internal audio recording, intelligent noise cancelling, 250m range, and 18-hour battery charging case.' },
+      { name: 'Wireless PRO Compact Dual Transmitter Microphone Kit', basePrice: 399, desc: 'Broadcast-grade wireless audio with timecode generator, GainAssist, 32-bit float on-board recording, and lav mics.' },
+      { name: 'MagGo 3-in-1 Foldable Qi2 15W Fast Charging Station', basePrice: 109, desc: 'Certified Qi2 15W ultra-fast wireless charging for iPhone, Apple Watch, and AirPods in a pocket-sized folding form.' },
+      { name: 'BoostCharge Pro 3-in-1 MagSafe Wireless Charging Pad', basePrice: 149, desc: 'Lay-flat premium chrome and silicone charging pad delivering 15W official MagSafe charging across all devices.' },
+      { name: 'Sharge Disk M.2 NVMe SSD Enclosure with Active Fan', basePrice: 69, desc: 'Pocket EDC aluminum enclosure with built-in active cooling fan, IP54 silicone bumper, and write protection switch.' },
+      { name: 'Universal Mobile Video Cage Dual Cold Shoe Rig', basePrice: 79, desc: 'CNC aluminum smartphone cage with dual ergonomic side handles, multiple 1/4"-20 threads, and power bank mount.' },
+      { name: 'MagSafe Snap-On Tri-Fold Wallet & Phone Stand', basePrice: 39, desc: 'Vegan leather magnetic wallet holding 3 cards with adjustable portrait/landscape angles and steel hinge.' },
+      { name: '622 Magnetic Battery (MagGo) 5000mAh Foldable Kickstand', basePrice: 59, desc: 'Slim MagSafe battery snapping firmly to iPhone back with versatile fold-out kickstand and USB-C two-way port.' },
+      { name: 'Moment 67mm Mobile Lens Filter Mount & Adapter', basePrice: 49, desc: 'Allows standard 67mm camera filters (CPL, ND, Black Mist) to mount directly onto smartphones for cinematic video.' },
+      { name: 'Magnetic Semiconductor Radiator Active Phone Cooler', basePrice: 45, desc: 'Peltier cooling chip dropping phone temperature by up to 25C in seconds with RGB ambient light and MagSafe ring.' },
+    ],
+    variants: [
+      { label: 'Matte Carbon Black / Protective Travel Pouch', priceDelta: 0, specs: { Finish: 'Anodized Matte Carbon', Material: 'Aerospace Grade Aluminum' } },
+      { label: 'Arctic Glacier White / Braided Type-C Cable', priceDelta: 10, specs: { Color: 'Arctic White', Cable: 'Braided 100W 3ft Cable' } },
+      { label: 'Cyberpunk Transparent Edition / LED Backlit', priceDelta: 25, specs: { Style: 'Transparent Industrial', Lighting: 'Addressable RGB LED' } },
+      { label: 'Pro Creator Rig Bundle with Mini Tripod & Extension', priceDelta: 45, specs: { Mount: 'Arca-Swiss Standard / Cold Shoe', Extras: 'Mini Tripod + Ballhead' } },
+    ],
+  },
+  {
+    category: 'Laptops & Computers',
+    target: 300,
+    queryKey: ['laptop', 'gaming-laptop'],
+    prefix: 'LAP',
+    brands: ['Apple', 'ASUS ROG', 'Lenovo Legion', 'Dell XPS', 'Razer', 'MSI', 'Framework', 'Acer Predator', 'HP Omen', 'Minisforum'],
+    models: [
+      { name: 'MacBook Pro 16 M3 Max Studio Flagship', basePrice: 3499, desc: 'Extreme dynamic range Liquid Retina XDR display, up to 22-hour battery life, and pro studio audio array.' },
+      { name: 'Zephyrus G16 OLED Ultra-Slim Gaming Laptop', basePrice: 1999, desc: 'Ultra-slim CNC aluminum chassis with 240Hz 0.2ms ROG Nebula OLED, vapor chamber cooling, and Dolby Atmos audio.' },
+      { name: 'Legion Pro 7i Gen 9 High-Performance Rig', basePrice: 2299, desc: 'Overclockable computing powerhouse powered by Legion Coldfront vapor chamber and PureSight WQXGA 240Hz display.' },
+      { name: 'XPS 16 InfinityEdge 4K Touch Laptop', basePrice: 2199, desc: 'Futuristic seamless glass touch pad, capacitive touch row, and vivid 4K+ OLED InfinityEdge display.' },
+      { name: 'Blade 16 Dual-Mode Mini-LED Esports Laptop', basePrice: 2799, desc: 'World premier dual-mode display switching between 4K 120Hz creator mode and FHD+ 240Hz esports gaming.' },
+      { name: 'Stealth 16 AI Studio Thin & Light Laptop', basePrice: 1849, desc: 'Magnesium-aluminum alloy featherlight body certified for NVIDIA Studio with 99.9Whr high-capacity flight-ready battery.' },
+      { name: 'Predator Helios 18 Immersive Gaming Laptop', basePrice: 2499, desc: 'Massive 18-inch 250Hz Mini-LED display with 5th Gen AeroBlade 3D metal fans and liquid metal thermal grease.' },
+      { name: 'Omen Transcend 14 OLED Ultraportable Rig', basePrice: 1499, desc: 'World lightest 14-inch gaming laptop with IMAX Enhanced certified OLED screen and HyperX tuned audio.' },
+      { name: 'Framework Laptop 16 Modular & Upgradable', basePrice: 1799, desc: 'Fully repairable high-performance modular laptop with hot-swappable GPU bay and customizable input matrix.' },
+      { name: 'EliteMini AI Workstation Compact Mini PC', basePrice: 899, desc: 'Ultra-compact dual-fan liquid-cooled desktop PC supporting quad 4K monitors and high-speed PCIe 5.0 SSDs.' },
+    ],
+    variants: [
+      { label: '32GB RAM / 1TB Gen4 NVMe / RTX 4080', priceDelta: 0, specs: { RAM: '32GB DDR5 5600MHz', Storage: '1TB M.2 PCIe 4.0', GPU: 'NVIDIA RTX 4080 12GB' } },
+      { label: '64GB RAM / 2TB Gen4 NVMe / RTX 4090', priceDelta: 550, specs: { RAM: '64GB DDR5 5600MHz', Storage: '2TB M.2 PCIe 4.0', GPU: 'NVIDIA RTX 4090 16GB' } },
+      { label: '16GB RAM / 512GB NVMe / RTX 4070', priceDelta: -280, specs: { RAM: '16GB DDR5 5200MHz', Storage: '512GB M.2 NVMe', GPU: 'NVIDIA RTX 4070 8GB' } },
+      { label: '32GB RAM / 2TB Gen5 NVMe / OLED Edition', priceDelta: 320, specs: { RAM: '32GB LPDDR5X 7500MHz', Storage: '2TB PCIe Gen5', Display: '4K OLED 120Hz' } },
+      { label: '64GB RAM / 4TB Enterprise Dual SSD', priceDelta: 850, specs: { RAM: '64GB Overclocked', Storage: '4TB RAID-0 NVMe', OS: 'Windows 11 Pro Licensed' } },
+    ],
+  },
+  {
+    category: 'Monitors & Displays',
+    target: 290,
+    queryKey: ['computer-monitor'],
+    prefix: 'MON',
+    brands: ['LG UltraGear', 'Samsung Odyssey', 'Alienware', 'ASUS TUF', 'BenQ Mobiuz', 'Gigabyte', 'MSI Optix', 'ViewSonic Elite', 'Philips Evnia'],
+    models: [
+      { name: '34" Curved QD-OLED 175Hz Gaming Monitor', basePrice: 899, desc: 'Stunning Quantum Dot OLED panel with infinite 1.5M:1 contrast, 0.03ms GtG response, and AMD FreeSync Premium Pro.' },
+      { name: '49" Dual QHD 240Hz 1000R Super UltraWide', basePrice: 1199, desc: 'Expansive 32:9 immersive curved workstation display equivalent to dual 27-inch QHD monitors side by side.' },
+      { name: '27" 4K Fast IPS 160Hz Esports Pro Display', basePrice: 599, desc: 'Factory color-calibrated 98% DCI-P3 monitor with VESA DisplayHDR 600 and HDMI 2.1 for PS5 & PC.' },
+      { name: '32" 4K QD-OLED 240Hz Anti-Reflection Monitor', basePrice: 1099, desc: 'Next-gen third-generation QD-OLED panel offering razor-sharp text clarity and pixel-perfect HDR highlights.' },
+      { name: '15.6" 4K OLED Portable Travel Monitor', basePrice: 329, desc: 'Ultralight CNC aluminum portable screen with 100% DCI-P3, 10-point capacitive touch, and dual USB-C DP Alt.' },
+      { name: '38" WQHD+ 144Hz Nano IPS Curved Workstation', basePrice: 949, desc: 'Ultra-wide 21:9 professional editing screen with Thunderbolt 3 85W power delivery and built-in KVM switch.' },
+      { name: '24.5" 360Hz Fast IPS Esports Tournament Display', basePrice: 449, desc: 'Engineered for competitive shooters with NVIDIA Reflex Latency Analyzer and dual-axis ergonomic stand.' },
+      { name: '32" 4K Mini-LED 144Hz 1152-Zone HDR1000', basePrice: 799, desc: 'Local dimming matrix delivering true 1000-nit peak brightness without blooming on dark backgrounds.' },
+      { name: '45" UltraGear Curved OLED 240Hz 0.03ms Display', basePrice: 1299, desc: 'Massive 800R curved gaming display with 98.5% DCI-P3 and anti-glare low-reflection coating.' },
+      { name: '27" 1440p 240Hz Fast IPS Esports Monitor', basePrice: 429, desc: 'Ultra-responsive 1ms GtG esports gaming monitor with AMD FreeSync Premium and ergonomic pivot stand.' },
+    ],
+    variants: [
+      { label: 'Deep Matte Black / VESA Mount Ready', priceDelta: 0, specs: { Panel: 'QD-OLED / Fast IPS', ColorSync: '10-bit 99% DCI-P3', RefreshRate: '175Hz - 240Hz' } },
+      { label: 'Ergonomic Desk Arm Included Bundle', priceDelta: 65, specs: { Stand: 'Gas-Spring Heavy Duty Arm', Ports: '2x HDMI 2.1, 1x DP 1.4, USB Hub' } },
+      { label: 'KVM Switch + 90W Type-C Power Delivery', priceDelta: 90, specs: { Connectivity: 'Thunderbolt / USB-C 90W PD', Audio: 'DTS Sound Integrated' } },
+      { label: 'Color Calibrated Creator Edition', priceDelta: 45, specs: { DeltaE: '< 1.0 Factory Certified', Shield: 'Magnetic Anti-Glare Hood' } },
+      { label: 'Pro Dual-Input Multi-Tasking Hub Edition', priceDelta: 80, specs: { PipPbp: 'Picture-in-Picture Supported', Hub: '4-Port High-Speed USB 3.2' } },
+    ],
+  },
+  {
+    category: 'Keyboards & Mice',
+    target: 290,
+    queryKey: ['mechanical-keyboard', 'gaming-mouse'],
+    prefix: 'KBM',
+    brands: ['Logitech G', 'Razer', 'Keychron', 'Corsair', 'SteelSeries', 'Glorious', 'NuPhy', 'Ducky', 'Akko', 'Wooting'],
+    models: [
+      { name: 'Q1 Pro Wireless QMK/VIA Custom Mechanical Keyboard', basePrice: 199, desc: 'Full CNC machined aluminum body, double-gasket acoustic mount, screw-in stabilizers, and hot-swap sockets.' },
+      { name: 'PRO X SUPERLIGHT 2 Wireless Ultralight Gaming Mouse', basePrice: 159, desc: 'Sub-60g competitive esports mouse with HERO 2 sensor, LIGHTFORCE hybrid optical-mechanical switches, and 4K polling.' },
+      { name: 'BlackWidow V4 Pro Mechanical Gaming Keyboard', basePrice: 229, desc: 'Dedicated macro column, multi-function digital roller, magnetic plush leatherette wrist rest with underglow.' },
+      { name: 'Air75 V2 Ultra-Slim Wireless Mechanical Keyboard', basePrice: 119, desc: 'World thinnest low-profile mechanical keyboard with Gateron low-profile switches and multi-device Bluetooth 5.3.' },
+      { name: '60HE+ Analog Hall Effect Rapid Trigger Keyboard', basePrice: 175, desc: 'Lekker magnetic switches with adjustable 0.1mm to 4.0mm actuation and continuous rapid trigger reset.' },
+      { name: 'Viper V3 Pro 54g Ultra-Lightweight Wireless Mouse', basePrice: 159, desc: 'Flawless 35,000 DPI Focus Pro 35K Gen-2 optical sensor with genuine 8000Hz hyper-polling dongle included.' },
+      { name: 'MX Master 3S Advanced Ergonomic Wireless Mouse', basePrice: 99, desc: 'Quiet click electromagnetic MagSpeed scroll wheel, 8K DPI track-on-glass sensor, and thumb gesture button.' },
+      { name: 'One 3 RGB Hot-Swappable Double-Shot PBT Keyboard', basePrice: 139, desc: 'QUACK Mechanics acoustic design with dual-layer high-grade silicone dampening and authentic Cherry MX switches.' },
+      { name: 'Apex Pro TKL Wireless OmniPoint Adjustable Keyboard', basePrice: 249, desc: 'OmniPoint 2.0 hyper-magnetic switches with 20x faster actuation, OLED smart display, and aircraft aluminum frame.' },
+      { name: 'Model O 2 Wireless Superlight Honeycomb Mouse', basePrice: 79, desc: 'BAMF 2.0 26K optical sensor, frictionless G-Skates virgin PTFE feet, and up to 210 hours battery longevity.' },
+    ],
+    variants: [
+      { label: 'Hot-Swap Tactile Brown / Matte Carbon', priceDelta: 0, specs: { Switch: 'Pre-lubed Tactile', Connectivity: 'Tri-Mode (2.4G/BT/Wired)' } },
+      { label: 'Linear Red Silent / PBT Dye-Sub Keycaps', priceDelta: 15, specs: { Switch: 'Linear 45g Smooth', Keycaps: 'Cherry Profile PBT' } },
+      { label: 'Clicky Blue Switches / RGB Per-Key Aura', priceDelta: -10, specs: { Feedback: 'Acoustic Clicky 55g', Backlight: '16.8M RGB South-Facing' } },
+      { label: 'Hall Effect Magnetic / Rapid Trigger Tuned', priceDelta: 35, specs: { Actuation: '0.1mm - 4.0mm Adjustable', Polling: '8000Hz Ultra-Low Latency' } },
     ],
   },
   {
     category: 'Audio & Headphones',
-    brandPool: ['Sony', 'Apple', 'Bose', 'Sennheiser', 'Marshall', 'JBL', 'Bowers & Wilkins', 'Sonos', 'Shure', 'Bang & Olufsen'],
-    templates: [
-      {
-        titlePrefix: 'Sony WH-1000XM5 Wireless Noise Canceling Headphones',
-        variants: ['Black with Auto NC Optimizer', 'Silver with Auto NC Optimizer', 'Midnight Blue Special Edition'],
-        description: 'Industry-leading noise cancellation with 8 microphones, Auto NC Optimizer, 30-hour battery life, and crystal-clear hands-free calling.',
-        specsBase: { Battery: '30 Hours with Quick Charge', Drivers: '30mm Carbon Fiber Composite', Connectivity: 'Bluetooth 5.2 Multipoint' },
-        priceRange: [348, 399],
-        discountRange: [15, 25],
-      },
-      {
-        titlePrefix: 'Apple AirPods Max Wireless Over-Ear Headphones',
-        variants: ['Space Gray with Smart Case', 'Silver with Smart Case', 'Sky Blue with Smart Case', 'Midnight USB-C', 'Starlight USB-C'],
-        description: 'High-fidelity audio with active noise cancellation, transparency mode, personalized spatial audio with dynamic head tracking.',
-        specsBase: { Drivers: 'Apple-designed 40mm Dynamic', Canopy: 'Knit-Mesh Stainless Steel', Connectivity: 'Apple H1 Chip in Each Cup' },
-        priceRange: [479, 549],
-        discountRange: [10, 18],
-      },
-      {
-        titlePrefix: 'Bose QuietComfort Ultra Wireless Headphones',
-        variants: ['Black with Spatial Audio', 'White Smoke with Spatial Audio', 'Sandstone Limited Edition'],
-        description: 'Breakthrough spatialized audio for immersive listening, world-class noise cancellation, and CustomTune technology.',
-        specsBase: { Immersion: 'Bose Immersive Audio Mode', Battery: 'Up to 24 Hours', Microphones: 'Advanced Noise-Rejecting Array' },
-        priceRange: [379, 429],
-        discountRange: [12, 20],
-      },
-      {
-        titlePrefix: 'Sennheiser Momentum 4 Wireless Audiophile Headphones',
-        variants: ['Matte Black with 60Hr Battery', 'White/Silver with 60Hr Battery', 'Special SE Copper Edition'],
-        description: 'Outstanding acoustic performance powered by 42mm audiophile-inspired transducers with a class-leading 60-hour battery life.',
-        specsBase: { Battery: '60 Hours Incredible Lifespan', Codecs: 'aptX Adaptive, AAC, SBC', Equalizer: 'Built-in Sound Personalization' },
-        priceRange: [299, 379],
-        discountRange: [18, 30],
-      },
-      {
-        titlePrefix: 'Marshall Stanmore III Bluetooth Home Speaker',
-        variants: ['Black Classic Vintage', 'Cream Gold Vintage', 'Brown Heritage Edition'],
-        description: 'Legendary Marshall room-filling sound with wider stereo soundstage, dynamic loudness, and signature vintage styling.',
-        specsBase: { Amplifiers: 'One 50W Class D (Woofer) + Two 15W (Tweeters)', Inputs: 'Bluetooth 5.2, 3.5mm AUX, RCA', Design: 'Brass Accent Knobs' },
-        priceRange: [329, 379],
-        discountRange: [10, 18],
-      },
+    target: 290,
+    queryKey: ['headphones', 'microphone-studio'],
+    prefix: 'AUD',
+    brands: ['Sony', 'Bose', 'Sennheiser', 'Audio-Technica', 'Shure', 'Beyerdynamic', 'Marshall', 'JBL', 'Rode', 'FiiO'],
+    models: [
+      { name: 'WH-1000XM5 Wireless Noise Canceling Headphones', basePrice: 399, desc: 'Industry-leading noise cancellation with dual QN1 processors, 8 microphones, LDAC Hi-Res Wireless, and 30hr battery.' },
+      { name: 'QuietComfort Ultra Spatial Audio Headphones', basePrice: 429, desc: 'Breakthrough spatialized audio immersion, CustomTune acoustic calibration, and world-class quiet and aware modes.' },
+      { name: 'MOMENTUM 4 Wireless Audiophile Headphones', basePrice: 299, desc: 'Signature Sennheiser acoustic sound with 42mm audiophile transducers and unrivaled 60-hour marathon battery.' },
+      { name: 'SM7B Dynamic Vocal Studio Microphone', basePrice: 399, desc: 'Legendary broadcast vocal dynamic mic with flat, wide-range frequency response and internal air suspension shock isolation.' },
+      { name: 'ATH-M50xBT2 Professional Studio Monitor Headphones', basePrice: 199, desc: 'Proprietary 45mm large-aperture drivers with rare earth magnets, copper-clad aluminum voice coils, and 50hr battery.' },
+      { name: 'DT 990 PRO 250 Ohm Open Studio Reference Headphones', basePrice: 169, desc: 'Open-back diffuse-field studio benchmark headphones with robust spring steel headband and plush velour earpads.' },
+      { name: 'Wave:3 Premium USB Studio Condenser Microphone', basePrice: 149, desc: 'Broadcast-grade cardioid capsule with Clipguard anti-distortion technology and Wave Link digital mixing software.' },
+      { name: 'Major IV Bluetooth Wireless Foldable Headphones', basePrice: 149, desc: 'Iconic Marshall vintage textured vinyl design with custom-tuned dynamic drivers and 80+ hours wireless playtime.' },
+      { name: 'Rodecaster Pro II Integrated Audio Production Studio', basePrice: 699, desc: 'Ultra-low-noise Revolution Preamp quad inputs with SMART pads, APHEX audio processing, and dual USB-C interfaces.' },
+      { name: 'BTR7 Portable Bluetooth Hi-Fi DAC Headphone Amp', basePrice: 199, desc: 'Dual THX AAA-28 amplifiers with dual ES9219C DAC chips, balanced 4.4mm output, and full MQA decoding.' },
+    ],
+    variants: [
+      { label: 'Midnight Black Edition / Protective Hardcase', priceDelta: 0, specs: { Driver: '40mm High-Res Diaphragm', Battery: '30 - 60 Hours Playback' } },
+      { label: 'Silver Platinum Luxe / Travel Flight Adapter', priceDelta: 20, specs: { Codecs: 'LDAC, AAC, aptX Adaptive', Charging: 'USB-C Fast Charge 3min=3hr' } },
+      { label: 'Studio Boom Arm + Heavy Pop Filter Bundle', priceDelta: 60, specs: { PolarPattern: 'Cardioid Studio Grade', Connection: 'Balanced XLR / USB' } },
+      { label: 'Dual XLR Cable + Shockmount Suspension Kit', priceDelta: 45, specs: { FrequencyResponse: '20Hz - 20,000Hz', Impedance: '150 - 250 Ohms' } },
     ],
   },
   {
-    category: 'Cameras & Drones',
-    brandPool: ['Sony', 'Canon', 'Nikon', 'DJI', 'Fujifilm', 'GoPro', 'Insta360', 'Blackmagic Design', 'Leica'],
-    templates: [
-      {
-        titlePrefix: 'Sony Alpha A7 IV Full-Frame Mirrorless Camera',
-        variants: ['Body Only (33MP / 4K 60p)', 'with FE 28-70mm f/3.5-5.6 Lens', 'with FE 24-70mm f/2.8 GM II Pro Kit'],
-        description: 'Next-generation hybrid full-frame camera with 33MP Exmor R sensor, real-time eye autofocus for humans/animals/birds, and 4K 60p 10-bit 4:2:2 recording.',
-        specsBase: { Sensor: '33MP Full-Frame Exmor R BSI CMOS', Video: '4K 60p 10-Bit 4:2:2 S-Cinetone', Stabilization: '5-Axis In-Body SteadyShot' },
-        priceRange: [2298, 3498],
-        discountRange: [8, 15],
-      },
-      {
-        titlePrefix: 'DJI Mini 4 Pro Drone Fly More Combo Plus',
-        variants: ['with DJI RC 2 Controller & 3 Batteries', 'Standard Kit with DJI RC-N2', 'Fly More Combo with Shoulder Bag'],
-        description: 'Under 249g ultra-lightweight drone with omnidirectional active obstacle sensing, 4K/60fps HDR true vertical shooting, and 20km FHD video transmission.',
-        specsBase: { Weight: '< 249 g FAA C0 Compliant', Video: '4K/60fps HDR & 4K/100fps Slow-Mo', FlightTime: 'Up to 45 Mins (Plus Battery)' },
-        priceRange: [759, 1099],
-        discountRange: [10, 18],
-      },
-      {
-        titlePrefix: 'Canon EOS R6 Mark II Mirrorless Camera',
-        variants: ['Body Only (24.2MP / 40fps)', 'with RF 24-105mm f/4 L IS USM Lens Kit', 'Creator Vlogging Kit with Mic & Grip'],
-        description: 'High-speed 40fps electronic shutter shooting, 6K oversampled 4K 60p video without crop, and Dual Pixel CMOS AF II with vehicle/aircraft detection.',
-        specsBase: { Sensor: '24.2MP Full-Frame CMOS', Burst: 'Up to 40 fps Electronic', Video: '6K Oversampled 4K 60p Uncropped' },
-        priceRange: [2199, 3199],
-        discountRange: [12, 20],
-      },
-      {
-        titlePrefix: 'GoPro HERO12 Black Action Camera',
-        variants: ['Creator Edition with Media Mod & Volta', 'Special Bundle with 2 Enduro Batteries', 'Standard Adventure Pack with Floating Grip'],
-        description: 'Incredible 5.3K60 video, HyperSmooth 6.0 stabilization, HDR photos & video, Bluetooth audio support for AirPods, and waterproof down to 33ft.',
-        specsBase: { Video: '5.3K60 / 4K120 / 2.7K240 Slow-Mo', Stabilization: 'HyperSmooth 6.0 + 360 Horizon Lock', Waterproof: '10m (33ft) Without Housing' },
-        priceRange: [349, 599],
-        discountRange: [15, 25],
-      },
+    category: 'Earbuds & Portable Speakers',
+    target: 290,
+    queryKey: ['wireless-earbuds', 'bluetooth-speaker'],
+    prefix: 'EAR',
+    brands: ['Sony', 'Apple', 'Bose', 'Sennheiser', 'Anker Soundcore', 'JBL', 'Bang & Olufsen', 'Marshall', 'Beats'],
+    models: [
+      { name: 'WF-1000XM5 True Wireless Noise Canceling Earbuds', basePrice: 299, desc: 'Dual feedback microphones with Integrated Processor V2, Dynamic Driver X, and crystal-clear bone conduction sensors.' },
+      { name: 'AirPods Pro 2 USB-C with Active Noise Cancellation', basePrice: 249, desc: 'H2 chip power with Adaptive Audio, Transparency mode, and Personalized Spatial Audio with dynamic head tracking.' },
+      { name: 'QuietComfort Ultra Wireless Noise Canceling Earbuds', basePrice: 299, desc: 'CustomTune sound calibration that personalizes noise cancellation and sound performance directly to your ear canals.' },
+      { name: 'Soundcore Liberty 4 NC Wireless Noise Canceling Earbuds', basePrice: 99, desc: 'Reduces noise by up to 98.5% with high-sensitivity in-ear sound sensor, custom 11mm drivers, and LDAC audio.' },
+      { name: 'Charge 5 Portable Waterproof Bluetooth Speaker', basePrice: 179, desc: 'Long-excursion driver, separate tweeter, dual passive bass radiators, IP67 waterproof/dustproof with built-in powerbank.' },
+      { name: 'Emberton II Portable Bluetooth Speaker', basePrice: 169, desc: 'True Stereophonic multi-directional 360-degree sound with 30+ hours of portable playtime and rugged IP67 rating.' },
+      { name: 'Fit Pro True Wireless Sports Earbuds', basePrice: 199, desc: 'Secure-fit wingtips that stay locked during intense workouts, powered by Apple H1 chip with Active Noise Cancelling.' },
+      { name: 'Flip 6 Eco-Edition Rugged Bluetooth Speaker', basePrice: 129, desc: '2-way speaker system delivering powerful, crystal-clear sound with deep bass in an eco-friendly recycled body.' },
+      { name: 'Beosound Explore Ultra-Durable Outdoor Speaker', basePrice: 199, desc: 'Type II anodized scratch-resistant aluminum shell with carabiner clip and true 360 sound for backcountry trekking.' },
+      { name: 'MOMENTUM True Wireless 4 Flagship Earbuds', basePrice: 299, desc: 'Lossless audio streaming with Qualcomm S5 Gen 2, Auracast broadcasting, and continuous 30-hour battery case.' },
+    ],
+    variants: [
+      { label: 'Stealth Black / Qi Wireless Charging Case', priceDelta: 0, specs: { Battery: 'Up to 30 Hours with Case', WaterResistance: 'IPX4 / IPX7' } },
+      { label: 'Glacier White / Silicone Ear Tip Multipack', priceDelta: 10, specs: { Tips: 'XS, S, M, L Memory Foam', Microphones: '6x Beamforming AI Mics' } },
+      { label: 'Rugged Forest Green / Metal Carabiner Clip', priceDelta: 15, specs: { Enclosure: 'Drop-Resistant Rubberized Armor', Bluetooth: 'BT 5.3 Multipoint' } },
+      { label: 'Special Edition Gold Metallic Trim', priceDelta: 30, specs: { Tuning: 'Audiophile Certified Hi-Res Wireless', Latency: 'Ultra-Low Gaming Mode' } },
     ],
   },
   {
-    category: 'Gaming & VR',
-    brandPool: ['Sony PlayStation', 'Microsoft Xbox', 'Nintendo', 'Valve', 'ASUS ROG', 'Meta', 'Razer', 'Logitech G', 'SteelSeries', 'Elgato'],
-    templates: [
-      {
-        titlePrefix: 'Sony PlayStation 5 Pro Console',
-        variants: ['2TB SSD Disc Edition with DualSense', '2TB SSD Digital Edition with Extra Controller', 'Spider-Man 2 Collector Bundle'],
-        description: 'Experience PlayStation Spectral Super Resolution (PSSR), advanced ray tracing, and consistent 60fps/120fps 4K gaming on a massive 2TB ultra-high speed SSD.',
-        specsBase: { Storage: '2TB Custom High-Speed NVMe SSD', GPU: 'Advanced RDNA Ray Tracing Architecture', Output: 'Supports 4K 120Hz & 8K HDR' },
-        priceRange: [699, 899],
-        discountRange: [5, 12],
-      },
-      {
-        titlePrefix: 'Valve Steam Deck OLED Handheld Gaming Console',
-        variants: ['1TB NVMe OLED with Anti-Glare Etched Glass', '512GB NVMe OLED with Custom Carrying Case'],
-        description: 'Brilliant 7.4-inch 90Hz HDR OLED screen, custom 6nm AMD APU, faster Wi-Fi 6E, and 50Whr battery for hours of AAA PC gaming on the go.',
-        specsBase: { Screen: '7.4" 90Hz HDR OLED Display (1000 nits)', Battery: '50Whr (3-12 Hours of Gameplay)', Connectivity: 'Wi-Fi 6E Tri-Band' },
-        priceRange: [549, 689],
-        discountRange: [5, 10],
-      },
-      {
-        titlePrefix: 'Nintendo Switch OLED Model',
-        variants: ['Mario Red Special Edition', 'White Joy-Con Console', 'The Legend of Zelda: Tears of the Kingdom Edition'],
-        description: 'Vibrant 7-inch OLED screen, wide adjustable tabletop stand, dock with wired LAN port, and 64GB of internal storage.',
-        specsBase: { Screen: '7.0" OLED Multi-Touch Screen', Audio: 'Enhanced On-Board Stereo Speakers', Modes: 'TV Mode, Tabletop Mode, Handheld Mode' },
-        priceRange: [329, 369],
-        discountRange: [8, 15],
-      },
-      {
-        titlePrefix: 'Meta Quest 3 Breakthrough Mixed Reality Headset',
-        variants: ['512GB Asgards Wrath 2 Bundle', '128GB with Elite Strap & Battery Pack', '512GB Pro Comfort Kit'],
-        description: 'Transform your home with full-color mixed reality passthrough, 4K+ Infinite Display, 3D spatial audio, and Snapdragon XR2 Gen 2 power.',
-        specsBase: { Optics: '4K+ Infinite Display (2064x2208 per eye)', Passthrough: 'Dual RGB Color Cameras', Chip: 'Snapdragon XR2 Gen 2' },
-        priceRange: [499, 699],
-        discountRange: [8, 16],
-      },
+    category: 'Cameras, Drones & Creators',
+    target: 290,
+    queryKey: ['camera-lens', 'drone', 'action-camera'],
+    prefix: 'CAM',
+    brands: ['DJI', 'Sony Alpha', 'GoPro', 'Canon EOS', 'Insta360', 'Fujifilm', 'Nikon Z', 'Elgato', 'Sigma'],
+    models: [
+      { name: 'Alpha a7 IV Full-Frame Mirrorless Camera', basePrice: 2499, desc: '33MP full-frame Exmor R back-illuminated sensor with BIONZ XR processing, 4K 60p video, and real-time Eye AF tracking.' },
+      { name: 'Mini 4 Pro Fly More Combo Drone', basePrice: 1099, desc: 'Sub-249g ultralight drone with omnidirectional obstacle sensing, 4K/60fps HDR true vertical shooting, and 34-min flight.' },
+      { name: 'HERO12 Black Waterproof Action Camera', basePrice: 399, desc: '5.3K 60fps video with HyperSmooth 6.0 stabilization, HDR video, dual LCD screens, and GP2 processing engine.' },
+      { name: 'X4 8K 360 Waterproof Action Camera', basePrice: 499, desc: 'Unbeatable 8K 30fps 360-degree capture with invisible selfie stick effect, FlowState stabilization, and AI gesture control.' },
+      { name: 'EOS R6 Mark II Full-Frame Camera Body', basePrice: 2299, desc: '24.2MP high-speed sensor shooting up to 40fps electronic shutter, 6K oversampled 4K 60p, and in-body 8-stop IS.' },
+      { name: 'Avata 2 FPV Drone Fly More Combo', basePrice: 999, desc: 'Immersive FPV flight with 4K/60fps HDR wide-angle video, integrated propeller guard, and Goggles 3 with Real View PiP.' },
+      { name: 'Osmo Pocket 3 1-Inch Sensor Gimbal Camera', basePrice: 519, desc: 'Pocket-sized motorized 3-axis stabilizer with 1-inch CMOS sensor, 2-inch rotatable OLED touchscreen, and 4K 120fps.' },
+      { name: 'X-T5 Mirrorless Digital Camera Body', basePrice: 1699, desc: '40.2MP X-Trans CMOS 5 HR sensor with classic tactile dials, film simulation modes, and 7-stop in-body stabilization.' },
+      { name: 'Stream Deck XL 32-Key Studio Controller', basePrice: 249, desc: '32 customizable LCD keys for triggering limitless actions, scene transitions, audio mixing, and smart home shortcuts.' },
+      { name: '24-70mm F2.8 DG DN Art Lens (Sony E / Leica L)', basePrice: 1099, desc: 'Industry benchmark professional standard zoom lens with nano porous coating, 11-blade aperture, and weather sealing.' },
+    ],
+    variants: [
+      { label: 'Body Only / Standard Kit Package', priceDelta: 0, specs: { Sensor: 'Full-Frame / 1-Inch CMOS', Stabilization: '5-Axis In-Body IS' } },
+      { label: 'With 24-70mm f/4 IS Zoom Lens Kit', priceDelta: 600, specs: { Lens: '24-70mm Optical Image Stabilized', FilterThread: '72mm Front' } },
+      { label: 'Fly More Combo (3 Batteries + Hub + Bag)', priceDelta: 240, specs: { FlightTime: 'Up to 102 Minutes Total', Bag: 'Water-Resistant Shoulder Pouch' } },
+      { label: 'Creator Accessory Pack (Wireless Mic + Tripod)', priceDelta: 160, specs: { Audio: '2.4GHz Wireless Transmitter Included', Mount: 'Universal 1/4-inch Arca' } },
     ],
   },
   {
-    category: 'Home & Kitchen',
-    brandPool: ['Dyson', 'Breville', 'DeLonghi', 'KitchenAid', 'Roborock', 'iRobot', 'Philips', 'Ninja', 'Vitamix', 'Anova'],
-    templates: [
-      {
-        titlePrefix: 'Dyson V15 Detect Absolute Cordless Vacuum',
-        variants: ['Yellow/Nickel with Laser Fluffy Optic', 'Complete Extra with HEPA Filtration & 10 Tools'],
-        description: 'Dyson’s most intelligent cordless vacuum with laser illumination revealing invisible microscopic dust and acoustic piezo sensor particle counting.',
-        specsBase: { Suction: '240 AW Laser-Guided Suction', RunTime: 'Up to 60 Minutes', Filtration: 'Whole-Machine HEPA to 0.1 Microns' },
-        priceRange: [649, 799],
-        discountRange: [15, 25],
-      },
-      {
-        titlePrefix: 'Breville Barista Touch Impress Espresso Machine',
-        variants: ['Brushed Stainless Steel', 'Black Truffle Matte', 'Sea Salt White Edition'],
-        description: 'Barista-quality microfoam and precision espresso with automated assisted tamping, intelligent dosing, and step-by-step touchscreen guidance.',
-        specsBase: { Heating: 'ThermoJet 3-Second Instant Heatup', Tamping: 'Assisted 10kg Tamp with 7-degree Twist', Screen: 'Intelligent Touchscreen' },
-        priceRange: [1399, 1599],
-        discountRange: [10, 20],
-      },
-      {
-        titlePrefix: 'Roborock S8 Pro Ultra Robot Vacuum and Mop',
-        variants: ['White with RockDock Ultra Cleaning Station', 'Black with RockDock Ultra Cleaning Station'],
-        description: 'Hands-free cleaning with self-washing, self-drying, self-emptying, and self-refilling RockDock. DuoRoller Riser brush and VibraRise 2.0 mopping.',
-        specsBase: { Suction: '6000 Pa Extreme Suction', Navigation: 'PreciSense LiDAR & Reactive 3D Obstacle Avoidance', Dock: 'RockDock Ultra 6-in-1' },
-        priceRange: [1299, 1599],
-        discountRange: [15, 25],
-      },
-      {
-        titlePrefix: 'KitchenAid Artisan Series 5-Quart Tilt-Head Stand Mixer',
-        variants: ['Empire Red with Pouring Shield', 'Matte Black with Glass Bowl', 'Pistachio Green Classic', 'Contour Silver Metallic'],
-        description: 'Iconic planetary mixing action with 10 speeds and 59 touchpoints per rotation for thorough ingredient blending from cookies to sourdough.',
-        specsBase: { Capacity: '5 Quart Stainless Steel Bowl with Handle', Power: '325 Watts Heavy-Duty Motor', Attachments: 'Dough Hook, Flat Beater, Wire Whip' },
-        priceRange: [379, 479],
-        discountRange: [18, 30],
-      },
+    category: 'Gaming Handhelds & VR',
+    target: 290,
+    queryKey: ['gaming-console', 'vr-headset'],
+    prefix: 'GAM',
+    brands: ['Valve Steam Deck', 'ASUS ROG', 'Lenovo Legion', 'Meta Quest', 'PlayStation', 'Xbox', '8BitDo', 'Turtle Beach', 'SCUF'],
+    models: [
+      { name: 'Quest 3 Mixed Reality All-In-One VR Headset', basePrice: 499, desc: 'Breakthrough mixed reality with dual RGB color cameras, 4K+ Infinite Display, 3D spatial audio, and Touch Plus controllers.' },
+      { name: 'Steam Deck OLED 1TB Handheld Gaming PC', basePrice: 649, desc: 'Stunning 7.4-inch 90Hz HDR OLED display, 6nm AMD APU, 50Whr battery for up to 12 hours gameplay, and Wi-Fi 6E.' },
+      { name: 'ROG Ally X Handheld Gaming Console (24GB RAM)', basePrice: 799, desc: 'Upgraded AMD Ryzen Z1 Extreme with 24GB LPDDR5X-7500 RAM, massive 80Wh battery, dual USB-C ports, and 1TB SSD.' },
+      { name: 'Legion Go 8.8" QHD+ Detachable Controller Handheld', basePrice: 699, desc: 'Pivot gaming with detachable trueStrike controllers with FPS mouse mode, 144Hz screen, and dual USB-4 40Gbps ports.' },
+      { name: 'PlayStation 5 Pro Console (2TB Storage)', basePrice: 699, desc: 'PlayStation Spectral Super Resolution AI upscaling, advanced ray tracing fidelity, and steady 60fps/120fps 4K gaming.' },
+      { name: 'Xbox Series X 1TB Gaming Console', basePrice: 499, desc: 'True 4K gaming powered by 12 teraflops of raw graphic processing, Quick Resume, and Xbox Velocity Architecture.' },
+      { name: 'G923 TRUEFORCE Racing Wheel and Pedals', basePrice: 349, desc: 'High-definition force feedback dialing into game physics engines at 4000 times per second for authentic track grip.' },
+      { name: 'DualSense Edge Wireless Customizable Controller', basePrice: 199, desc: 'Remappable back buttons, changeable stick caps, tunable trigger stops, and modular replaceable stick modules.' },
+      { name: 'Ultimate 2.4G Wireless Controller with Charging Dock', basePrice: 69, desc: 'Hall Effect sensing joysticks preventing stick drift, customizable tactile back paddles, and seamless charging dock.' },
+      { name: 'Stealth Pro Wireless Multiplatform Gaming Headset', basePrice: 329, desc: 'Hand-matched 50mm Nanoclear drivers, active noise cancellation, and swappable dual-battery continuous power system.' },
+    ],
+    variants: [
+      { label: 'Standard Retail Edition / Cables Included', priceDelta: 0, specs: { Compatibility: 'PC / PS5 / Xbox / Mobile', Connection: 'Low-Latency Wireless 2.4G' } },
+      { label: 'Elite Pro Bundle with Magnetic Charging Stand', priceDelta: 50, specs: { Stand: 'Magnetic Rapid Dock with LED', Extras: 'Extra Thumbsticks & D-Pads' } },
+      { label: '512GB Extended Internal Storage Model', priceDelta: 150, specs: { Storage: '512GB High-Speed NVMe', Display: 'Pancake Lenses 120Hz' } },
+      { label: 'Flight Pro Pedal Rudder Attachment Combo', priceDelta: 120, specs: { Pedals: 'Differential Braking Foot Pedals', Materials: 'Industrial Steel & Aluminum' } },
     ],
   },
   {
-    category: 'Watches & Wearables',
-    brandPool: ['Apple', 'Garmin', 'Samsung', 'Tag Heuer', 'Oura', 'Withings', 'Casio G-Shock', 'Suunto', 'Omega', 'Tissot'],
-    templates: [
-      {
-        titlePrefix: 'Apple Watch Ultra 2 GPS + Cellular 49mm',
-        variants: ['Titanium with Blue Ocean Band', 'Titanium with Orange Alpine Loop (Large)', 'Titanium with Trail Loop (M/L)'],
-        description: 'Rugged titanium case, precision dual-frequency GPS, up to 36 hours of normal battery life, and 3000-nit brightest Apple display ever.',
-        specsBase: { Case: '49mm Aerospace-Grade Titanium', Display: '3000 nits Sapphire Crystal Glass', WaterResistance: '100m Dive Certified EN13319' },
-        priceRange: [749, 799],
-        discountRange: [8, 15],
-      },
-      {
-        titlePrefix: 'Garmin Fenix 7X Pro Sapphire Solar Multisport GPS',
-        variants: ['Carbon Gray DLC Titanium 51mm', 'Titanium with Chestnut Leather Band 51mm', 'Fog Gray / Ember Orange Edition'],
-        description: 'Solar-charging lens extending battery up to 37 days, built-in LED flashlight, Hill Score, Endurance Score, and TopoActive multi-continent maps.',
-        specsBase: { Battery: 'Up to 37 Days with Solar', Glass: 'Power Sapphire Scratch-Resistant', Sensor: 'Elevate Gen 5 Heart Rate & ECG' },
-        priceRange: [849, 999],
-        discountRange: [10, 20],
-      },
-      {
-        titlePrefix: 'Oura Ring Gen 3 Horizon Smart Wellness Tracker',
-        variants: ['Stealth Matte Finish (Size 10)', 'Gold Horizon Finish (Size 9)', 'Rose Gold Horizon Finish (Size 8)', 'Silver Horizon Finish (Size 11)'],
-        description: 'Lightweight titanium ring tracking sleep staging, readiness score, heart rate variability (HRV), and body temperature with medical-grade precision.',
-        specsBase: { Material: 'Durable Titanium with PVD Coating', Battery: 'Up to 7 Days Single Charge', WaterResistance: '100m Waterproof' },
-        priceRange: [349, 499],
-        discountRange: [5, 12],
-      },
+    category: 'Smart Home & Robotics',
+    target: 290,
+    queryKey: ['smart-home', 'robot-vacuum'],
+    prefix: 'SMT',
+    brands: ['Roborock', 'iRobot', 'Ring', 'eufy', 'Ecobee', 'Philips Hue', 'TP-Link Tapo', 'Google Nest', 'Nanoleaf', 'Dyson'],
+    models: [
+      { name: 'S8 Pro Ultra Robot Vacuum and Sonic Mop', basePrice: 1399, desc: 'RockDock Ultra all-in-one dock that self-washes, self-dries, self-empties, and self-refills with 6000Pa suction.' },
+      { name: 'Roomba Combo j9+ Auto-Retracting Mop Robot', basePrice: 999, desc: 'Identifies and avoids obstacles like pet waste and cables with D.R.I.V.E. intelligence and auto-retracting mop head.' },
+      { name: 'Battery Doorbell Plus Head-to-Toe HD Video', basePrice: 149, desc: '1536p HD expanded field of view showing packages on your doorstep, color night vision, and two-way talk.' },
+      { name: 'SoloCam S340 Solar Powered 360 Security Camera', basePrice: 199, desc: 'Continuous solar charging with dual 3K cameras, 8x hybrid zoom, 360-degree pan and tilt, and zero monthly fees.' },
+      { name: 'Smart Thermostat Premium with Remote Sensor', basePrice: 249, desc: 'Zinc metal bezel with radar occupancy detection, air quality monitor, and built-in hands-free voice assistant.' },
+      { name: 'White and Color Ambiance Smart LED Starter Kit (4pk)', basePrice: 179, desc: '16 million colors with sync to music and games, Hue Bridge hub included for reliable local Zigbee response.' },
+      { name: 'Lines Smarter RGB Backlit Modular Light Bars', basePrice: 199, desc: 'Ultra-lightweight modular LED light bars that connect at 60-degree angles with music visualizer and screen mirroring.' },
+      { name: 'Purifier Hot+Cool Formaldehyde Air Purifier Fan', basePrice: 699, desc: 'HEPA H13 sealed filtration destroying formaldehyde, capturing 99.97% of allergens with bladeless heating and cooling.' },
+      { name: 'Smart Wi-Fi Outdoor Plugs Dual Socket IP64', basePrice: 29, desc: 'Weatherproof dual independent sockets with energy monitoring, schedule timers, and Matter cross-platform support.' },
+      { name: 'Smart Lock Pro Keyless Touchscreen Deadbolt', basePrice: 229, desc: 'Fingerprint biometric unlock in 0.3 seconds, built-in Wi-Fi, auto-locking door sensors, and backup physical keys.' },
+    ],
+    variants: [
+      { label: 'Standard Device with Mounting Hardware', priceDelta: 0, specs: { Ecosystem: 'Matter, HomeKit, Alexa, Google', Connectivity: 'Wi-Fi 6 / Zigbee / Thread' } },
+      { label: 'Complete Home Automation 2-Pack Bundle', priceDelta: 120, specs: { Coverage: 'Whole-Home Expanded Range', Power: 'Solar + High-Capacity Battery' } },
+      { label: 'With 1-Year Cloud Storage Voucher', priceDelta: 40, specs: { Recording: '24/7 Encrypted Cloud + Local SD', Resolution: '2K - 4K Ultra HD' } },
+      { label: 'Heavy-Duty Pro Installation Hardware Kit', priceDelta: 25, specs: { Mount: 'Weather-Sealed Die-Cast Bracket', Warranty: '2-Year Replacement Warranty' } },
     ],
   },
   {
-    category: 'Fashion & Footwear',
-    brandPool: ['Nike', 'Jordan', 'Adidas', 'Arc\'teryx', 'The North Face', 'Patagonia', 'Salomon', 'New Balance', 'Canada Goose', 'Stone Island'],
-    templates: [
-      {
-        titlePrefix: 'Nike Air Jordan 1 Retro High OG',
-        variants: ['Lost & Found Chicago Colorway (US 10.5)', 'Royal Reimagined Suede (US 11)', 'Bred Patent Leather (US 10)', 'Shadow 2.0 (US 9.5)'],
-        description: 'Authentic 1985 silhouette with official certificate of authenticity. Premium full-grain leather upper with encapsulated Nike Air cushioning.',
-        specsBase: { Upper: '100% Genuine Full-Grain Leather', Outsole: 'Solid Rubber with Pivot Circle', Verification: '100% Authenticity Guarantee Verified Tag' },
-        priceRange: [199, 399],
-        discountRange: [10, 25],
-      },
-      {
-        titlePrefix: 'Arc\'teryx Beta AR GORE-TEX Pro Hardshell Jacket',
-        variants: ['Black Sapphire (Men\'s Large)', 'Kingfisher Navy (Men\'s Medium)', 'Heritage Lucent Red (Men\'s XL)'],
-        description: 'Most versatile waterproof/breathable jacket engineered with rugged GORE-TEX PRO Most Rugged technology and DropHood helmet compatibility.',
-        specsBase: { Membrane: '3-Layer GORE-TEX PRO Most Rugged', Fit: 'Regular with e3D Ergonomic Patterning', Zippers: 'WaterTight Pit Zips & Front' },
-        priceRange: [599, 650],
-        discountRange: [5, 15],
-      },
-      {
-        titlePrefix: 'The North Face 1996 Retro Nuptse 700-Fill Down Jacket',
-        variants: ['TNF Black (Large)', 'Summit Gold (Medium)', 'Pine Needle Green (Large)', 'Misty Sage (Small)'],
-        description: 'Iconic oversized baffle silhouette with 700-fill certified goose down insulation, water-repellent DWR ripstop finish, and packable stow hood.',
-        specsBase: { Insulation: '700-Fill Responsible Down Standard (RDS)', Shell: '40D Ripstop Nylon with DWR', Packable: 'Stows into Right Hand Pocket' },
-        priceRange: [299, 340],
-        discountRange: [10, 20],
-      },
-      {
-        titlePrefix: 'Salomon XT-6 GORE-TEX Trail Running Shoes',
-        variants: ['Black / Phantom / Star White (US 10)', 'Safari / Bitter Chocolate (US 10.5)', 'Vanilla Ice / Almond Milk (US 9)'],
-        description: 'The preferred footwear of ultra-distance legends and streetwear tastemakers with waterproof GORE-TEX membrane and Agile Chassis System.',
-        specsBase: { Chassis: 'Agile Chassis System (ACS) Stability', Lacing: 'Quicklace Minimalist One-Pull', Outsole: 'Mud Contagrip with Deep Lugs' },
-        priceRange: [189, 220],
-        discountRange: [8, 16],
-      },
+    category: 'Storage & PC Hardware',
+    target: 290,
+    queryKey: ['ssd-drive', 'wifi-router'],
+    prefix: 'SSD',
+    brands: ['Samsung', 'Crucial', 'Western Digital', 'SanDisk', 'Kingston', 'Corsair', 'Sabrent', 'Seagate'],
+    models: [
+      { name: '990 PRO PCIe 4.0 NVMe M.2 Solid State Drive', basePrice: 179, desc: 'Blistering sequential read/write speeds up to 7,450/6,900 MB/s with nickel-coated controller thermal guard.' },
+      { name: 'T705 PCIe Gen5 NVMe M.2 SSD with Heatsink', basePrice: 299, desc: 'Next-gen storage speeds up to an astonishing 14,500 MB/s for instantaneous game loading and 8K video scrubbing.' },
+      { name: 'WD_BLACK SN850X NVMe SSD with Heatsink for PS5 & PC', basePrice: 189, desc: 'Extreme gaming storage with Game Mode 2.0, low latency queueing, and official Sony PlayStation 5 compatibility.' },
+      { name: 'Extreme PRO Portable External SSD Rugged USB 3.2', basePrice: 219, desc: 'Forged aluminum chassis acting as a heatsink delivering up to 2000MB/s speeds with IP55 water/dust resistance.' },
+      { name: 'Vengeance RGB 64GB (2x32GB) DDR5 6000MHz RAM Kit', basePrice: 219, desc: 'High-frequency screened memory ICs with ten individually addressable RGB LEDs per module and Intel XMP 3.0.' },
+      { name: 'T7 Shield 4TB Rugged Portable External SSD', basePrice: 299, desc: 'Durable elastomer exterior protecting against 3-meter drops with USB 3.2 Gen 2 transfer speeds up to 1050MB/s.' },
+      { name: 'Rocket 4 Plus-G 2TB DirectStorage Gaming SSD', basePrice: 209, desc: 'State-of-the-art gaming firmware optimized specifically for Microsoft DirectStorage API with zero game hitching.' },
+      { name: 'Extreme 512GB microSDXC UHS-I Memory Card 190MB/s', basePrice: 49, desc: 'A2 rated for rapid mobile app performance, V30 video speed class for continuous 4K UHD video recording.' },
+      { name: 'Fury Beast Black 32GB (2x16GB) DDR5 5600MHz RAM', basePrice: 119, desc: 'Low-profile heat spreader design with AMD EXPO profile support and automatic on-die ECC error correction.' },
+      { name: 'IronWolf Pro 16TB NAS Internal Hard Drive 7200 RPM', basePrice: 319, desc: 'Multi-bay RAID certified CMR drive with AgileArray firmware, RV rotational vibration sensors, and 300TB/yr workload.' },
+    ],
+    variants: [
+      { label: '1TB Capacity / Standard Low-Profile Format', priceDelta: -50, specs: { Capacity: '1,000 GB', Interface: 'PCIe 4.0 / USB 3.2' } },
+      { label: '2TB Capacity / High-Efficiency Passive Heatsink', priceDelta: 0, specs: { Capacity: '2,000 GB', Speed: 'Up to 7,450 MB/s' } },
+      { label: '4TB Enterprise Capacity / Extreme Endurance TBW', priceDelta: 160, specs: { Capacity: '4,000 GB', Endurance: '2,400 TBW Lifetime' } },
+      { label: 'Rugged Bumper Armor Travel Case Included', priceDelta: 15, specs: { DropRating: '3-Meter Drop Tested', Encryption: 'AES 256-bit Hardware' } },
     ],
   },
   {
-    category: 'Outdoor & Sports',
-    brandPool: ['YETI', 'Camp Chef', 'Coleman', 'Specialized', 'Trek', 'TaylorMade', 'Titleist', 'Garmin', 'Intex', 'Black Diamond'],
-    templates: [
-      {
-        titlePrefix: 'YETI Tundra 45 Hard Cooler Heavy-Duty',
-        variants: ['Desert Tan with PermaFrost Insulation', 'Navy Blue with PermaFrost Insulation', 'Rescue Red Special Edition'],
-        description: 'Legendary rotomolded construction makes it virtually indestructible. 3 inches of PermaFrost insulation keeps ice frozen for days.',
-        specsBase: { Construction: 'Rotomolded Armored Polyethylene', Insulation: '3" Commercial-Grade PermaFrost', Latches: 'T-Rex Heavy-Duty Rubber' },
-        priceRange: [299, 350],
-        discountRange: [5, 12],
-      },
-      {
-        titlePrefix: 'Camp Chef Everest 2X High-Pressure Stove',
-        variants: ['Dual 20,000 BTU Matchless Burners', 'Deluxe Edition with Cast Iron Griddle'],
-        description: 'Two massive 20,000 BTU burners blast past wind and high altitude. Push-button auto igniter and stainless steel drip tray.',
-        specsBase: { Output: '40,000 Total BTU (2x 20,000)', Ignition: 'Matchless Piezoelectric', Dimensions: '23.5" x 13.5" x 4.25"' },
-        priceRange: [149, 199],
-        discountRange: [15, 25],
-      },
-      {
-        titlePrefix: 'TaylorMade Qi10 Max Carbon Driver',
-        variants: ['10.5 Degree Fujikura Speeder Stiff Shaft', '9.0 Degree Mitsubishi Diamana Regular Shaft', '12.0 Degree High Launch Senior Shaft'],
-        description: 'Achieves historic 10,000 MOI threshold for unprecedented forgiveness and ball speed across the entire 60X Carbon Twist Face.',
-        specsBase: { MOI: '10,000 g-cm Inertia Threshold', Face: '60X Carbon Twist Face with Inverted Cone', Hosel: '4-Degree Loft Sleeve Adjustable' },
-        priceRange: [549, 599],
-        discountRange: [10, 18],
-      },
+    category: 'Power Stations & Solar Tech',
+    target: 290,
+    queryKey: ['power-station', 'power-bank', 'cordless-drill'],
+    prefix: 'PWR',
+    brands: ['Anker', 'EcoFlow', 'Jackery', 'Bluetti', 'Baseus', 'Ugreen', 'Belkin', 'Shargeek'],
+    models: [
+      { name: 'Prime 27,650mAh Power Bank (250W Total Output)', basePrice: 179, desc: 'Smart digital display showing real-time wattage per port, companion app control, and dual 140W USB-C PD 3.1.' },
+      { name: 'RIVER 2 Pro 768Wh Portable Power Station', basePrice: 599, desc: 'LFP battery with 3000+ life cycles, 70-minute 0-100% AC wall charging, and 800W continuous output (1600W X-Boost).' },
+      { name: 'Explorer 1000 v2 Portable LiFePO4 Power Station', basePrice: 799, desc: '1070Wh battery capacity with 1500W pure sine wave inverter, emergency UPS function, and 1-hour flash charging.' },
+      { name: 'Nexode 300W 5-Port GaN Desktop Fast Charger', basePrice: 199, desc: 'Powers 3 laptops simultaneously with single-port 140W PD 3.1 and intelligent Thermal Guard temperature monitoring.' },
+      { name: 'Storm 2 Transparent 100W Cyberpunk Power Bank', basePrice: 199, desc: 'Futuristic transparent IPS display showing battery health, cell voltages, circuit temperature, and DC output.' },
+      { name: 'MagGo 10,000mAh Qi2 15W Wireless Power Bank', basePrice: 89, desc: 'Certified Qi2 15W wireless charging snapping securely to MagSafe iPhones with foldable kickstand and LCD percentage.' },
+      { name: 'SolarSaga 100W Foldable Monocrystalline Solar Panel', basePrice: 249, desc: 'High 23% conversion efficiency with ETFE lamination, adjustable kickstands, and IP65 water-resistant casing.' },
+      { name: 'Blade HD 100W Ultra-Thin Laptop Power Bank 20000mAh', basePrice: 99, desc: 'Impossibly slender 0.7-inch aircraft aluminum slab sliding easily alongside laptops in standard briefcases.' },
+      { name: 'BoostCharge Pro 3-in-1 Fast Wireless Charging Stand', basePrice: 149, desc: 'Charges iPhone, Apple Watch Ultra, and AirPods simultaneously with premium weighted chrome finish.' },
+      { name: 'Car Jump Starter 3000A with Digital Air Compressor', basePrice: 129, desc: 'Starts all gas and up to 8.0L diesel engines with integrated 150 PSI tire inflator and 400 lumen work light.' },
+    ],
+    variants: [
+      { label: 'Space Gray / Braided 240W USB-C Cable (6ft)', priceDelta: 0, specs: { Output: '100W - 250W High-Speed PD', Certification: 'UL / CE Safety Certified' } },
+      { label: 'With 100W Solar Panel Folding Briefcase', priceDelta: 180, specs: { SolarInput: 'Up to 220W Dual Input', Cells: 'Grade-A SunPower Monocrystalline' } },
+      { label: 'Heavy-Duty Shockproof Travel Hardcase', priceDelta: 25, specs: { Material: 'EVA Ballistic Nylon', InternalPadding: 'Laser-Cut Foam' } },
+      { label: 'Rapid 140W Wall Adapter Bundled Edition', priceDelta: 55, specs: { Charger: '140W GaN Wall Plug Included', Efficiency: '95% Active Efficiency' } },
     ],
   },
   {
-    category: 'Health & Fitness',
-    brandPool: ['Theragun', 'Hyperice', 'Dyson', 'Oral-B', 'Philips Sonicare', 'Bowflex', 'Concept2', 'Peloton', 'Waterpik', 'Braun'],
-    templates: [
-      {
-        titlePrefix: 'Theragun PRO Plus 6-in-1 Percussive Therapy Device',
-        variants: ['Deep Tissue Massager with Infrared Light & Vibration', 'Bundle with Cold & Heat Therapy Attachments'],
-        description: 'Professional-grade recovery device combining 16mm percussive massage with near-infrared LED light therapy, vibration, and heart rate sensing.',
-        specsBase: { Amplitude: '16mm Deep Muscle Penetration', StallForce: '60 lbs No-Stall Brushless Motor', Therapy: 'Near-Infrared LED 660nm' },
-        priceRange: [549, 599],
-        discountRange: [10, 20],
-      },
-      {
-        titlePrefix: 'Dyson Supersonic Nural Intelligent Hair Dryer',
-        variants: ['Vinca Blue & Topaz with 5 Styling Attachments', 'Strawberry Bronze with Scalp Protect Sensor', 'Ceramic Patina with Diffuser'],
-        description: 'Auto-adapts temperature with Scalp Protect mode using Time of Flight sensors to protect scalp health and enhance natural shine.',
-        specsBase: { Sensor: 'Nural Scalp Protect Sensor Array', Motor: 'Dyson Digital Motor V9 (110,000 RPM)', Attachments: 'Wave+Curl Diffuser, Gentle Air, Flyaway' },
-        priceRange: [449, 499],
-        discountRange: [8, 15],
-      },
-      {
-        titlePrefix: 'Bowflex SelectTech 552 Adjustable Dumbbells (Pair)',
-        variants: ['Adjusts 5 to 52.5 lbs with Storage Trays', 'Bundle with Ergonomic Media Stand'],
-        description: 'Replaces 15 sets of weights with a turn of a dial. Adjusts from 5 to 52.5 lbs in 2.5 lb increments for progressive strength training.',
-        specsBase: { WeightRange: '5 to 52.5 lbs (2.3 to 23.8 kg) Per Dumbbell', Increments: '2.5 lb increments up to first 25 lbs', Coating: 'Molded Durable Plates' },
-        priceRange: [379, 429],
-        discountRange: [15, 25],
-      },
+    category: 'Smartwatches & Wearables',
+    target: 290,
+    queryKey: ['smartwatch'],
+    prefix: 'WAT',
+    brands: ['Garmin', 'Apple Watch', 'Samsung Galaxy Watch', 'Oura', 'WHOOP', 'Polar', 'Amazfit', 'Coros', 'Suunto'],
+    models: [
+      { name: 'Fenix 7X Pro Sapphire Solar Multisport GPS Watch', basePrice: 899, desc: 'Power Sapphire solar charging lens, built-in LED flashlight, multi-band GNSS with SatIQ, and up to 37 days battery.' },
+      { name: 'Apple Watch Ultra 2 GPS + Cellular 49mm Titanium', basePrice: 799, desc: 'Precision dual-frequency GPS, customizable Action button, 3000 nits brightest display, and 100m water resistance.' },
+      { name: 'Galaxy Watch Ultra 47mm LTE Rugged Smartwatch', basePrice: 649, desc: 'Cushion design with Grade 4 Titanium, dual-frequency GPS, 100hr power save mode, and personalized heart rate zones.' },
+      { name: 'Ring Gen 3 Heritage Titanium Smart Ring', basePrice: 299, desc: 'Featherlight medical-grade titanium ring monitoring sleep stages, skin temperature variance, HRV, and readiness.' },
+      { name: 'EPIX Pro Gen 2 Sapphire 51mm AMOLED Smartwatch', basePrice: 999, desc: 'Vibrant 1.4-inch AMOLED touch display paired with full topographical mapping, Hill Score, and endurance analytics.' },
+      { name: 'Pace 3 Lightweight GPS Sport Running Watch', basePrice: 229, desc: 'Only 30g with breathable nylon band, dual-frequency satellite tracking, SpO2 sensor, and 38 hours continuous GPS.' },
+      { name: 'Vantage V3 Premium Multisport Training Watch', basePrice: 599, desc: 'Biosensing Elixir technology featuring wrist ECG, skin temp sensing, SpO2, and offline dual-band topography maps.' },
+      { name: 'T-Rex Ultra Rugged Outdoor Smartwatch 30m Dive', basePrice: 399, desc: '316L stainless steel bezel, withstands 70C heat to -30C freezing, 30-meter freediving certified, and dual-band GPS.' },
+      { name: 'Forerunner 965 AMOLED Premium Triathlon Watch', basePrice: 599, desc: 'Brilliant touchscreen with titanium bezel, built-in full-color mapping, Training Readiness, and 23-day battery.' },
+      { name: 'WHOOP 4.0 Health & Strain Fitness Tracker', basePrice: 239, desc: 'Screen-free wearable optimizing recovery, sleep, and cardiovascular strain with 5-sensor skin monitoring.' },
     ],
-  },
-  {
-    category: 'Office & Workspace',
-    brandPool: ['Herman Miller', 'Steelcase', 'Secretlab', 'Autonomous', 'LG', 'Dell', 'BenQ', 'Logitech', 'Keychron', 'Elgato'],
-    templates: [
-      {
-        titlePrefix: 'Herman Miller Aeron Ergonomic Office Chair',
-        variants: ['Mineral Fully Adjustable PostureFit SL (Size B)', 'Graphite Fully Adjustable (Size C)', 'Carbon Polished Aluminum (Size B)'],
-        description: 'The benchmark for ergonomic seating. 8Z Pellicle breathable suspension elastomeric mesh distributing weight evenly to eliminate pressure points.',
-        specsBase: { Support: 'PostureFit SL Sacral & Lumbar Support', Mechanism: 'Harmonic 2 Tilt with Forward Tilt Limiter', Warranty: '12-Year 3-Shift Warranty' },
-        priceRange: [1495, 1895],
-        discountRange: [10, 20],
-      },
-      {
-        titlePrefix: 'LG 28" DualUp Ergo Monitor 16:18 SDQHD',
-        variants: ['28MQ780-B with Ergo Arm Stand (USB-C 90W PD)', '28MQ750-C with Nano IPS Panel'],
-        description: 'Revolutionary 16:18 aspect ratio offering vertical split view equal to two 21.5-inch displays stacked without bezels.',
-        specsBase: { Resolution: '2560 x 2880 SDQHD Nano IPS', Color: 'DCI-P3 98% with HDR10', Connectivity: 'USB Type-C 90W Power Delivery & KVM' },
-        priceRange: [599, 699],
-        discountRange: [15, 25],
-      },
-      {
-        titlePrefix: 'Logitech MX Master 3S Performance Wireless Mouse',
-        variants: ['Space Gray with Quiet Clicks & 8K DPI', 'Pale Gray with Quiet Clicks', 'Graphite with Bolt USB Receiver'],
-        description: 'MagSpeed electromagnetic scrolling up to 1,000 lines per second, 8,000 DPI track-on-glass sensor, and 90% quieter clicks.',
-        specsBase: { Sensor: '8,000 DPI Darkfield High Precision', Scroll: 'MagSpeed Electromagnetic SmartShift', Battery: 'Up to 70 Days on Full Charge' },
-        priceRange: [89, 99],
-        discountRange: [10, 20],
-      },
-    ],
-  },
-  {
-    category: 'Power & Tech Gear',
-    brandPool: ['Anker', 'EcoFlow', 'Jackery', 'SanDisk', 'Samsung', 'Belkin', 'UGREEN', 'Goal Zero', 'Baseus'],
-    templates: [
-      {
-        titlePrefix: 'EcoFlow DELTA 2 Max Portable Power Station 2048Wh',
-        variants: ['2400W AC Output (Solar Generator Ready)', 'Bundle with 220W Bifacial Solar Panel', 'with Extra 2048Wh Expansion Battery'],
-        description: 'LFP battery chemistry with 3,000 cycles to 80% capacity. Powers 99% of heavy home appliances with 2400W output and X-Boost to 3100W.',
-        specsBase: { Capacity: '2,048 Wh (Expandable to 6,144 Wh)', Output: '2400W AC (6x Outlets) + 100W USB-C', Recharge: '0-80% in 43 Mins with Dual AC+Solar' },
-        priceRange: [1399, 1899],
-        discountRange: [18, 30],
-      },
-      {
-        titlePrefix: 'Anker Prime 27,650mAh Power Bank (250W)',
-        variants: ['3-Port Ultra-Fast Power Delivery PowerCore', 'with 100W Smart Charging Base Station'],
-        description: 'Airline-approved 99.54Wh capacity with 2x 140W USB-C ports and 1x 65W USB-A port capable of fast-charging two MacBook Pros simultaneously.',
-        specsBase: { Output: '250W Total High-Speed Multi-Port', Capacity: '27,650 mAh (99.54 Wh Flight Safe)', Display: 'Digital Smart Display with App Control' },
-        priceRange: [149, 189],
-        discountRange: [15, 25],
-      },
-      {
-        titlePrefix: 'SanDisk 4TB Extreme PRO Portable SSD USB 3.2 Gen 2x2',
-        variants: ['Up to 2000MB/s Read/Write Speeds', 'with Rugged Aluminum Enclosure & Carabiner'],
-        description: 'NVMe solid state performance in a rugged forged aluminum chassis that acts as a heatsink. IP65 water & dust resistance and 3-meter drop protection.',
-        specsBase: { Speed: 'Up to 2,000 MB/s Read & Write', Durability: 'IP65 Water/Dust Resistance + 3m Drop', Security: '256-bit AES Hardware Encryption' },
-        priceRange: [299, 379],
-        discountRange: [20, 35],
-      },
+    variants: [
+      { label: 'Titanium Slate Black / Breathable QuickFit Band', priceDelta: 0, specs: { Material: 'Titanium / Sapphire Glass', WaterRating: '10 ATM / 100m Dive' } },
+      { label: 'Solar Sapphire Edition / Orange Alpine Loop', priceDelta: 80, specs: { Glass: 'Power Sapphire Solar Crystal', Bezel: 'DLC Coated Titanium' } },
+      { label: 'With Extra Silicone Sport & Leather Bands (2-Pack)', priceDelta: 35, specs: { Bands: 'Quick-Release 22mm / 26mm', Sensors: 'HR, SpO2, ECG, Temp' } },
+      { label: 'Cellular LTE Autonomous Edition Unlocked', priceDelta: 100, specs: { Network: 'Standalone 4G LTE eSIM', GPS: 'Multi-Band L1+L5 SatIQ' } },
     ],
   },
 ];
 
 export function generateMasterProducts(): Product[] {
-  const categoryBuckets: Product[][] = [];
-  let globalCounter = 1000;
+  const products: Product[] = [];
+  const titlesSet = new Set<string>();
+  let globalId = 1;
 
-  for (const catData of CATEGORIES_DATA) {
-    const bucket: Product[] = [];
-    const targetPerCategory = 88;
+  // 1. Generate exactly 1,100 authentic smartphones
+  const TARGET_SMARTPHONES = 1100;
+  const smartphoneCategoryName = 'Smartphones & Mobile Flagships';
+  let phoneCount = 0;
+
+  const phoneImages = getCategoryImages(smartphoneCategoryName, [
+    'iphone', 'samsung-galaxy', 'google-pixel', 'foldable-phone',
+    'smartphone', 'android-phone', 'cellphone', 'mobile-phone', 'phone-screen'
+  ]);
+
+  for (let vIdx = 0; vIdx < SMARTPHONE_VARIANTS.length; vIdx++) {
+    const variant = SMARTPHONE_VARIANTS[vIdx];
+    for (const group of SMARTPHONE_BRANDS_MODELS) {
+      const groupImages = getCategoryImages(smartphoneCategoryName, group.imgKeys);
+      for (const model of group.models) {
+        if (phoneCount >= TARGET_SMARTPHONES) break;
+
+        const title = `${group.brand} ${model.name} - ${variant.label}`;
+        if (titlesSet.has(title)) continue;
+        titlesSet.add(title);
+
+        const sku = `ADR-PHN-${String(globalId).padStart(5, '0')}`;
+        const finalPrice = Math.max(149.99, Math.round((model.basePrice + variant.priceDelta + (globalId % 7)) * 100) / 100);
+        const discountPct = 10 + (globalId % 15);
+        const originalPrice = Math.round((finalPrice / (1 - discountPct / 100)) * 100) / 100;
+
+        const imgUrl = (groupImages.length > 0)
+          ? groupImages[phoneCount % groupImages.length]
+          : phoneImages[phoneCount % phoneImages.length];
+
+        const fullDesc = `${model.desc} Configured with ${variant.label}. Authenticity guaranteed brand-new in original sealed manufacturer packaging. Net proceeds directly empower Adera Foundation verified education and healthcare milestones.`;
+
+        products.push({
+          id: globalId,
+          name: title,
+          description: fullDesc,
+          price: finalPrice,
+          originalPrice,
+          image: imgUrl,
+          category: smartphoneCategoryName,
+          brand: group.brand,
+          sku,
+          source: 'Amazon Prime & Certified Direct Stock',
+          specs: {
+            ...variant.specs,
+            Processor: group.chipset,
+            Condition: 'Brand New (Factory Sealed Retail Box)',
+            Authenticity: '100% Guaranteed Genuine Manufacturer Stock',
+            Warranty: 'Full 1-Year Manufacturer Warranty + 30-Day Hassle-Free Returns',
+            Shipping: 'Insured Global Express Delivery with On-Chain Tracking',
+          },
+          stock: 30 + (globalId % 190),
+          rating: Math.round((4.6 + (globalId % 5) * 0.1) * 10) / 10,
+          sold: 45 + (globalId % 820),
+        });
+
+        globalId++;
+        phoneCount++;
+      }
+      if (phoneCount >= TARGET_SMARTPHONES) break;
+    }
+    if (phoneCount >= TARGET_SMARTPHONES) break;
+  }
+
+  // 2. Generate remaining 3,790 products across 13 tech categories
+  const otherBuckets: Product[][] = [];
+  for (const cat of OTHER_TECH_CATEGORIES) {
+    const images = getCategoryImages(cat.category, cat.queryKey);
     let catCount = 0;
-    const photoIds = CATEGORY_IMAGE_REGISTRY[catData.category] || [];
+    const catProducts: Product[] = [];
 
-    while (catCount < targetPerCategory) {
-      for (const tpl of catData.templates) {
-        for (const variant of tpl.variants) {
-          if (catCount >= targetPerCategory) break;
+    for (let vIdx = 0; vIdx < cat.variants.length; vIdx++) {
+      const variant = cat.variants[vIdx];
+      for (const brand of cat.brands) {
+        for (const model of cat.models) {
+          if (catCount >= cat.target) break;
 
-          globalCounter++;
-          catCount++;
+          const title = `${brand} ${model.name} - ${variant.label}`;
+          if (titlesSet.has(title)) continue;
+          titlesSet.add(title);
 
-          const brand = catData.brandPool[catCount % catData.brandPool.length];
-          const source = 'Verified Stock';
-          const skuCode = `ADR-${brand.slice(0, 3).toUpperCase()}${globalCounter}`;
+          const sku = `ADR-${cat.prefix}-${String(globalId).padStart(5, '0')}`;
+          const finalPrice = Math.max(19.99, Math.round((model.basePrice + variant.priceDelta + (globalId % 9)) * 100) / 100);
+          const discountPct = 12 + (globalId % 16);
+          const originalPrice = Math.round((finalPrice / (1 - discountPct / 100)) * 100) / 100;
 
-          const minP = tpl.priceRange[0];
-          const maxP = tpl.priceRange[1];
-          const stepPrice = minP + ((catCount * 37) % (maxP - minP + 1));
-          const discountPct = tpl.discountRange[0] + ((catCount * 7) % (tpl.discountRange[1] - tpl.discountRange[0] + 1));
-          const originalPrice = Math.round(stepPrice / (1 - discountPct / 100));
-          const price = parseFloat(stepPrice.toFixed(2));
+          const imgUrl = images[catCount % images.length];
+          const fullDesc = `${model.desc} Includes ${variant.label}. Verified authentic brand-new stock in original sealed factory retail packaging. 100% of marketplace net proceeds support Adera Foundation verified humanitarian milestones.`;
 
-          const photoId = photoIds[(catCount - 1) % photoIds.length] || 'photo-1517336714731-489689fd1ca8';
-          const image = `https://images.unsplash.com/${photoId}?auto=format&fit=crop&w=800&q=80`;
-
-          const rating = parseFloat((4.3 + ((catCount * 13) % 8) / 10).toFixed(1));
-          const sold = 45 + ((catCount * 97) % 850);
-
-          const productName = `${brand} ${tpl.titlePrefix} - ${variant}`;
-
-          bucket.push({
-            id: globalCounter,
-            name: productName,
-            brand,
-            category: catData.category,
-            source,
-            sku: skuCode,
-            price,
+          catProducts.push({
+            id: globalId,
+            name: title,
+            description: fullDesc,
+            price: finalPrice,
             originalPrice,
-            image,
-            description: tpl.description,
+            image: imgUrl,
+            category: cat.category,
+            brand,
+            sku,
+            source: 'Amazon Prime & Certified Direct Stock',
             specs: {
-              ...tpl.specsBase,
-              Condition: 'Brand New in Factory Sealed Packaging',
-              SKU: skuCode,
-              Shipping: 'Free Insured Global Priority (3-5 Business Days)',
-              Warranty: '1 Year Full Manufacturer Warranty',
+              ...variant.specs,
+              Condition: 'Brand New (Factory Sealed Retail Box)',
+              Authenticity: '100% Guaranteed Genuine Manufacturer Stock',
+              Warranty: 'Full 1-Year Manufacturer Warranty + 30-Day Hassle-Free Returns',
+              Shipping: 'Insured Global Express Delivery with On-Chain Tracking',
             },
-            rating,
-            sold,
+            stock: 35 + (globalId % 180),
+            rating: Math.round((4.4 + (globalId % 6) * 0.1) * 10) / 10,
+            sold: 28 + (globalId % 650),
           });
+
+          globalId++;
+          catCount++;
         }
+        if (catCount >= cat.target) break;
       }
+      if (catCount >= cat.target) break;
     }
-    categoryBuckets.push(bucket);
+    otherBuckets.push(catProducts);
   }
 
-  // Interleave round-robin across all categories for store diversity
-  const interleavedProducts: Product[] = [];
-  const maxLen = Math.max(...categoryBuckets.map(b => b.length));
+  // 3. Interleave categories evenly
+  const smartphoneProducts = products;
+  const allBuckets = [smartphoneProducts, ...otherBuckets];
+  const totalTarget = 4890;
+  const result: Product[] = [];
+
+  const maxLen = Math.max(...allBuckets.map(b => b.length));
   for (let i = 0; i < maxLen; i++) {
-    for (const bucket of categoryBuckets) {
-      if (i < bucket.length) {
-        interleavedProducts.push(bucket[i]);
+    for (const b of allBuckets) {
+      if (i < b.length && result.length < totalTarget) {
+        result.push(b[i]);
       }
     }
   }
 
-  return interleavedProducts;
+  return result;
 }
 
 export const MASTER_CATALOG_PRODUCTS: Product[] = generateMasterProducts();

@@ -31,9 +31,9 @@ export class ProductsService implements OnModuleInit {
         },
       });
 
-      if (count < 500 || hasStale) {
-        console.log(`📦 Server startup: Found ${count} products (stale detected: ${!!hasStale}). Auto-seeding 1,000+ unique products...`);
-        await this.seed1000Catalog();
+      if (count < 4890 || hasStale) {
+        console.log(`📦 Server startup: Found ${count} products in DB (expected 4890). Auto-seeding 4,890 authentic products & smartphones...`);
+        await this.seed4890Catalog();
       }
     } catch (err: any) {
       console.warn('⚠️ Product auto-seed check skipped:', err.message);
@@ -146,5 +146,41 @@ export class ProductsService implements OnModuleInit {
       ...result,
       message: `Successfully seeded ${result.total} unique, non-repeating products across 12 categories`,
     };
+  }
+
+  async seed4890Catalog(): Promise<any> {
+    try {
+      const { generate4890GenuineProducts } = require('../../scripts/seed-3000-realistic-products.js');
+      const products = generate4890GenuineProducts();
+
+      console.log(`Clearing old products and inserting ${products.length} products...`);
+      await this.prisma.resellerProduct.deleteMany({});
+      await this.prisma.product.deleteMany({});
+
+      const BATCH_SIZE = 100;
+      for (let i = 0; i < products.length; i += BATCH_SIZE) {
+        const batch = products.slice(i, i + BATCH_SIZE);
+        await this.prisma.product.createMany({
+          data: batch,
+          skipDuplicates: true,
+        });
+      }
+
+      const total = await this.prisma.product.count();
+      const phoneCount = await this.prisma.product.count({
+        where: { category: 'Smartphones & Mobile Flagships' },
+      });
+
+      console.log(`✅ Seeded ${total} products (Smartphones: ${phoneCount}) into PostgreSQL`);
+      return {
+        success: true,
+        total,
+        phoneCount,
+        message: `Successfully seeded ${total} genuine products with ${phoneCount} authentic smartphones into PostgreSQL`,
+      };
+    } catch (err: any) {
+      console.error('Error seeding 4890 catalog:', err);
+      throw err;
+    }
   }
 }
