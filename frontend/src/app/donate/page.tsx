@@ -1324,9 +1324,28 @@ function DonateHub() {
                       >
                         {tx.type === 'DEPOSIT' ? '+' : '-'}${tx.amount.toFixed(2)}
                       </div>
-                      <span className="inline-block text-[10px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-1.5 py-0.2 rounded mt-0.5">
-                        {tx.status === 'CONFIRMED' ? 'Confirmed' : 'Pending Proof'}
-                      </span>
+                      <div className="flex items-center justify-end gap-1.5 mt-0.5">
+                        {tx.paymentProof && (
+                          <a
+                            href={tx.paymentProof}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-[10px] text-emerald-700 hover:underline font-bold"
+                            title="View Payment Proof Screenshot"
+                          >
+                            Proof Receipt ↗
+                          </a>
+                        )}
+                        <span className={`inline-block text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                          tx.status === 'CONFIRMED'
+                            ? 'text-emerald-800 bg-emerald-50 border border-emerald-200'
+                            : tx.status === 'REJECTED'
+                            ? 'text-rose-800 bg-rose-50 border border-rose-200'
+                            : 'text-amber-800 bg-amber-50 border border-amber-200'
+                        }`}>
+                          {tx.status === 'CONFIRMED' ? 'Confirmed' : tx.status === 'REJECTED' ? 'Rejected' : 'Pending Verification'}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 ))}

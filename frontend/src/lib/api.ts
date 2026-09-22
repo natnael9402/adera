@@ -90,4 +90,37 @@ export const api = {
       return request('/notifications/mark-all-read' + qs, { method: 'POST' });
     },
   },
+  wallet: {
+    get: (email?: string) => {
+      const qs = email ? `?email=${encodeURIComponent(email)}` : '';
+      return request(`/wallet${qs}`);
+    },
+    deposit: (data: {
+      amountUsd: number;
+      cryptoSymbol: string;
+      cryptoAmount: string;
+      txHash: string;
+      paymentProof?: string;
+      donorEmail?: string;
+    }) =>
+      request('/wallet/deposit', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    donate: (data: {
+      causeId: number;
+      amountUsd: number;
+      isAnonymous?: boolean;
+      donorName?: string;
+      donorEmail?: string;
+    }) =>
+      request('/wallet/donate', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    getTransactions: (status?: string) => {
+      const qs = status ? `?status=${encodeURIComponent(status)}` : '';
+      return request(`/wallet/admin/transactions${qs}`);
+    },
+  },
 };

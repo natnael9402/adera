@@ -38,6 +38,7 @@ model User {
   tokens       VerificationToken[]
   activities   ActivityLog[]
   notifications Notification[]
+  wallet       Wallet?
 }
 
 model Post {
@@ -341,5 +342,33 @@ model Notification {
   user       User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
+model Wallet {
+  id           Int                 @id @default(autoincrement())
+  userId       Int?                @unique
+  userEmail    String?             @unique
+  balance      Float               @default(0.0)
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
 
+  user         User?               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions WalletTransaction[]
+}
 
+model WalletTransaction {
+  id           Int      @id @default(autoincrement())
+  walletId     Int
+  type         String   // "DEPOSIT" | "DONATION"
+  amount       Float
+  cryptoSymbol String?  @default("USDC")
+  cryptoAmount String?
+  txHash       String
+  paymentProof String?
+  status       String   @default("PENDING") // "PENDING" | "CONFIRMED" | "REJECTED"
+  causeId      Int?
+  causeTitle   String?
+  donorName    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  wallet       Wallet   @relation(fields: [walletId], references: [id], onDelete: Cascade)
+}

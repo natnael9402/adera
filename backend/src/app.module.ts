@@ -17,6 +17,7 @@ import { ResellersModule } from './resellers/resellers.module';
 import { UploadModule } from './upload/upload.module';
 import { ActivityLogsModule } from './activity-logs/activity-logs.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { WalletModule } from './wallet/wallet.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { NotificationsModule } from './notifications/notifications.module';
     PrismaModule,
     ActivityLogsModule,
     NotificationsModule,
+    WalletModule,
     AuthModule,
     UsersModule,
     PostsModule,

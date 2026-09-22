@@ -5,7 +5,7 @@ import { useAuth } from './AuthContext';
 import { api } from '@/lib/api';
 
 export interface WalletTransaction {
-  id: string;
+  id: string | number;
   type: 'DEPOSIT' | 'DONATION';
   amount: number;
   cryptoSymbol?: string;
@@ -13,8 +13,8 @@ export interface WalletTransaction {
   txHash: string;
   causeId?: number | string;
   causeTitle?: string;
-  status: 'CONFIRMED' | 'PENDING_VERIFICATION';
-  paymentProof?: string;
+  status: 'CONFIRMED' | 'PENDING' | 'PENDING_VERIFICATION' | 'REJECTED';
+  paymentProof?: string | null;
   createdAt: string;
 }
 
@@ -44,79 +44,78 @@ const WalletContext = createContext<WalletContextType | undefined>(undefined);
 const STORAGE_BALANCE_KEY = 'adera_wallet_balance';
 const STORAGE_TXS_KEY = 'adera_wallet_transactions';
 
-const INITIAL_SAMPLE_TRANSACTIONS: WalletTransaction[] = [
-  {
-    id: 'tx-init-1',
-    type: 'DEPOSIT',
-    amount: 150.00,
-    cryptoSymbol: 'USDC',
-    cryptoAmount: '150.00',
-    txHash: '0x8f2a49b8192c7d9124be4c1e08924b12d7c001',
-    status: 'CONFIRMED',
-    createdAt: new Date(Date.now() - 3600000 * 24 * 2).toISOString(),
-  },
-  {
-    id: 'tx-init-2',
-    type: 'DONATION',
-    amount: 50.00,
-    cryptoSymbol: 'USDC',
-    causeId: 33,
-    causeTitle: 'Solar Water Filtration Well in Dire Dawa',
-    txHash: '0x71a2e4c89110b98721c473fc4223a44d71facbe',
-    status: 'CONFIRMED',
-    createdAt: new Date(Date.now() - 3600000 * 18).toISOString(),
-  },
-];
-
 export function WalletProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
-  const [balance, setBalance] = useState<number>(100.00);
-  const [transactions, setTransactions] = useState<WalletTransaction[]>(INITIAL_SAMPLE_TRANSACTIONS);
+  // Strictly start at $0.00 - zero mock balance
+  const [balance, setBalance] = useState<number>(0.0);
+  const [transactions, setTransactions] = useState<WalletTransaction[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  // Initialize from LocalStorage or default
-  useEffect(() => {
+  // Sync wallet from backend database table
+  const fetchBackendWallet = useCallback(async () => {
+    try {
+      const email = user?.email || (typeof window !== 'undefined' ? localStorage.getItem('user_email') || undefined : undefined);
+      const res = await api.wallet.get(email);
+      if (res && typeof res.balance === 'number') {
+        setBalance(res.balance);
+        if (Array.isArray(res.transactions)) {
+          setTransactions(
+            res.transactions.map((t: any) => ({
+              id: t.id,
+              type: t.type,
+              amount: t.amount,
+              cryptoSymbol: t.cryptoSymbol,
+              cryptoAmount: t.cryptoAmount,
+              txHash: t.txHash,
+              causeId: t.causeId,
+              causeTitle: t.causeTitle,
+              status: t.status,
+              paymentProof: t.paymentProof,
+              createdAt: t.createdAt,
+            }))
+          );
+        }
+        localStorage.setItem(STORAGE_BALANCE_KEY, res.balance.toFixed(2));
+        localStorage.setItem(STORAGE_TXS_KEY, JSON.stringify(res.transactions || []));
+        return;
+      }
+    } catch (err) {
+      console.warn('Backend wallet sync note (reading cached balance):', err);
+    }
+
+    // Fallback to cache if offline
     try {
       const savedBalance = localStorage.getItem(STORAGE_BALANCE_KEY);
       const savedTxs = localStorage.getItem(STORAGE_TXS_KEY);
-
       if (savedBalance !== null) {
         const parsed = parseFloat(savedBalance);
         if (!isNaN(parsed)) setBalance(parsed);
       } else {
-        // Default seed balance for exciting instant testability
-        setBalance(100.00);
-        localStorage.setItem(STORAGE_BALANCE_KEY, '100.00');
+        setBalance(0.0);
       }
-
       if (savedTxs !== null) {
         const parsedTxs = JSON.parse(savedTxs);
-        if (Array.isArray(parsedTxs) && parsedTxs.length > 0) {
-          setTransactions(parsedTxs);
-        }
-      } else {
-        localStorage.setItem(STORAGE_TXS_KEY, JSON.stringify(INITIAL_SAMPLE_TRANSACTIONS));
+        if (Array.isArray(parsedTxs)) setTransactions(parsedTxs);
       }
-    } catch (e) {
-      console.warn('Failed to load wallet from storage:', e);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+    } catch (e) {}
+  }, [user]);
 
-  // Save to LocalStorage whenever state changes
-  const saveState = (newBalance: number, newTxs: WalletTransaction[]) => {
+  useEffect(() => {
+    setIsLoading(true);
+    fetchBackendWallet().finally(() => setIsLoading(false));
+  }, [fetchBackendWallet]);
+
+  // Save to LocalStorage helper
+  const saveLocalState = (newBalance: number, newTxs: WalletTransaction[]) => {
     setBalance(newBalance);
     setTransactions(newTxs);
     try {
       localStorage.setItem(STORAGE_BALANCE_KEY, newBalance.toFixed(2));
       localStorage.setItem(STORAGE_TXS_KEY, JSON.stringify(newTxs));
-    } catch (e) {
-      console.warn('Failed to write wallet to storage:', e);
-    }
+    } catch (e) {}
   };
 
-  // Add Funds (Deposit)
+  // Add Funds (Deposit with real database proof acceptance)
   const deposit = async (data: {
     amountUsd: number;
     cryptoSymbol: string;
@@ -124,6 +123,41 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     txHash: string;
     paymentProof?: string;
   }) => {
+    // 1. Call Backend API to insert into Wallet and WalletTransaction tables
+    try {
+      const res = await api.wallet.deposit({
+        amountUsd: data.amountUsd,
+        cryptoSymbol: data.cryptoSymbol,
+        cryptoAmount: data.cryptoAmount,
+        txHash: data.txHash,
+        paymentProof: data.paymentProof,
+        donorEmail: user?.email,
+      });
+
+      if (res && typeof res.balance === 'number') {
+        setBalance(res.balance);
+        if (res.transaction) {
+          const newTx: WalletTransaction = {
+            id: res.transaction.id,
+            type: 'DEPOSIT',
+            amount: res.transaction.amount,
+            cryptoSymbol: res.transaction.cryptoSymbol,
+            cryptoAmount: res.transaction.cryptoAmount,
+            txHash: res.transaction.txHash,
+            status: res.transaction.status,
+            paymentProof: res.transaction.paymentProof,
+            createdAt: res.transaction.createdAt,
+          };
+          const nextTxs = [newTx, ...transactions.filter(t => t.id !== newTx.id)];
+          saveLocalState(res.balance, nextTxs);
+        }
+        return;
+      }
+    } catch (err) {
+      console.warn('Backend deposit call note, saving to local store:', err);
+    }
+
+    // Local fallback
     const newTx: WalletTransaction = {
       id: `tx-dep-${Date.now()}`,
       type: 'DEPOSIT',
@@ -131,14 +165,13 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       cryptoSymbol: data.cryptoSymbol,
       cryptoAmount: data.cryptoAmount,
       txHash: data.txHash,
-      status: data.paymentProof ? 'PENDING_VERIFICATION' : 'CONFIRMED',
+      status: data.paymentProof ? 'PENDING' : 'CONFIRMED',
       paymentProof: data.paymentProof,
       createdAt: new Date().toISOString(),
     };
-
     const nextBalance = balance + data.amountUsd;
     const nextTxs = [newTx, ...transactions];
-    saveState(nextBalance, nextTxs);
+    saveLocalState(nextBalance, nextTxs);
   };
 
   // Donate Directly from Wallet Balance
@@ -157,9 +190,43 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       };
     }
 
+    const numericCauseId = typeof data.causeId === 'number' ? data.causeId : parseInt(String(data.causeId), 10);
+
+    // Call Backend API to deduct from Wallet in database
+    try {
+      const res = await api.wallet.donate({
+        causeId: numericCauseId,
+        amountUsd: data.amountUsd,
+        isAnonymous: data.isAnonymous,
+        donorName: data.donorName || user?.name,
+        donorEmail: user?.email,
+      });
+
+      if (res && res.txHash) {
+        const nextBalance = typeof res.balance === 'number' ? res.balance : Math.max(0, balance - data.amountUsd);
+        const newTx: WalletTransaction = {
+          id: res.transaction?.id || `tx-don-${Date.now()}`,
+          type: 'DONATION',
+          amount: data.amountUsd,
+          cryptoSymbol: 'WALLET_USD',
+          cryptoAmount: data.amountUsd.toFixed(2),
+          causeId: data.causeId,
+          causeTitle: data.causeTitle,
+          txHash: res.txHash,
+          status: 'CONFIRMED',
+          createdAt: new Date().toISOString(),
+        };
+        const nextTxs = [newTx, ...transactions];
+        saveLocalState(nextBalance, nextTxs);
+        return { success: true, txHash: res.txHash };
+      }
+    } catch (err: any) {
+      console.warn('Backend wallet donate note:', err);
+    }
+
+    // Local fallback if offline
     const mockTxHash = `0x${Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join('')}`;
     const nextBalance = Math.max(0, balance - data.amountUsd);
-
     const newTx: WalletTransaction = {
       id: `tx-don-${Date.now()}`,
       type: 'DONATION',
@@ -172,27 +239,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       status: 'CONFIRMED',
       createdAt: new Date().toISOString(),
     };
-
     const nextTxs = [newTx, ...transactions];
-    saveState(nextBalance, nextTxs);
-
-    // Synchronize with backend API if valid cause
-    try {
-      const numericCauseId = typeof data.causeId === 'number' ? data.causeId : parseInt(String(data.causeId), 10);
-      if (!isNaN(numericCauseId)) {
-        await api.posts.donate(numericCauseId, {
-          donorName: data.isAnonymous ? 'Anonymous Supporter' : (data.donorName || user?.name || 'Adera Wallet Donor'),
-          donorEmail: user?.email,
-          amountUsd: data.amountUsd,
-          cryptoAmount: data.amountUsd.toFixed(2),
-          cryptoSymbol: 'WALLET_USD',
-          txHash: mockTxHash,
-          isAnonymous: data.isAnonymous || false,
-        });
-      }
-    } catch (err) {
-      console.warn('Backend donation sync note (local balance deducted successfully):', err);
-    }
+    saveLocalState(nextBalance, nextTxs);
 
     return {
       success: true,
@@ -201,18 +249,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   };
 
   const refreshWallet = useCallback(() => {
-    try {
-      const savedBalance = localStorage.getItem(STORAGE_BALANCE_KEY);
-      if (savedBalance !== null) {
-        const parsed = parseFloat(savedBalance);
-        if (!isNaN(parsed)) setBalance(parsed);
-      }
-      const savedTxs = localStorage.getItem(STORAGE_TXS_KEY);
-      if (savedTxs !== null) {
-        setTransactions(JSON.parse(savedTxs));
-      }
-    } catch (e) {}
-  }, []);
+    fetchBackendWallet();
+  }, [fetchBackendWallet]);
 
   return (
     <WalletContext.Provider
