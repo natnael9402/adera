@@ -88,7 +88,7 @@ export default function Navbar() {
 
             {/* Philanthropic Wallet Pill */}
             <Link
-              href="/donate?tab=funds"
+              href="/wallet"
               className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-slate-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/80 rounded-xl transition-all"
               title="Philanthropic Wallet Balance"
             >
@@ -187,7 +187,16 @@ export default function Navbar() {
                 className="w-full py-2.5 bg-emerald-600 text-white font-extrabold text-xs rounded-xl shadow-xs flex items-center justify-center gap-2"
               >
                 <Heart className="w-4 h-4 fill-white/30" />
-                <span>Donate & Philanthropic Wallet (${balance.toFixed(2)})</span>
+                <span>Donate to Causes</span>
+              </Link>
+
+              <Link
+                href="/wallet"
+                onClick={() => setMobileOpen(false)}
+                className="w-full py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-950 border border-emerald-200/80 font-extrabold text-xs rounded-xl shadow-xs flex items-center justify-center gap-2"
+              >
+                <Wallet className="w-4 h-4 text-emerald-700" />
+                <span>Philanthropic Wallet (${balance.toFixed(2)})</span>
               </Link>
 
               <a
