@@ -142,7 +142,7 @@ export default function Navbar() {
           <div className="flex md:hidden items-center gap-2">
             <NotificationCenter />
             <Link
-              href="/donate"
+              href="/wallet"
               className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-xl text-xs font-bold"
               title="Philanthropic Wallet"
             >
