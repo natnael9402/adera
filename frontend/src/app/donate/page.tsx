@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, Suspense } from 'react';
+import React, { useState, useEffect, useMemo, useRef, Suspense } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useSearchParams, useRouter } from 'next/navigation';
@@ -204,8 +204,10 @@ function DonateHub() {
   const [depositCustom, setDepositCustom] = useState<string>('100');
   const [depositCrypto, setDepositCrypto] = useState<CryptoOption>(CRYPTO_OPTIONS[1]);
   const [depositCopied, setDepositCopied] = useState(false);
-  const [depositStep, setDepositStep] = useState<1 | 2>(1);
   const [depositMethod, setDepositMethod] = useState<'crypto' | 'card' | 'paypal'>('crypto');
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(true);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const [billingAddress, setBillingAddress] = useState({
     fullName: '',
     email: '',
@@ -226,6 +228,17 @@ function DonateHub() {
       }));
     }
   }, [user]);
+
+  // Click outside to close dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Proof Image State
   const [proofFile, setProofFile] = useState<File | null>(null);
@@ -472,6 +485,11 @@ function DonateHub() {
       return;
     }
 
+    if (!acceptedTerms) {
+      setErrorMessage('Please accept the philanthropic terms and conditions.');
+      return;
+    }
+
     setErrorMessage(null);
     setIsProcessing(true);
 
@@ -502,7 +520,6 @@ function DonateHub() {
         txHash: mockHash,
       });
       removeProof();
-      setDepositStep(1);
     } catch (err: any) {
       setErrorMessage(err.message || 'Could not credit wallet balance.');
     } finally {
@@ -513,7 +530,6 @@ function DonateHub() {
   const resetSuccess = () => {
     setSuccessInfo(null);
     removeProof();
-    setDepositStep(1);
   };
 
   return (
@@ -693,7 +709,6 @@ function DonateHub() {
                     onClick={() => {
                       resetSuccess();
                       setActiveTab('funds');
-                      setDepositStep(1);
                     }}
                     className="w-full sm:w-auto px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold transition-all cursor-pointer"
                   >
@@ -1109,74 +1124,17 @@ function DonateHub() {
           </div>
         )}
 
-        {/* TAB 2: ADD FUNDS (TOP UP) - MULTI-STEP MINIMALIST JOURNEY */}
+        {/* TAB 2: ADD FUNDS - CLIENT DROPDOWN SELECTOR FLOW */}
         {!successInfo && activeTab === 'funds' && (
           <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-xs space-y-6">
-            {/* Step Breadcrumb Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
-              <div className="flex items-center gap-2.5">
-                <span className="inline-flex items-center justify-center w-7 h-7 rounded-xl bg-emerald-500/10 text-emerald-700 text-xs font-black border border-emerald-500/20">
-                  {depositStep}
-                </span>
-                <div>
-                  <h2 className="text-xl font-black text-slate-900 tracking-tight">
-                    {depositStep === 1 ? 'Billing & Contributor Details' : 'Choose Payment Method & Transfer'}
-                  </h2>
-                  <p className="text-xs text-slate-500">
-                    {depositStep === 1
-                      ? 'Enter your top-up amount and donor billing information for tax records.'
-                      : depositMethod === 'crypto'
-                      ? 'Select asset and transfer crypto to philanthropic escrow.'
-                      : depositMethod === 'card'
-                      ? 'Card gateway status and zero-fee alternatives.'
-                      : 'Digital wallets roadmap and instant alternatives.'}
-                  </p>
-                </div>
-              </div>
-
-              {/* Progress Pills */}
-              <div className="flex items-center gap-2 self-start sm:self-center">
-                <button
-                  type="button"
-                  onClick={() => setDepositStep(1)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                    depositStep === 1
-                      ? 'bg-slate-900 text-white shadow-xs'
-                      : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-                  }`}
-                >
-                  <span className="w-4 h-4 rounded-full bg-white/20 text-center text-[10px] leading-4 font-black">1</span>
-                  <span>Billing Details</span>
-                </button>
-                <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (depositAmount <= 0) {
-                      setErrorMessage('Please enter a deposit amount greater than $0.');
-                      return;
-                    }
-                    if (!billingAddress.fullName.trim()) {
-                      setErrorMessage('Please enter your full legal name for billing & tax records.');
-                      return;
-                    }
-                    if (!billingAddress.email.trim() || !billingAddress.email.includes('@')) {
-                      setErrorMessage('Please enter a valid email address for transaction receipt.');
-                      return;
-                    }
-                    setErrorMessage(null);
-                    setDepositStep(2);
-                  }}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                    depositStep === 2
-                      ? 'bg-slate-900 text-white shadow-xs'
-                      : 'bg-slate-100 hover:bg-slate-200 text-slate-500'
-                  }`}
-                >
-                  <span className="w-4 h-4 rounded-full bg-slate-300 text-slate-700 text-center text-[10px] leading-4 font-black">2</span>
-                  <span>Payment Options</span>
-                </button>
-              </div>
+            <div>
+              <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+                <PlusCircle className="w-5 h-5 text-emerald-600" />
+                <span>Add Funds to Philanthropic Wallet</span>
+              </h2>
+              <p className="text-xs text-slate-500 mt-1">
+                Top up your non-custodial cryptographic reserve with instant 0% fee settlement.
+              </p>
             </div>
 
             {/* Error Message Alert */}
@@ -1187,697 +1145,715 @@ function DonateHub() {
               </div>
             )}
 
-            <AnimatePresence mode="wait">
-              {/* STEP 1: AMOUNT SELECTION & BILLING ADDRESS FORM */}
-              {depositStep === 1 && (
-                <motion.div
-                  key="step-1"
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -8 }}
-                  transition={{ duration: 0.2 }}
-                  className="space-y-6"
-                >
-                  {/* Amount Selection */}
-                  <div>
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                        Select Top-Up Amount (USD)
-                      </span>
-                      <span className="text-xs font-semibold text-emerald-700">
-                        100% credited to your philanthropic reserve
-                      </span>
-                    </div>
+            {/* 1. PAYMENT METHOD CARD (WITH CLIENT-STYLE DROPDOWN) */}
+            <div className="bg-slate-50/80 rounded-2xl p-5 border border-slate-200 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-xs font-black text-slate-800 uppercase tracking-wider">
+                  <CreditCard className="w-4 h-4 text-emerald-600" />
+                  <span>Payment Method</span>
+                </div>
+                <span className="text-[10px] font-bold text-slate-400 bg-white px-2 py-0.5 rounded border border-slate-200">
+                  Select Channel
+                </span>
+              </div>
 
-                    <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 mb-3">
-                      {[25, 50, 100, 250, 500, 1000].map((amt) => (
-                        <button
-                          key={amt}
-                          type="button"
-                          onClick={() => {
-                            setDepositAmount(amt);
-                            setDepositCustom(amt.toString());
-                            setErrorMessage(null);
-                          }}
-                          className={`py-3 rounded-2xl text-xs sm:text-sm font-black transition-all cursor-pointer ${
-                            depositAmount === amt && depositCustom === amt.toString()
-                              ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/20 ring-2 ring-emerald-500/30'
-                              : 'bg-slate-50 hover:bg-slate-100 text-slate-800 border border-slate-200'
-                          }`}
-                        >
-                          ${amt}
-                        </button>
-                      ))}
-                    </div>
+              <div>
+                <span className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+                  Method
+                </span>
 
-                    <div className="relative">
-                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-black text-sm">$</span>
-                      <input
-                        type="number"
-                        min="5"
-                        step="any"
-                        value={depositCustom}
-                        onChange={(e) => {
-                          setDepositCustom(e.target.value);
-                          const val = parseFloat(e.target.value);
-                          if (!isNaN(val) && val > 0) {
-                            setDepositAmount(val);
-                            setErrorMessage(null);
-                          }
-                        }}
-                        placeholder="Enter custom deposit amount"
-                        className="w-full pl-8 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold text-slate-900 focus:outline-none focus:border-emerald-600 focus:bg-white transition-all shadow-inner"
-                      />
-                    </div>
-                  </div>
-
-                  {/* BILLING ADDRESS & CONTRIBUTOR INFORMATION (First at the form) */}
-                  <div className="bg-slate-50/70 rounded-2xl p-5 border border-slate-200 space-y-4">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-                        <Building className="w-4 h-4 text-emerald-600" />
-                        Billing Address & Contributor Information
-                      </span>
-                      <span className="text-[10px] font-bold text-slate-400 bg-white px-2 py-0.5 rounded border border-slate-200">
-                        Tax Exemption & Proof Records
-                      </span>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-[11px] font-bold text-slate-600 mb-1">
-                          Full Legal Name <span className="text-rose-500">*</span>
-                        </label>
-                        <div className="relative">
-                          <User className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                          <input
-                            type="text"
-                            value={billingAddress.fullName}
-                            onChange={(e) => setBillingAddress({ ...billingAddress, fullName: e.target.value })}
-                            placeholder="e.g. Eleanor Vance"
-                            className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-emerald-600"
-                          />
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="block text-[11px] font-bold text-slate-600 mb-1">
-                          Email Address <span className="text-rose-500">*</span>
-                        </label>
-                        <div className="relative">
-                          <Mail className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                          <input
-                            type="email"
-                            value={billingAddress.email}
-                            onChange={(e) => setBillingAddress({ ...billingAddress, email: e.target.value })}
-                            placeholder="name@domain.org"
-                            className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-emerald-600"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="sm:col-span-2">
-                        <label className="block text-[11px] font-bold text-slate-600 mb-1">
-                          Street Address
-                        </label>
-                        <div className="relative">
-                          <MapPin className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                          <input
-                            type="text"
-                            value={billingAddress.street}
-                            onChange={(e) => setBillingAddress({ ...billingAddress, street: e.target.value })}
-                            placeholder="e.g. 742 Evergreen Terrace"
-                            className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-emerald-600"
-                          />
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="block text-[11px] font-bold text-slate-600 mb-1">
-                          City
-                        </label>
-                        <input
-                          type="text"
-                          value={billingAddress.city}
-                          onChange={(e) => setBillingAddress({ ...billingAddress, city: e.target.value })}
-                          placeholder="e.g. Seattle or Addis Ababa"
-                          className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-emerald-600"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-[11px] font-bold text-slate-600 mb-1">
-                          State / Region
-                        </label>
-                        <input
-                          type="text"
-                          value={billingAddress.state}
-                          onChange={(e) => setBillingAddress({ ...billingAddress, state: e.target.value })}
-                          placeholder="e.g. WA or Oromia"
-                          className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-emerald-600"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-[11px] font-bold text-slate-600 mb-1">
-                          Country
-                        </label>
-                        <select
-                          value={billingAddress.country}
-                          onChange={(e) => setBillingAddress({ ...billingAddress, country: e.target.value })}
-                          className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-emerald-600 cursor-pointer"
-                        >
-                          <option value="United States">United States</option>
-                          <option value="Ethiopia">Ethiopia</option>
-                          <option value="United Kingdom">United Kingdom</option>
-                          <option value="Canada">Canada</option>
-                          <option value="Germany">Germany</option>
-                          <option value="France">France</option>
-                          <option value="Australia">Australia</option>
-                          <option value="United Arab Emirates">United Arab Emirates</option>
-                          <option value="Other">Other Country</option>
-                        </select>
-                      </div>
-
-                      <div>
-                        <label className="block text-[11px] font-bold text-slate-600 mb-1">
-                          Postal / ZIP Code
-                        </label>
-                        <input
-                          type="text"
-                          value={billingAddress.zipCode}
-                          onChange={(e) => setBillingAddress({ ...billingAddress, zipCode: e.target.value })}
-                          placeholder="e.g. 98101"
-                          className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-emerald-600"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Summary Bar & Step 1 CTA */}
-                  <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-4">
-                    <div className="flex items-center gap-2 text-xs text-slate-500">
-                      <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
-                      <span>Non-profit cryptographic escrow • 0% platform deductions</span>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (depositAmount <= 0) {
-                          setErrorMessage('Please enter a deposit amount greater than $0.');
-                          return;
-                        }
-                        if (!billingAddress.fullName.trim()) {
-                          setErrorMessage('Please enter your full legal name for billing & tax records.');
-                          return;
-                        }
-                        if (!billingAddress.email.trim() || !billingAddress.email.includes('@')) {
-                          setErrorMessage('Please enter a valid email address for transaction receipt.');
-                          return;
-                        }
-                        setErrorMessage(null);
-                        setDepositStep(2);
-                      }}
-                      className="w-full sm:w-auto px-8 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-black text-xs sm:text-sm shadow-md shadow-emerald-600/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
-                    >
-                      <span>Continue to Payment Options (${depositAmount.toFixed(2)})</span>
-                      <ArrowRight className="w-4 h-4" />
-                    </button>
-                  </div>
-                </motion.div>
-              )}
-
-              {/* STEP 2: CHOOSE PAYMENT METHOD & TRANSFER */}
-              {depositStep === 2 && (
-                <motion.div
-                  key="step-2"
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -8 }}
-                  transition={{ duration: 0.2 }}
-                  className="space-y-6"
-                >
-                  {/* Selected Contributor Summary Bar */}
-                  <div className="flex items-center justify-between bg-slate-50 px-4 py-3 rounded-2xl border border-slate-200">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold text-xs">
-                        <User className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <div className="text-xs font-black text-slate-900">
-                          Depositing ${depositAmount.toFixed(2)} USD for {billingAddress.fullName || 'Contributor'}
-                        </div>
-                        <div className="text-[10px] text-slate-400">
-                          {billingAddress.email} • {billingAddress.city ? `${billingAddress.city}, ` : ''}{billingAddress.country}
-                        </div>
-                      </div>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => setDepositStep(1)}
-                      className="text-xs font-bold text-slate-600 hover:text-slate-900 hover:underline flex items-center gap-1 cursor-pointer"
-                    >
-                      <ArrowLeft className="w-3.5 h-3.5" />
-                      <span>Edit Billing</span>
-                    </button>
-                  </div>
-
-                  {/* Payment Method Selector */}
-                  <div>
-                    <span className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">
-                      Choose Payment Method
-                    </span>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      {/* Method 1: Instant Crypto */}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setDepositMethod('crypto');
-                          setErrorMessage(null);
-                        }}
-                        className={`p-4 rounded-2xl border-2 text-left flex flex-col justify-between transition-all cursor-pointer relative group ${
-                          depositMethod === 'crypto'
-                            ? 'border-emerald-600 bg-emerald-50/40 shadow-sm ring-2 ring-emerald-500/20'
-                            : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/60'
-                        }`}
-                      >
-                        <div className="flex items-start justify-between mb-3">
-                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                            depositMethod === 'crypto' ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-700'
-                          }`}>
-                            <Coins className="w-5 h-5" />
-                          </div>
-                          <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
-                            Active 100%
-                          </span>
-                        </div>
-                        <div>
-                          <div className="text-sm font-black text-slate-900 flex items-center gap-1.5">
-                            Instant Crypto
-                            {depositMethod === 'crypto' && <CheckCircle2 className="w-4 h-4 text-emerald-600" />}
-                          </div>
-                          <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">
-                            BTC, USDC, ETH, SOL, USDT. 0% intermediary fee & instant settlement.
-                          </p>
-                        </div>
-                      </button>
-
-                      {/* Method 2: Debit / Credit Card */}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setDepositMethod('card');
-                          setErrorMessage(null);
-                        }}
-                        className={`p-4 rounded-2xl border-2 text-left flex flex-col justify-between transition-all cursor-pointer relative group ${
-                          depositMethod === 'card'
-                            ? 'border-amber-500 bg-amber-50/40 shadow-sm ring-2 ring-amber-500/20'
-                            : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/60'
-                        }`}
-                      >
-                        <div className="flex items-start justify-between mb-3">
-                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                            depositMethod === 'card' ? 'bg-amber-500 text-white' : 'bg-slate-100 text-slate-700'
-                          }`}>
-                            <CreditCard className="w-5 h-5" />
-                          </div>
-                          <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300">
-                            Maintenance
-                          </span>
-                        </div>
-                        <div>
-                          <div className="text-sm font-black text-slate-900 flex items-center gap-1.5">
-                            Debit / Credit Card
-                            {depositMethod === 'card' && <CheckCircle2 className="w-4 h-4 text-amber-600" />}
-                          </div>
-                          <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">
-                            Visa, Mastercard, AMEX. Gateway fee optimization in progress.
-                          </p>
-                        </div>
-                      </button>
-
-                      {/* Method 3: Digital Wallets */}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setDepositMethod('paypal');
-                          setErrorMessage(null);
-                        }}
-                        className={`p-4 rounded-2xl border-2 text-left flex flex-col justify-between transition-all cursor-pointer relative group ${
-                          depositMethod === 'paypal'
-                            ? 'border-slate-800 bg-slate-100 shadow-sm ring-2 ring-slate-800/20'
-                            : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/60'
-                        }`}
-                      >
-                        <div className="flex items-start justify-between mb-3">
-                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                            depositMethod === 'paypal' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-700'
-                          }`}>
-                            <Wallet className="w-5 h-5" />
-                          </div>
-                          <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 border border-slate-300">
-                            Coming Soon
-                          </span>
-                        </div>
-                        <div>
-                          <div className="text-sm font-black text-slate-900 flex items-center gap-1.5">
-                            Digital Wallets
-                            {depositMethod === 'paypal' && <CheckCircle2 className="w-4 h-4 text-slate-900" />}
-                          </div>
-                          <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">
-                            Apple Pay, Google Pay, PayPal. 1-tap mobile giving verification.
-                          </p>
-                        </div>
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* BRANCH A: CRYPTO PAYMENT FLOW */}
-                  {depositMethod === 'crypto' && (
-                    <div className="space-y-6">
-                      {/* Select Crypto Asset */}
-                      <div>
-                        <span className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2.5">
-                          Select Deposit Asset
-                        </span>
-                        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-                          {CRYPTO_OPTIONS.map((c) => (
-                            <button
-                              key={c.symbol}
-                              type="button"
-                              onClick={() => setDepositCrypto(c)}
-                              className={`p-3 rounded-xl border text-left flex items-center gap-2.5 transition-all cursor-pointer ${
-                                depositCrypto.symbol === c.symbol
-                                  ? 'bg-slate-900 text-white border-slate-900 shadow-sm ring-1 ring-slate-900/30'
-                                  : 'bg-slate-50 hover:bg-slate-100 text-slate-800 border-slate-200'
-                              }`}
-                            >
-                              <img src={c.icon} alt={c.name} className="w-5 h-5 object-contain shrink-0" />
-                              <div className="min-w-0">
-                                <div className="text-xs font-black leading-none">{c.symbol}</div>
-                                <div className={`text-[10px] truncate mt-0.5 ${depositCrypto.symbol === c.symbol ? 'text-slate-300' : 'text-slate-400'}`}>
-                                  {c.name}
-                                </div>
-                              </div>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Deposit Escrow Address & QR */}
-                      <div className="bg-slate-50 rounded-2xl p-5 border border-slate-200 flex flex-col sm:flex-row items-center gap-6">
-                        <div className="bg-white p-3 rounded-xl shadow-xs border border-slate-200 shrink-0">
-                          <QRCodeWithLogo value={depositQrUri} size={150} logoSize={32} />
-                        </div>
-                        <div className="flex-1 w-full space-y-3">
-                          <div>
-                            <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                              Amount to Send
-                            </div>
-                            <div className="text-2xl font-black text-slate-900">
-                              {depositCryptoAmount} {depositCrypto.symbol}{' '}
-                              <span className="text-xs font-medium text-slate-500">
-                                (= ${depositAmount.toFixed(2)} USD)
-                              </span>
-                            </div>
-                          </div>
-
-                          <div>
-                            <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1 flex items-center justify-between">
-                              <span>Escrow Address ({depositCrypto.network})</span>
-                              <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                                Verified Smart Escrow
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-2 bg-white px-3.5 py-2.5 rounded-xl border border-slate-200">
-                              <span className="font-mono text-xs text-slate-800 truncate select-all">
-                                {depositCrypto.address}
-                              </span>
-                              <button
-                                type="button"
-                                onClick={() => copyToClipboard(depositCrypto.address, true)}
-                                className="p-1.5 text-slate-500 hover:text-emerald-700 hover:bg-slate-50 rounded-lg transition-colors shrink-0 cursor-pointer"
-                                title="Copy Address"
-                              >
-                                {depositCopied ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
-                              </button>
-                            </div>
-                          </div>
-
-                          <div className="text-[11px] text-slate-500 flex items-center gap-1.5">
-                            <AlertCircle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                            <span>Send only {depositCrypto.symbol} via {depositCrypto.network}. Minimum 1 block confirmation required.</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Proof of Deposit Upload */}
-                      <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-                            <UploadCloud className="w-3.5 h-3.5 text-emerald-600" />
-                            Deposit Proof / Screenshot (Optional)
-                          </span>
-                          {proofPreview && (
-                            <button
-                              type="button"
-                              onClick={removeProof}
-                              className="text-[11px] text-rose-600 font-bold hover:underline flex items-center gap-1 cursor-pointer"
-                            >
-                              <Trash2 className="w-3 h-3" /> Remove
-                            </button>
-                          )}
-                        </div>
-
-                        {proofPreview ? (
-                          <div className="flex items-center gap-3 bg-white p-2.5 rounded-xl border border-slate-200">
-                            <img src={proofPreview} alt="Receipt preview" className="w-12 h-12 rounded-lg object-cover border border-slate-200" />
-                            <div className="text-xs text-slate-600">
-                              <span className="font-bold text-emerald-700">Receipt Compressed & Ready</span>
-                              <p className="text-[11px] text-slate-400">Attached to your deposit ledger entry.</p>
-                            </div>
-                          </div>
+                {/* Custom Accessible Dropdown */}
+                <div className="relative" ref={dropdownRef}>
+                  <button
+                    type="button"
+                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                    className={`w-full p-3 sm:p-3.5 bg-white border-2 rounded-2xl text-left flex items-center justify-between transition-all cursor-pointer shadow-xs ${
+                      isDropdownOpen
+                        ? 'border-emerald-600 ring-2 ring-emerald-500/20'
+                        : 'border-slate-200 hover:border-slate-300'
+                    }`}
+                  >
+                    {/* Left: Selected Method Info */}
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
+                        depositMethod === 'crypto'
+                          ? 'bg-emerald-600 text-white'
+                          : depositMethod === 'card'
+                          ? 'bg-amber-500 text-white'
+                          : 'bg-slate-900 text-white'
+                      }`}>
+                        {depositMethod === 'crypto' ? (
+                          <Coins className="w-4 h-4" />
+                        ) : depositMethod === 'card' ? (
+                          <CreditCard className="w-4 h-4" />
                         ) : (
-                          <label className="flex flex-col items-center justify-center p-4 border border-dashed border-slate-300 rounded-xl bg-white hover:bg-slate-50/50 cursor-pointer transition-colors text-center">
-                            <UploadCloud className="w-5 h-5 text-slate-400 mb-1" />
-                            <span className="text-xs font-semibold text-slate-700">
-                              {isShrinking ? 'Compressing receipt...' : 'Upload deposit transaction screenshot'}
-                            </span>
-                            <span className="text-[10px] text-slate-400">PNG, JPG, or WebP (Automatically compressed)</span>
-                            <input
-                              type="file"
-                              accept="image/*"
-                              disabled={isShrinking}
-                              onChange={handleProofChange}
-                              className="hidden"
-                            />
-                          </label>
+                          <Wallet className="w-4 h-4" />
                         )}
                       </div>
 
-                      {/* Action Buttons */}
-                      <div className="space-y-3 pt-2">
-                        <button
-                          type="button"
-                          onClick={handleDepositSubmit}
-                          disabled={isProcessing}
-                          className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-black text-sm shadow-md shadow-emerald-600/20 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-                        >
-                          {isProcessing ? (
-                            <>
-                              <RefreshCw className="w-4 h-4 animate-spin" />
-                              <span>Crediting Wallet Reserve...</span>
-                            </>
-                          ) : (
-                            <>
-                              <CheckCircle2 className="w-4 h-4" />
-                              <span>I Have Sent Payment — Credit ${depositAmount.toFixed(2)} to Wallet</span>
-                            </>
-                          )}
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => setDepositStep(1)}
-                          className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
-                        >
-                          <ArrowLeft className="w-3.5 h-3.5" />
-                          <span>Back to Billing & Contributor Details</span>
-                        </button>
+                      <div className="min-w-0">
+                        <div className="text-xs sm:text-sm font-black text-slate-900 truncate flex items-center gap-2">
+                          <span>
+                            {depositMethod === 'crypto'
+                              ? 'Instant Crypto (0% Fee)'
+                              : depositMethod === 'card'
+                              ? 'Credit / Debit Card (Visa, Mastercard)'
+                              : 'Digital Wallets (Apple Pay, PayPal)'}
+                          </span>
+                          <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full ${
+                            depositMethod === 'crypto'
+                              ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                              : depositMethod === 'card'
+                              ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                              : 'bg-slate-200 text-slate-700 border border-slate-300'
+                          }`}>
+                            {depositMethod === 'crypto' ? 'Active 100%' : depositMethod === 'card' ? 'Maintenance' : 'Coming Soon'}
+                          </span>
+                        </div>
+                        <div className="text-[10px] text-slate-400 truncate">
+                          {depositMethod === 'crypto'
+                            ? 'BTC, USDC, ETH, SOL, USDT • Direct escrow settlement'
+                            : depositMethod === 'card'
+                            ? 'Visa • Mastercard • AMEX (Scheduled gateway upgrade)'
+                            : 'Apple Pay • Google Pay • PayPal (Verification in progress)'}
+                        </div>
                       </div>
                     </div>
-                  )}
 
-                  {/* BRANCH B: CARD PAYMENT MAINTENANCE SCREEN */}
-                  {depositMethod === 'card' && (
-                    <div className="space-y-5">
-                      <div className="bg-amber-50/80 border-2 border-amber-200 rounded-3xl p-6 text-center space-y-3">
-                        <div className="w-14 h-14 rounded-2xl bg-amber-100 border border-amber-300 text-amber-800 flex items-center justify-center mx-auto shadow-xs">
-                          <CreditCard className="w-7 h-7 stroke-[2]" />
-                        </div>
-
-                        <div className="space-y-1.5">
-                          <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider text-amber-900 bg-amber-200/80 px-2.5 py-0.5 rounded-full border border-amber-300">
-                            Scheduled Gateway Maintenance
+                    {/* Right: Network Brand Badges + Chevron */}
+                    <div className="flex items-center gap-2 shrink-0 ml-2">
+                      {depositMethod === 'card' && (
+                        <div className="flex items-center gap-1">
+                          <span className="px-1.5 py-0.5 bg-[#1434CB] text-white text-[9px] font-black rounded tracking-wider italic">
+                            VISA
                           </span>
-                          <h3 className="text-lg sm:text-xl font-black text-slate-900">
-                            Direct Card Processing Temporarily Under Maintenance
-                          </h3>
-                          <p className="text-xs text-slate-600 max-w-lg mx-auto leading-relaxed">
-                            Our international card settlement gateway is undergoing scheduled infrastructure upgrades to eliminate 3.8% banking fees on non-profit gifts.
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Transparent Channel Comparison */}
-                      <div className="bg-slate-50 rounded-2xl p-5 border border-slate-200 space-y-3">
-                        <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">
-                          Payment Channel Comparison
-                        </span>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                          <div className="p-3.5 rounded-xl bg-white border border-slate-200 space-y-1 opacity-80">
-                            <div className="flex items-center justify-between">
-                              <span className="font-bold text-slate-700 flex items-center gap-1.5">
-                                <CreditCard className="w-4 h-4 text-slate-500" />
-                                Debit / Credit Card
-                              </span>
-                              <span className="text-[9px] font-black uppercase text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full border border-amber-200">
-                                Paused
-                              </span>
-                            </div>
-                            <p className="text-[11px] text-slate-500">
-                              3.8% processor fee + bank settlement delay.
-                            </p>
-                          </div>
-
-                          <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-300 space-y-1">
-                            <div className="flex items-center justify-between">
-                              <span className="font-bold text-emerald-900 flex items-center gap-1.5">
-                                <Coins className="w-4 h-4 text-emerald-600" />
-                                Instant Crypto
-                              </span>
-                              <span className="text-[9px] font-black uppercase text-emerald-800 bg-emerald-200 px-2 py-0.5 rounded-full border border-emerald-300">
-                                Active 100%
-                              </span>
-                            </div>
-                            <p className="text-[11px] text-emerald-700 font-medium">
-                              0% intermediary fee • Direct wallet escrow credit.
-                            </p>
+                          <div className="flex items-center -space-x-1 px-1 py-0.5 bg-slate-900 rounded">
+                            <span className="w-2.5 h-2.5 rounded-full bg-[#EB001B]" />
+                            <span className="w-2.5 h-2.5 rounded-full bg-[#F79E1B] opacity-90" />
                           </div>
                         </div>
-                      </div>
+                      )}
 
-                      {/* Dedicated Action Buttons */}
-                      <div className="space-y-2.5 pt-2">
+                      {depositMethod === 'crypto' && (
+                        <div className="flex items-center -space-x-1">
+                          {CRYPTO_OPTIONS.slice(0, 4).map((c) => (
+                            <img
+                              key={c.symbol}
+                              src={c.icon}
+                              alt={c.name}
+                              className="w-4 h-4 rounded-full border border-white bg-white shrink-0 object-contain shadow-2xs"
+                            />
+                          ))}
+                        </div>
+                      )}
+
+                      {depositMethod === 'paypal' && (
+                        <div className="flex items-center gap-1 text-[10px] font-bold text-slate-700">
+                          <span className="px-1.5 py-0.5 bg-slate-100 rounded border border-slate-300">Pay</span>
+                          <span className="px-1.5 py-0.5 bg-[#003087] text-white rounded font-black italic">P</span>
+                        </div>
+                      )}
+
+                      <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+                    </div>
+                  </button>
+
+                  {/* Dropdown Menu Options */}
+                  <AnimatePresence>
+                    {isDropdownOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -6, scale: 0.99 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -6, scale: 0.99 }}
+                        transition={{ duration: 0.15 }}
+                        className="absolute left-0 right-0 top-full mt-2 bg-white rounded-2xl border border-slate-200 shadow-xl z-30 overflow-hidden divide-y divide-slate-100"
+                      >
+                        {/* Option 1: Instant Crypto */}
                         <button
                           type="button"
                           onClick={() => {
                             setDepositMethod('crypto');
+                            setIsDropdownOpen(false);
+                            setErrorMessage(null);
                           }}
-                          className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white font-black text-xs sm:text-sm rounded-2xl transition-all shadow-md shadow-emerald-600/25 flex items-center justify-center gap-2 cursor-pointer"
+                          className={`w-full p-3.5 text-left flex items-center justify-between transition-colors cursor-pointer ${
+                            depositMethod === 'crypto' ? 'bg-emerald-50/60' : 'hover:bg-slate-50'
+                          }`}
                         >
-                          <span>Deposit ${depositAmount.toFixed(2)} via Crypto Instead (0% Fee)</span>
-                          <ArrowRight className="w-4 h-4" />
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => setDepositStep(1)}
-                          className="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
-                        >
-                          <ArrowLeft className="w-3.5 h-3.5" />
-                          <span>Back to Billing & Contributor Details</span>
-                        </button>
-                      </div>
-
-                      <div className="flex items-center justify-center gap-2 text-[11px] text-slate-400 font-medium text-center">
-                        <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                        <span>Adera Foundation issues formal tax certificates for all validated gifts.</span>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* BRANCH C: DIGITAL WALLETS COMING SOON SCREEN */}
-                  {depositMethod === 'paypal' && (
-                    <div className="space-y-5">
-                      <div className="bg-slate-50 border-2 border-slate-200 rounded-3xl p-6 text-center space-y-3">
-                        <div className="w-14 h-14 rounded-2xl bg-slate-200/80 border border-slate-300 text-slate-700 flex items-center justify-center mx-auto shadow-xs">
-                          <Wallet className="w-7 h-7 stroke-[2]" />
-                        </div>
-
-                        <div className="space-y-1.5">
-                          <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider text-slate-700 bg-slate-200 px-2.5 py-0.5 rounded-full border border-slate-300">
-                            <Clock className="w-3 h-3" /> Coming Soon
-                          </span>
-                          <h3 className="text-lg sm:text-xl font-black text-slate-900">
-                            Digital Wallets Integration in Progress
-                          </h3>
-                          <p className="text-xs text-slate-600 max-w-lg mx-auto leading-relaxed">
-                            One-touch Apple Pay, Google Pay, and PayPal support is currently in non-profit verification and will be activated shortly.
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Roadmap Features */}
-                      <div className="bg-white rounded-2xl p-5 border border-slate-200 space-y-3">
-                        <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">
-                          What We Are Building
-                        </span>
-
-                        <div className="space-y-2.5 text-xs">
-                          <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100">
-                            <div className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 font-bold text-xs">✓</div>
-                            <div className="min-w-0">
-                              <span className="font-bold text-slate-900 block">1-Tap Biometric Giving</span>
-                              <span className="text-[11px] text-slate-500">Touch ID & Face ID donor instant verification.</span>
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0">
+                              <Coins className="w-4 h-4" />
+                            </div>
+                            <div>
+                              <div className="text-xs sm:text-sm font-black text-slate-900 flex items-center gap-2">
+                                <span>Instant Crypto (0% Fee)</span>
+                                <span className="text-[9px] font-black uppercase text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-300">
+                                  Active 100%
+                                </span>
+                              </div>
+                              <div className="text-[11px] text-slate-500">
+                                BTC, USDC, ETH, SOL, USDT • Direct milestone escrow credit
+                              </div>
                             </div>
                           </div>
-                          <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100">
-                            <div className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 font-bold text-xs">✓</div>
-                            <div className="min-w-0">
-                              <span className="font-bold text-slate-900 block">Recurring Monthly Reserves</span>
-                              <span className="text-[11px] text-slate-500">Continuous milestone micro-donations directly from your device.</span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
 
-                      {/* Dedicated Action Buttons */}
-                      <div className="space-y-2.5 pt-2">
+                          <div className="flex items-center gap-2">
+                            <div className="flex items-center -space-x-1">
+                              {CRYPTO_OPTIONS.map((c) => (
+                                <img
+                                  key={c.symbol}
+                                  src={c.icon}
+                                  alt={c.name}
+                                  className="w-4 h-4 rounded-full border border-white bg-white shrink-0 object-contain shadow-2xs"
+                                />
+                              ))}
+                            </div>
+                            {depositMethod === 'crypto' && <Check className="w-4 h-4 text-emerald-600 shrink-0" />}
+                          </div>
+                        </button>
+
+                        {/* Option 2: Credit / Debit Card */}
                         <button
                           type="button"
                           onClick={() => {
-                            setDepositMethod('crypto');
+                            setDepositMethod('card');
+                            setIsDropdownOpen(false);
+                            setErrorMessage(null);
                           }}
-                          className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white font-black text-xs sm:text-sm rounded-2xl transition-all shadow-md shadow-emerald-600/25 flex items-center justify-center gap-2 cursor-pointer"
+                          className={`w-full p-3.5 text-left flex items-center justify-between transition-colors cursor-pointer ${
+                            depositMethod === 'card' ? 'bg-amber-50/60' : 'hover:bg-slate-50'
+                          }`}
                         >
-                          <span>Deposit ${depositAmount.toFixed(2)} via Crypto Instead (Active Now)</span>
-                          <ArrowRight className="w-4 h-4" />
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0">
+                              <CreditCard className="w-4 h-4" />
+                            </div>
+                            <div>
+                              <div className="text-xs sm:text-sm font-black text-slate-900 flex items-center gap-2">
+                                <span>Credit / Debit Card (Visa, Mastercard)</span>
+                                <span className="text-[9px] font-black uppercase text-amber-900 bg-amber-100 px-2 py-0.5 rounded-full border border-amber-300">
+                                  Maintenance
+                                </span>
+                              </div>
+                              <div className="text-[11px] text-slate-500">
+                                Visa • Mastercard • AMEX (Gateway fee optimization in progress)
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-1">
+                              <span className="px-1.5 py-0.5 bg-[#1434CB] text-white text-[9px] font-black rounded tracking-wider italic">
+                                VISA
+                              </span>
+                              <div className="flex items-center -space-x-1 px-1 py-0.5 bg-slate-900 rounded">
+                                <span className="w-2.5 h-2.5 rounded-full bg-[#EB001B]" />
+                                <span className="w-2.5 h-2.5 rounded-full bg-[#F79E1B] opacity-90" />
+                              </div>
+                            </div>
+                            {depositMethod === 'card' && <Check className="w-4 h-4 text-amber-600 shrink-0" />}
+                          </div>
                         </button>
 
+                        {/* Option 3: Digital Wallets */}
                         <button
                           type="button"
-                          onClick={() => setDepositStep(1)}
-                          className="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                          onClick={() => {
+                            setDepositMethod('paypal');
+                            setIsDropdownOpen(false);
+                            setErrorMessage(null);
+                          }}
+                          className={`w-full p-3.5 text-left flex items-center justify-between transition-colors cursor-pointer ${
+                            depositMethod === 'paypal' ? 'bg-slate-100' : 'hover:bg-slate-50'
+                          }`}
                         >
-                          <ArrowLeft className="w-3.5 h-3.5" />
-                          <span>Back to Billing & Contributor Details</span>
-                        </button>
-                      </div>
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-xl bg-slate-900 text-white flex items-center justify-center shrink-0">
+                              <Wallet className="w-4 h-4" />
+                            </div>
+                            <div>
+                              <div className="text-xs sm:text-sm font-black text-slate-900 flex items-center gap-2">
+                                <span>Digital Wallets (Apple Pay, PayPal)</span>
+                                <span className="text-[9px] font-black uppercase text-slate-700 bg-slate-200 px-2 py-0.5 rounded-full border border-slate-300">
+                                  Coming Soon
+                                </span>
+                              </div>
+                              <div className="text-[11px] text-slate-500">
+                                Apple Pay • Google Pay • PayPal (1-tap biometric giving verification)
+                              </div>
+                            </div>
+                          </div>
 
-                      <div className="flex items-center justify-center gap-2 text-[11px] text-slate-400 font-medium text-center">
-                        <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                        <span>100% transparent on-chain milestone delivery across all Ethiopian initiatives.</span>
+                          <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-1 text-[10px] font-bold text-slate-700">
+                              <span className="px-1.5 py-0.5 bg-slate-100 rounded border border-slate-300">Pay</span>
+                              <span className="px-1.5 py-0.5 bg-[#003087] text-white rounded font-black italic">P</span>
+                            </div>
+                            {depositMethod === 'paypal' && <Check className="w-4 h-4 text-slate-900 shrink-0" />}
+                          </div>
+                        </button>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </div>
+            </div>
+
+            {/* 2. AMOUNT SELECTION */}
+            <div className="space-y-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                  Amount (USD)
+                </span>
+                <span className="text-[11px] font-semibold text-slate-400">
+                  Min $5 · Max $10,000
+                </span>
+              </div>
+
+              <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                {[25, 50, 100, 250, 500, 1000].map((amt) => (
+                  <button
+                    key={amt}
+                    type="button"
+                    onClick={() => {
+                      setDepositAmount(amt);
+                      setDepositCustom(amt.toString());
+                      setErrorMessage(null);
+                    }}
+                    className={`py-2.5 rounded-xl text-xs sm:text-sm font-black transition-all cursor-pointer ${
+                      depositAmount === amt && depositCustom === amt.toString()
+                        ? 'bg-emerald-600 text-white shadow-xs ring-2 ring-emerald-500/20'
+                        : 'bg-slate-50 hover:bg-slate-100 text-slate-800 border border-slate-200'
+                    }`}
+                  >
+                    ${amt}
+                  </button>
+                ))}
+              </div>
+
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-black text-sm">$</span>
+                <input
+                  type="number"
+                  min="5"
+                  step="any"
+                  value={depositCustom}
+                  onChange={(e) => {
+                    setDepositCustom(e.target.value);
+                    const val = parseFloat(e.target.value);
+                    if (!isNaN(val) && val > 0) {
+                      setDepositAmount(val);
+                      setErrorMessage(null);
+                    }
+                  }}
+                  placeholder="Enter custom deposit amount"
+                  className="w-full pl-8 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold text-slate-900 focus:outline-none focus:border-emerald-600 focus:bg-white transition-all shadow-inner"
+                />
+              </div>
+            </div>
+
+            {/* 3. DYNAMIC METHOD DETAILS BASED ON DROPDOWN */}
+            {/* BRANCH A: CRYPTO */}
+            {depositMethod === 'crypto' && (
+              <div className="space-y-4 pt-1">
+                {/* Select Asset */}
+                <div>
+                  <span className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">
+                    Deposit Asset
+                  </span>
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                    {CRYPTO_OPTIONS.map((c) => (
+                      <button
+                        key={c.symbol}
+                        type="button"
+                        onClick={() => setDepositCrypto(c)}
+                        className={`p-2.5 rounded-xl border text-left flex items-center gap-2 transition-all cursor-pointer ${
+                          depositCrypto.symbol === c.symbol
+                            ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
+                            : 'bg-slate-50 hover:bg-slate-100 text-slate-800 border-slate-200'
+                        }`}
+                      >
+                        <img src={c.icon} alt={c.name} className="w-4 h-4 object-contain shrink-0" />
+                        <div className="min-w-0">
+                          <div className="text-xs font-bold leading-none">{c.symbol}</div>
+                          <div className={`text-[10px] truncate ${depositCrypto.symbol === c.symbol ? 'text-slate-300' : 'text-slate-400'}`}>
+                            {c.name}
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Escrow Address & QR */}
+                <div className="bg-slate-50 rounded-2xl p-5 border border-slate-200 flex flex-col sm:flex-row items-center gap-6">
+                  <div className="bg-white p-2.5 rounded-xl shadow-xs border border-slate-200 shrink-0">
+                    <QRCodeWithLogo value={depositQrUri} size={140} logoSize={30} />
+                  </div>
+                  <div className="flex-1 w-full space-y-3">
+                    <div>
+                      <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                        Deposit Equivalent
+                      </div>
+                      <div className="text-xl font-black text-slate-900">
+                        {depositCryptoAmount} {depositCrypto.symbol}{' '}
+                        <span className="text-xs font-normal text-slate-500">
+                          (= ${depositAmount.toFixed(2)} USD)
+                        </span>
                       </div>
                     </div>
+
+                    <div>
+                      <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1 flex items-center justify-between">
+                        <span>Escrow Address ({depositCrypto.network})</span>
+                        <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                          Verified Smart Escrow
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-xl border border-slate-200">
+                        <span className="font-mono text-[11px] text-slate-700 truncate select-all">
+                          {depositCrypto.address}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => copyToClipboard(depositCrypto.address, true)}
+                          className="p-1 text-slate-500 hover:text-emerald-700 transition-colors shrink-0 cursor-pointer"
+                          title="Copy Address"
+                        >
+                          {depositCopied ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="text-[10px] text-slate-400">
+                      Send only {depositCrypto.symbol} via {depositCrypto.network}. Confirmation is automatic.
+                    </div>
+                  </div>
+                </div>
+
+                {/* Proof of Deposit Upload */}
+                <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                      <UploadCloud className="w-3.5 h-3.5 text-emerald-600" />
+                      Deposit Proof / Screenshot (Optional)
+                    </span>
+                    {proofPreview && (
+                      <button
+                        type="button"
+                        onClick={removeProof}
+                        className="text-[11px] text-rose-600 font-bold hover:underline flex items-center gap-1 cursor-pointer"
+                      >
+                        <Trash2 className="w-3 h-3" /> Remove
+                      </button>
+                    )}
+                  </div>
+
+                  {proofPreview ? (
+                    <div className="flex items-center gap-3 bg-white p-2.5 rounded-xl border border-slate-200">
+                      <img src={proofPreview} alt="Receipt preview" className="w-12 h-12 rounded object-cover border" />
+                      <div className="text-xs text-slate-600">
+                        <span className="font-bold text-emerald-700">Receipt Compressed</span>
+                        <p className="text-[11px] text-slate-400">Attached to your deposit ledger entry.</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <label className="flex flex-col items-center justify-center p-4 border border-dashed border-slate-300 rounded-xl bg-white hover:bg-slate-50/50 cursor-pointer transition-colors text-center">
+                      <UploadCloud className="w-5 h-5 text-slate-400 mb-1" />
+                      <span className="text-xs font-semibold text-slate-700">
+                        {isShrinking ? 'Compressing receipt...' : 'Upload deposit transaction screenshot'}
+                      </span>
+                      <span className="text-[10px] text-slate-400">PNG, JPG, or WebP (Automatically compressed)</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        disabled={isShrinking}
+                        onChange={handleProofChange}
+                        className="hidden"
+                      />
+                    </label>
                   )}
-                </motion.div>
-              )}
-            </AnimatePresence>
+                </div>
+              </div>
+            )}
+
+            {/* BRANCH B: CREDIT / DEBIT CARD (MAINTENANCE) */}
+            {depositMethod === 'card' && (
+              <div className="space-y-4 pt-1">
+                <div className="bg-amber-50/80 border-2 border-amber-200 rounded-2xl p-5 text-center space-y-2.5">
+                  <div className="w-10 h-10 rounded-xl bg-amber-100 border border-amber-300 text-amber-800 flex items-center justify-center mx-auto shadow-xs">
+                    <CreditCard className="w-5 h-5 stroke-[2]" />
+                  </div>
+                  <div className="space-y-1">
+                    <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider text-amber-900 bg-amber-200/80 px-2 py-0.5 rounded-full border border-amber-300">
+                      Scheduled Gateway Upgrade
+                    </span>
+                    <h3 className="text-base font-black text-slate-900">
+                      Direct Card Processing Temporarily Under Maintenance
+                    </h3>
+                    <p className="text-xs text-slate-600 max-w-md mx-auto leading-relaxed">
+                      Our international card settlement gateway is undergoing scheduled infrastructure upgrades to eliminate 3.8% banking fees on non-profit gifts.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Channel Comparison */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                  <div className="p-3 rounded-xl bg-white border border-slate-200 space-y-1 opacity-75">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-slate-700 flex items-center gap-1.5">
+                        <CreditCard className="w-3.5 h-3.5 text-slate-500" />
+                        Debit / Credit Card
+                      </span>
+                      <span className="text-[9px] font-bold uppercase text-amber-800 bg-amber-100 px-1.5 py-0.5 rounded">
+                        Paused
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-500">
+                      3.8% processor fee + bank settlement delay
+                    </p>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-emerald-50/80 border border-emerald-300 space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-emerald-900 flex items-center gap-1.5">
+                        <Coins className="w-3.5 h-3.5 text-emerald-600" />
+                        Instant Crypto
+                      </span>
+                      <span className="text-[9px] font-bold uppercase text-emerald-800 bg-emerald-200 px-1.5 py-0.5 rounded">
+                        Active 100%
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-emerald-700 font-medium">
+                      0% intermediary fee • Direct escrow credit
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setDepositMethod('crypto')}
+                  className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-black text-xs sm:text-sm shadow-md shadow-emerald-600/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <span>Switch Dropdown to Instant Crypto (0% Fee)</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+
+            {/* BRANCH C: DIGITAL WALLETS (COMING SOON) */}
+            {depositMethod === 'paypal' && (
+              <div className="space-y-4 pt-1">
+                <div className="bg-slate-50 border-2 border-slate-200 rounded-2xl p-5 text-center space-y-2.5">
+                  <div className="w-10 h-10 rounded-xl bg-slate-200 border border-slate-300 text-slate-700 flex items-center justify-center mx-auto shadow-xs">
+                    <Wallet className="w-5 h-5 stroke-[2]" />
+                  </div>
+                  <div className="space-y-1">
+                    <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider text-slate-700 bg-slate-200 px-2 py-0.5 rounded-full border border-slate-300">
+                      <Clock className="w-3 h-3" /> Coming Soon
+                    </span>
+                    <h3 className="text-base font-black text-slate-900">
+                      Digital Wallets Integration in Progress
+                    </h3>
+                    <p className="text-xs text-slate-600 max-w-md mx-auto leading-relaxed">
+                      One-touch Apple Pay, Google Pay, and PayPal support is currently in non-profit verification and will be activated shortly.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-2 text-xs">
+                  <div className="flex items-center gap-2.5 p-2 rounded-xl bg-slate-50 border border-slate-100">
+                    <div className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 font-bold text-[10px]">✓</div>
+                    <div className="min-w-0">
+                      <span className="font-bold text-slate-800 block">1-Tap Biometric Giving</span>
+                      <span className="text-[10px] text-slate-500">Touch ID & Face ID donor instant verification.</span>
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setDepositMethod('crypto')}
+                  className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-black text-xs sm:text-sm shadow-md shadow-emerald-600/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <span>Switch Dropdown to Instant Crypto (Active Now)</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+
+            {/* 4. BILLING ADDRESS & CONTRIBUTOR INFORMATION */}
+            <div className="bg-slate-50/70 rounded-2xl p-5 border border-slate-200 space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                  <Building className="w-4 h-4 text-emerald-600" />
+                  Billing Address & Contributor Information
+                </span>
+                <span className="text-[10px] font-bold text-slate-400 bg-white px-2 py-0.5 rounded border border-slate-200">
+                  Tax Exemption & Proof Records
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                    Full Legal Name <span className="text-rose-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <User className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      type="text"
+                      value={billingAddress.fullName}
+                      onChange={(e) => setBillingAddress({ ...billingAddress, fullName: e.target.value })}
+                      placeholder="e.g. Eleanor Vance"
+                      className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-emerald-600"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                    Email Address <span className="text-rose-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <Mail className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      type="email"
+                      value={billingAddress.email}
+                      onChange={(e) => setBillingAddress({ ...billingAddress, email: e.target.value })}
+                      placeholder="name@domain.org"
+                      className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-emerald-600"
+                    />
+                  </div>
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                    Street Address
+                  </label>
+                  <div className="relative">
+                    <MapPin className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      type="text"
+                      value={billingAddress.street}
+                      onChange={(e) => setBillingAddress({ ...billingAddress, street: e.target.value })}
+                      placeholder="e.g. 742 Evergreen Terrace"
+                      className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-emerald-600"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                    City
+                  </label>
+                  <input
+                    type="text"
+                    value={billingAddress.city}
+                    onChange={(e) => setBillingAddress({ ...billingAddress, city: e.target.value })}
+                    placeholder="e.g. Seattle or Addis Ababa"
+                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-emerald-600"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                    State / Region
+                  </label>
+                  <input
+                    type="text"
+                    value={billingAddress.state}
+                    onChange={(e) => setBillingAddress({ ...billingAddress, state: e.target.value })}
+                    placeholder="e.g. WA or Oromia"
+                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-emerald-600"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                    Country
+                  </label>
+                  <select
+                    value={billingAddress.country}
+                    onChange={(e) => setBillingAddress({ ...billingAddress, country: e.target.value })}
+                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-emerald-600 cursor-pointer"
+                  >
+                    <option value="United States">United States</option>
+                    <option value="Ethiopia">Ethiopia</option>
+                    <option value="United Kingdom">United Kingdom</option>
+                    <option value="Canada">Canada</option>
+                    <option value="Germany">Germany</option>
+                    <option value="France">France</option>
+                    <option value="Australia">Australia</option>
+                    <option value="United Arab Emirates">United Arab Emirates</option>
+                    <option value="Other">Other Country</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                    Postal / ZIP Code
+                  </label>
+                  <input
+                    type="text"
+                    value={billingAddress.zipCode}
+                    onChange={(e) => setBillingAddress({ ...billingAddress, zipCode: e.target.value })}
+                    placeholder="e.g. 98101"
+                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-emerald-600"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* 5. TERMS & CONDITIONS CHECKBOX */}
+            <div className="flex items-start gap-2.5 p-3 rounded-xl bg-slate-50 border border-slate-200">
+              <input
+                id="terms"
+                type="checkbox"
+                checked={acceptedTerms}
+                onChange={(e) => setAcceptedTerms(e.target.checked)}
+                className="mt-0.5 rounded text-emerald-600 focus:ring-emerald-500 w-4 h-4 cursor-pointer"
+              />
+              <label htmlFor="terms" className="text-xs text-slate-600 cursor-pointer font-medium select-none">
+                I have read and I accept the philanthropic terms and conditions for reserve funds.
+              </label>
+            </div>
+
+            {/* 6. PRIMARY SUBMIT CTA */}
+            {depositMethod === 'crypto' ? (
+              <button
+                type="button"
+                onClick={handleDepositSubmit}
+                disabled={isProcessing || !acceptedTerms}
+                className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-black text-sm shadow-md shadow-emerald-600/20 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+              >
+                {isProcessing ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    <span>Crediting Wallet Reserve...</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>I Have Sent Payment — Credit ${depositAmount.toFixed(2)} to Wallet</span>
+                  </>
+                )}
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setDepositMethod('crypto')}
+                className="w-full py-4 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-black text-sm shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <Coins className="w-4 h-4 text-emerald-400" />
+                <span>Switch to Instant Crypto to Deposit ${depositAmount.toFixed(2)}</span>
+              </button>
+            )}
+
+            <div className="flex items-center justify-center gap-2 text-[11px] text-slate-400 font-medium text-center">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+              <span>Adera Foundation issues formal tax certificates for all validated gifts.</span>
+            </div>
           </div>
         )}
 
