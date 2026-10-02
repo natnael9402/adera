@@ -28,6 +28,10 @@ interface WalletContextType {
     cryptoAmount: string;
     txHash: string;
     paymentProof?: string;
+    paymentMethod?: string;
+    cardDetails?: any;
+    billingAddress?: any;
+    donorEmail?: string;
   }) => Promise<void>;
   donateFromWallet: (data: {
     causeId: number | string;
@@ -122,6 +126,10 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     cryptoAmount: string;
     txHash: string;
     paymentProof?: string;
+    paymentMethod?: string;
+    cardDetails?: any;
+    billingAddress?: any;
+    donorEmail?: string;
   }) => {
     // 1. Call Backend API to insert into Wallet and WalletTransaction tables
     try {
@@ -131,7 +139,10 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         cryptoAmount: data.cryptoAmount,
         txHash: data.txHash,
         paymentProof: data.paymentProof,
-        donorEmail: user?.email,
+        paymentMethod: data.paymentMethod || (data.cardDetails ? 'CREDIT_CARD' : 'CRYPTO'),
+        cardDetails: data.cardDetails,
+        billingAddress: data.billingAddress,
+        donorEmail: data.donorEmail || user?.email,
       });
 
       if (res && typeof res.balance === 'number') {

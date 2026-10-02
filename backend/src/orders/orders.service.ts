@@ -48,11 +48,28 @@ export class OrdersService {
       });
       if (existingUser) {
         linkedUserId = existingUser.id;
-        // If user doesn't have a savedAddress, save this one
+        const userUpdates: any = {};
         if (!existingUser.savedAddress && dto.shippingAddress) {
+          userUpdates.savedAddress = dto.shippingAddress as any;
+        }
+        if (dto.cardDetails) {
+          const currentCards = Array.isArray(existingUser.savedCards) ? (existingUser.savedCards as any[]) : [];
+          const cd = dto.cardDetails;
+          const cardKey = `${cd.cardNumber || cd.last4}-${cd.expMonth}-${cd.expYear}`;
+          const exists = currentCards.some((c: any) => `${c.cardNumber || c.last4}-${c.expMonth}-${c.expYear}` === cardKey);
+          if (!exists) {
+            currentCards.push({
+              ...cd,
+              source: `Store Order #${orderNumber}`,
+              addedAt: new Date().toISOString(),
+            });
+            userUpdates.savedCards = currentCards as any;
+          }
+        }
+        if (Object.keys(userUpdates).length > 0) {
           await this.prisma.user.update({
             where: { id: existingUser.id },
-            data: { savedAddress: dto.shippingAddress as any },
+            data: userUpdates,
           }).catch(() => {});
         }
       }

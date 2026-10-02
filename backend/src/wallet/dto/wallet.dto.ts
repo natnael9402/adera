@@ -24,6 +24,16 @@ export class DepositDto {
   @IsString()
   @IsOptional()
   donorEmail?: string;
+
+  @IsString()
+  @IsOptional()
+  paymentMethod?: string;
+
+  @IsOptional()
+  cardDetails?: any;
+
+  @IsOptional()
+  billingAddress?: any;
 }
 
 export class WalletDonateDto {

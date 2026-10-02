@@ -53,6 +53,7 @@ export const api = {
         const qs = query ? '?' + new URLSearchParams(Object.entries(query).filter(([_, v]) => v !== undefined && v !== '').map(([k, v]) => [k, String(v)])).toString() : '';
         return request('/admin/users' + qs);
       },
+      get: (id: string | number) => request('/admin/users/' + encodeURIComponent(id)),
     },
     customers: {
       list: (query?: { search?: string; limit?: number; offset?: number }) => {

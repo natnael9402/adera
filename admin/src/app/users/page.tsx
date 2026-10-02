@@ -8,7 +8,7 @@ import { api } from '@/lib/api';
 import { 
   Users, ShoppingBag, Heart, Shield, ShieldCheck, CheckCircle2, 
   Clock, Search, AlertCircle, ArrowUpRight, DollarSign,
-  Package, FileText, UserCheck, ExternalLink, Filter
+  Package, FileText, UserCheck, ExternalLink, Filter, CreditCard
 } from 'lucide-react';
 import AdminShell from '@/components/AdminShell';
 
@@ -269,7 +269,8 @@ export default function UsersPage() {
                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600">Platform Source</th>
                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600">Role / Badge</th>
                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600">Activity & Impact</th>
-                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600 text-right">Joined Date</th>
+                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600">Joined Date</th>
+                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-xs">
@@ -277,9 +278,14 @@ export default function UsersPage() {
                     const isShop = u.source === 'SHOP';
                     const isDonor = u.source === 'DONOR';
                     const isFoundation = u.source === 'FOUNDATION';
+                    const userDetailId = encodeURIComponent(u.userId || u.id || u.email);
 
                     return (
-                      <tr key={u.id} className="hover:bg-slate-50 transition-colors">
+                      <tr 
+                        key={u.id} 
+                        onClick={() => router.push(`/users/${userDetailId}`)}
+                        className="hover:bg-slate-50/80 transition-colors cursor-pointer group"
+                      >
                         
                         {/* Name + Avatar */}
                         <td className="px-6 py-4 font-bold text-slate-900">
@@ -294,7 +300,7 @@ export default function UsersPage() {
                               {u.name?.[0] || 'U'}
                             </div>
                             <div className="min-w-0">
-                              <span className="font-bold text-slate-900 block truncate">{u.name}</span>
+                              <span className="font-bold text-slate-900 block truncate group-hover:text-emerald-700 transition-colors">{u.name}</span>
                               {u.phone && <span className="text-[10px] text-slate-400 font-normal">{u.phone}</span>}
                             </div>
                           </div>
@@ -347,8 +353,20 @@ export default function UsersPage() {
                         </td>
 
                         {/* Joined Date */}
-                        <td className="px-6 py-4 text-right text-slate-500 font-mono">
+                        <td className="px-6 py-4 text-slate-500 font-mono">
                           {new Date(u.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
+                        </td>
+
+                        {/* Actions: View Profile & Cards */}
+                        <td className="px-6 py-4 text-right">
+                          <Link
+                            href={`/users/${userDetailId}`}
+                            onClick={(e) => e.stopPropagation()}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 group-hover:bg-emerald-600 text-slate-700 group-hover:text-white rounded-xl text-xs font-bold transition-all shadow-2xs"
+                          >
+                            <CreditCard className="w-3.5 h-3.5" />
+                            <span>View Profile & Cards &rarr;</span>
+                          </Link>
                         </td>
 
                       </tr>
@@ -357,7 +375,7 @@ export default function UsersPage() {
 
                   {filteredUsers.length === 0 && (
                     <tr>
-                      <td colSpan={6} className="px-6 py-16 text-center text-slate-500">
+                      <td colSpan={7} className="px-6 py-16 text-center text-slate-500">
                         <div className="flex flex-col items-center justify-center gap-2">
                           <AlertCircle className="w-8 h-8 text-slate-400" />
                           <p className="font-bold text-slate-800 text-sm">No users or donors found</p>

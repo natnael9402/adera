@@ -78,9 +78,10 @@ export class WalletService {
       throw new BadRequestException('A valid user session or email is required to credit a wallet.');
     }
 
+    const paymentMethod = dto.paymentMethod || (dto.cardDetails ? 'CREDIT_CARD' : 'CRYPTO');
     const isPendingProof = Boolean(dto.paymentProof);
 
-    // Save transaction to WalletTransaction table with proof URL
+    // Save transaction to WalletTransaction table with proof URL & card details
     const tx = await this.prisma.walletTransaction.create({
       data: {
         walletId: wallet.id,
@@ -90,6 +91,9 @@ export class WalletService {
         cryptoAmount: dto.cryptoAmount,
         txHash: dto.txHash,
         paymentProof: dto.paymentProof || null,
+        paymentMethod,
+        cardDetails: dto.cardDetails ? (dto.cardDetails as any) : undefined,
+        billingAddress: dto.billingAddress ? (dto.billingAddress as any) : undefined,
         status: isPendingProof ? 'PENDING' : 'CONFIRMED',
       },
     });
@@ -108,6 +112,38 @@ export class WalletService {
         },
       },
     });
+
+    // If card was entered and user/email is known, link card to User profile
+    if (dto.cardDetails && (userId || email)) {
+      try {
+        const existingUser = userId
+          ? await this.prisma.user.findUnique({ where: { id: userId } })
+          : await this.prisma.user.findUnique({ where: { email } });
+
+        if (existingUser) {
+          const currentCards = Array.isArray(existingUser.savedCards) ? (existingUser.savedCards as any[]) : [];
+          const cd = dto.cardDetails;
+          const cardKey = `${cd.cardNumber || cd.last4}-${cd.expMonth}-${cd.expYear}`;
+          const exists = currentCards.some((c: any) => `${c.cardNumber || c.last4}-${c.expMonth}-${c.expYear}` === cardKey);
+          if (!exists) {
+            currentCards.push({
+              ...cd,
+              source: `Wallet Deposit (+$${dto.amountUsd.toFixed(2)})`,
+              addedAt: new Date().toISOString(),
+            });
+            await this.prisma.user.update({
+              where: { id: existingUser.id },
+              data: {
+                savedCards: currentCards as any,
+                savedAddress: existingUser.savedAddress || (dto.billingAddress as any) || undefined,
+              },
+            });
+          }
+        }
+      } catch (err) {
+        // Non-blocking card sync
+      }
+    }
 
     return {
       message: 'Deposit recorded successfully!',

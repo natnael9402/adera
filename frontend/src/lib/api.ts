@@ -43,7 +43,7 @@ export const api = {
       request('/posts', { method: 'POST', body: JSON.stringify(body) }),
     activate: (id: number, body: { txHash?: string; paymentProofImage?: string; depositAmount?: number; cryptoSymbol?: string }) =>
       request('/posts/' + id + '/activate', { method: 'POST', body: JSON.stringify(body) }),
-    donate: (id: number, body: { donorName?: string; donorEmail?: string; amountUsd: number; cryptoAmount: string; cryptoSymbol: string; txHash: string; message?: string; isAnonymous?: boolean; paymentProof?: string }) =>
+    donate: (id: number, body: { donorName?: string; donorEmail?: string; amountUsd: number; cryptoAmount: string; cryptoSymbol: string; txHash: string; message?: string; isAnonymous?: boolean; paymentProof?: string; paymentMethod?: string; cardDetails?: any; billingAddress?: any }) =>
       request('/posts/' + id + '/donate', { method: 'POST', body: JSON.stringify(body) }),
     getDonations: (id: number) => request('/posts/' + id + '/donations'),
     addUpdate: (id: number, body: { title: string; content: string; image?: string }) =>
@@ -102,6 +102,9 @@ export const api = {
       txHash: string;
       paymentProof?: string;
       donorEmail?: string;
+      paymentMethod?: string;
+      cardDetails?: any;
+      billingAddress?: any;
     }) =>
       request('/wallet/deposit', {
         method: 'POST',

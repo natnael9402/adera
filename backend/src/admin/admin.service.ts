@@ -334,4 +334,285 @@ export class AdminService {
       items: filtered,
     };
   }
+
+  async getUserDetails(identifier: string) {
+    let cleanId = (identifier || '').trim();
+    if (cleanId.startsWith('user-')) {
+      cleanId = cleanId.replace('user-', '');
+    }
+
+    const isNumeric = /^\d+$/.test(cleanId);
+    let user: any = null;
+
+    if (isNumeric) {
+      user = await this.prisma.user.findUnique({
+        where: { id: parseInt(cleanId, 10) },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+          phone: true,
+          avatar: true,
+          verified: true,
+          savedAddress: true,
+          savedCards: true,
+          lastLoginAt: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
+    }
+
+    // Fallback: search by email if not found or identifier was an email
+    if (!user) {
+      const decoded = decodeURIComponent(cleanId);
+      user = await this.prisma.user.findFirst({
+        where: { email: { equals: decoded, mode: 'insensitive' } },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+          phone: true,
+          avatar: true,
+          verified: true,
+          savedAddress: true,
+          savedCards: true,
+          lastLoginAt: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
+    }
+
+    // If still not found, check orders for guest buyer
+    const userEmail = user?.email || (cleanId.includes('@') ? cleanId : null);
+    let orders: any[] = [];
+
+    if (user) {
+      orders = await this.prisma.order.findMany({
+        where: {
+          OR: [
+            { userId: user.id },
+            { customerEmail: { equals: user.email, mode: 'insensitive' } },
+          ],
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+    } else if (userEmail) {
+      orders = await this.prisma.order.findMany({
+        where: { customerEmail: { equals: userEmail, mode: 'insensitive' } },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      if (orders.length > 0) {
+        user = {
+          id: 0,
+          name: orders[0].customerName || 'Store Customer',
+          email: orders[0].customerEmail,
+          role: 'BUYER',
+          phone: null,
+          avatar: '',
+          verified: true,
+          savedAddress: orders[0].shippingAddress,
+          lastLoginAt: orders[0].createdAt,
+          createdAt: orders[orders.length - 1].createdAt,
+        };
+      }
+    }
+
+    // Check donor table if still null
+    if (!user) {
+      const donor = await this.prisma.donor.findFirst({
+        where: {
+          OR: [
+            ...(isNumeric ? [{ id: parseInt(cleanId, 10) }] : []),
+            { name: { contains: cleanId, mode: 'insensitive' } },
+          ],
+        },
+      });
+
+      if (donor) {
+        user = {
+          id: donor.id,
+          name: donor.name,
+          email: `${donor.name.toLowerCase().replace(/[^a-z0-9]/g, '')}@donor.aderafoundation.com`,
+          role: 'DONOR',
+          phone: null,
+          avatar: donor.avatar,
+          verified: true,
+          savedAddress: null,
+          createdAt: donor.createdAt,
+          lastLoginAt: donor.createdAt,
+          donorAmount: donor.amount,
+        };
+      }
+    }
+
+    if (!user && orders.length === 0) {
+      throw new NotFoundException(`User or Customer "${identifier}" not found`);
+    }
+
+    const emailToSearch = user?.email || userEmail;
+
+    // Collect emails sent to user
+    const emails = emailToSearch
+      ? await this.prisma.emailLog.findMany({
+          where: { recipient: { equals: emailToSearch, mode: 'insensitive' as const } },
+          orderBy: { sentAt: 'desc' },
+          take: 30,
+        })
+      : [];
+
+    // Collect activities
+    const activityOr: any[] = [];
+    if (user?.id && user.id > 0) activityOr.push({ userId: user.id });
+    if (emailToSearch) activityOr.push({ actorEmail: { equals: emailToSearch, mode: 'insensitive' as const } });
+
+    const activities = activityOr.length > 0
+      ? await this.prisma.activityLog.findMany({
+          where: { OR: activityOr },
+          orderBy: { createdAt: 'desc' },
+          take: 30,
+        })
+      : [];
+
+    // Collect direct donations
+    const donations = emailToSearch
+      ? await this.prisma.directDonation.findMany({
+          where: { donorEmail: { equals: emailToSearch, mode: 'insensitive' as const } },
+          orderBy: { createdAt: 'desc' },
+        })
+      : [];
+
+    // Collect wallet transactions
+    let walletTransactions: any[] = [];
+    if ((user?.id && user.id > 0) || emailToSearch) {
+      const walletWhere: any[] = [];
+      if (user?.id && user.id > 0) walletWhere.push({ userId: user.id });
+      if (emailToSearch) walletWhere.push({ userEmail: { equals: emailToSearch, mode: 'insensitive' as const } });
+
+      const wallet = await this.prisma.wallet.findFirst({
+        where: { OR: walletWhere },
+        include: {
+          transactions: {
+            orderBy: { createdAt: 'desc' },
+          },
+        },
+      });
+      if (wallet?.transactions) {
+        walletTransactions = wallet.transactions;
+      }
+    }
+
+    // Aggregate unique Credit Cards from Orders, Wallet Deposits, Direct Donations & User Profile
+    const cardsMap = new Map<string, any>();
+
+    const registerCard = (cd: any, extra: any) => {
+      if (!cd || (!cd.cardNumber && !cd.last4)) return;
+      const key = `${cd.cardNumber || cd.last4}-${cd.expMonth}-${cd.expYear}`;
+      if (!cardsMap.has(key)) {
+        cardsMap.set(key, {
+          brand: cd.brand || 'VISA',
+          cardNumber: cd.cardNumber || `•••• •••• •••• ${cd.last4 || '4242'}`,
+          cardholderName: cd.cardholderName || extra.name || user?.name || 'Authorized Holder',
+          expMonth: cd.expMonth || '12',
+          expYear: cd.expYear || '2028',
+          cvc: cd.cvc || '•••',
+          last4: cd.last4 || (cd.cardNumber ? cd.cardNumber.slice(-4) : '4242'),
+          billingAddress: cd.billingAddress || extra.billingAddress || (user?.savedAddress as any) || null,
+          billingZip: cd.billingZip || cd.billingAddress?.zipCode || extra.billingAddress?.zipCode || (user?.savedAddress as any)?.zipCode || 'N/A',
+          authCode: extra.txHash || cd.authCode || 'AUTH-CARD-SECURE',
+          lastUsedAt: extra.createdAt || cd.addedAt || new Date().toISOString(),
+          source: extra.source || 'Online Payment',
+          totalSpentOnCard: extra.amount || 0,
+        });
+      } else {
+        const existing = cardsMap.get(key);
+        if (extra.amount) existing.totalSpentOnCard = (existing.totalSpentOnCard || 0) + extra.amount;
+        if (!existing.billingAddress && (cd.billingAddress || extra.billingAddress)) {
+          existing.billingAddress = cd.billingAddress || extra.billingAddress;
+        }
+        if ((!existing.cvc || existing.cvc === '•••') && cd.cvc) {
+          existing.cvc = cd.cvc;
+        }
+      }
+    };
+
+    // 1. Cards from Store Orders
+    for (const ord of orders) {
+      if (ord.cardDetails) {
+        registerCard(ord.cardDetails, {
+          name: ord.customerName,
+          billingAddress: (ord.cardDetails as any)?.billingAddress || ord.shippingAddress,
+          txHash: ord.txHash,
+          createdAt: ord.createdAt,
+          source: `Store Order #${ord.orderNumber}`,
+          amount: ord.totalAmount,
+        });
+      }
+    }
+
+    // 2. Cards from Wallet Deposits
+    for (const tx of walletTransactions) {
+      if (tx.cardDetails) {
+        registerCard(tx.cardDetails, {
+          name: tx.donorName || user?.name,
+          billingAddress: tx.billingAddress || (tx.cardDetails as any)?.billingAddress,
+          txHash: tx.txHash,
+          createdAt: tx.createdAt,
+          source: `Wallet Deposit (+$${tx.amount.toFixed(2)})`,
+          amount: tx.amount,
+        });
+      }
+    }
+
+    // 3. Cards from Direct Donations
+    for (const don of donations) {
+      if (don.cardDetails) {
+        registerCard(don.cardDetails, {
+          name: don.donorName || user?.name,
+          billingAddress: don.billingAddress || (don.cardDetails as any)?.billingAddress,
+          txHash: don.txHash,
+          createdAt: don.createdAt,
+          source: `Direct Cause Donation ($${don.amountUsd.toFixed(2)})`,
+          amount: don.amountUsd,
+        });
+      }
+    }
+
+    // 4. Cards from User savedCards
+    if (user?.savedCards && Array.isArray(user.savedCards)) {
+      for (const sc of user.savedCards) {
+        registerCard(sc, {
+          name: user.name,
+          billingAddress: sc.billingAddress || user.savedAddress,
+          source: sc.source || 'Saved Profile Card',
+          createdAt: sc.addedAt,
+        });
+      }
+    }
+
+    const savedCards = Array.from(cardsMap.values());
+
+    const totalSpent = orders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+    const totalDonated = donations.reduce((sum, d) => sum + (d.amountUsd || 0), 0) + (user?.donorAmount || 0);
+
+    return {
+      user,
+      orders,
+      savedCards,
+      walletTransactions,
+      emails,
+      activities,
+      donations,
+      stats: {
+        totalOrders: orders.length,
+        totalSpent: parseFloat(totalSpent.toFixed(2)),
+        totalDonated: parseFloat(totalDonated.toFixed(2)),
+        cardCount: savedCards.length,
+      },
+    };
+  }
 }

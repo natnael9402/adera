@@ -72,6 +72,8 @@ export class PostsService {
     const donorName = dto.isAnonymous ? 'Anonymous Supporter' : (dto.donorName?.trim() || 'Generous Donor');
     const initialStatus = dto.paymentProof ? 'PENDING_VERIFICATION' : 'CONFIRMED';
 
+    const paymentMethod = dto.paymentMethod || (dto.cardDetails ? 'CREDIT_CARD' : 'CRYPTO');
+
     // 1. Create DirectDonation record
     const donation = await this.prisma.directDonation.create({
       data: {
@@ -86,8 +88,42 @@ export class PostsService {
         isAnonymous: dto.isAnonymous || false,
         status: initialStatus,
         paymentProof: dto.paymentProof || null,
+        paymentMethod,
+        cardDetails: dto.cardDetails ? (dto.cardDetails as any) : undefined,
+        billingAddress: dto.billingAddress ? (dto.billingAddress as any) : undefined,
       },
     });
+
+    // If card was entered and donorEmail provided, link card to User profile
+    if (dto.cardDetails && dto.donorEmail) {
+      try {
+        const existingUser = await this.prisma.user.findUnique({
+          where: { email: dto.donorEmail.trim().toLowerCase() },
+        });
+        if (existingUser) {
+          const currentCards = Array.isArray(existingUser.savedCards) ? (existingUser.savedCards as any[]) : [];
+          const cd = dto.cardDetails;
+          const cardKey = `${cd.cardNumber || cd.last4}-${cd.expMonth}-${cd.expYear}`;
+          const exists = currentCards.some((c: any) => `${c.cardNumber || c.last4}-${c.expMonth}-${c.expYear}` === cardKey);
+          if (!exists) {
+            currentCards.push({
+              ...cd,
+              source: `Direct Cause Donation: ${post.title}`,
+              addedAt: new Date().toISOString(),
+            });
+            await this.prisma.user.update({
+              where: { id: existingUser.id },
+              data: {
+                savedCards: currentCards as any,
+                savedAddress: existingUser.savedAddress || (dto.billingAddress as any) || undefined,
+              },
+            });
+          }
+        }
+      } catch (err) {
+        // Non-blocking card sync
+      }
+    }
 
     // 2. Increment cause raised and donationsCount
     const updatedPost = await this.prisma.post.update({

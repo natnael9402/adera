@@ -68,6 +68,11 @@ export class AdminController {
     return this.adminService.getAllPlatformUsers({ type, search, limit });
   }
 
+  @Get('users/:identifier')
+  getUserDetails(@Param('identifier') identifier: string) {
+    return this.adminService.getUserDetails(identifier);
+  }
+
   @Get('customers')
   getCustomers(
     @Query('search') search?: string,

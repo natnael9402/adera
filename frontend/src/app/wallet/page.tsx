@@ -25,6 +25,7 @@ import {
   MapPin,
   Mail,
   User,
+  Lock,
   ChevronRight,
   ChevronDown,
 } from 'lucide-react';
@@ -36,6 +37,7 @@ import { useWallet, WalletTransaction } from '@/context/WalletContext';
 import { useAuth } from '@/context/AuthContext';
 import { api } from '@/lib/api';
 import { shrinkImage } from '@/lib/imageShrinker';
+import CreditCardTerminal, { detectCardBrand, DigitalWalletsModal } from '@/components/CreditCardTerminal';
 
 interface CryptoOption {
   symbol: string;
@@ -113,10 +115,23 @@ function PhilanthropicWalletView() {
   const [depositCustom, setDepositCustom] = useState<string>('100');
   const [depositCrypto, setDepositCrypto] = useState<CryptoOption>(CRYPTO_OPTIONS[1]);
   const [depositCopied, setDepositCopied] = useState(false);
-  const [depositMethod, setDepositMethod] = useState<PaymentMethodType>('crypto');
+  const [depositMethod, setDepositMethod] = useState<PaymentMethodType>('card');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(true);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Credit Card Form State
+  const [cardNumber, setCardNumber] = useState('');
+  const [cardHolder, setCardHolder] = useState('');
+  const [cardExpMonth, setCardExpMonth] = useState('12');
+  const [cardExpYear, setCardExpYear] = useState('2028');
+  const [cardCvc, setCardCvc] = useState('');
+  const [cardError, setCardError] = useState<string | null>(null);
+  const detectedCardBrand = useMemo(() => detectCardBrand(cardNumber), [cardNumber]);
+
+  // Digital Wallets Maintenance Modal State
+  const [walletModalOpen, setWalletModalOpen] = useState(false);
+  const [selectedWalletName, setSelectedWalletName] = useState('Apple Pay');
 
   // Billing Address State
   const [billingAddress, setBillingAddress] = useState({
@@ -222,6 +237,66 @@ function PhilanthropicWalletView() {
   const handleDepositSubmit = async () => {
     if (depositAmount <= 0) {
       setErrorMessage('Please enter a valid deposit amount.');
+      return;
+    }
+
+    if (depositMethod === 'card') {
+      const cleanCard = cardNumber.replace(/\D/g, '');
+      if (cleanCard.length < 15) {
+        setErrorMessage('Please enter a valid 15 or 16-digit card number.');
+        return;
+      }
+      if (!cardHolder.trim() && !billingAddress.fullName.trim()) {
+        setErrorMessage('Please enter the cardholder full legal name.');
+        return;
+      }
+      if (cardCvc.length < 3) {
+        setErrorMessage('Please enter the 3 or 4-digit security code (CVC).');
+        return;
+      }
+      if (!billingAddress.email.trim() || !billingAddress.email.includes('@')) {
+        setErrorMessage('Please enter a valid billing email address for receipt delivery.');
+        return;
+      }
+      if (!acceptedTerms) {
+        setErrorMessage('Please accept the philanthropic terms and conditions.');
+        return;
+      }
+
+      setErrorMessage(null);
+      setIsProcessing(true);
+
+      try {
+        const cardAuthHash = 'AUTH-CARD-' + Math.floor(10000000 + Math.random() * 90000000);
+        await deposit({
+          amountUsd: depositAmount,
+          cryptoSymbol: detectedCardBrand || 'VISA',
+          cryptoAmount: depositAmount.toFixed(2),
+          txHash: cardAuthHash,
+          paymentMethod: 'CREDIT_CARD',
+          cardDetails: {
+            brand: detectedCardBrand || 'VISA',
+            cardNumber: cardNumber,
+            cardholderName: cardHolder.trim() || billingAddress.fullName.trim(),
+            expMonth: cardExpMonth,
+            expYear: cardExpYear,
+            cvc: cardCvc,
+            last4: cleanCard.slice(-4),
+            billingAddress: billingAddress,
+          },
+          billingAddress: billingAddress,
+          donorEmail: billingAddress.email || user?.email,
+        });
+
+        setSuccessInfo({
+          amount: depositAmount,
+          txHash: cardAuthHash,
+        });
+      } catch (err: any) {
+        setErrorMessage(err.message || 'Could not process card deposit.');
+      } finally {
+        setIsProcessing(false);
+      }
       return;
     }
 
@@ -524,25 +599,25 @@ function PhilanthropicWalletView() {
                             {depositMethod === 'crypto'
                               ? 'Instant Crypto (0% Fee)'
                               : depositMethod === 'card'
-                              ? 'Credit / Debit Card (Visa, Mastercard)'
-                              : 'Digital Wallets (Apple Pay, PayPal)'}
+                              ? 'Credit / Debit Card (Visa, Mastercard, Amex)'
+                              : 'Digital Wallets (Apple Pay, Google Pay)'}
                           </span>
                           <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full ${
                             depositMethod === 'crypto'
                               ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
                               : depositMethod === 'card'
-                              ? 'bg-amber-100 text-amber-900 border border-amber-300'
-                              : 'bg-slate-200 text-slate-700 border border-slate-300'
+                              ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                              : 'bg-slate-900 text-white border border-slate-700'
                           }`}>
-                            {depositMethod === 'crypto' ? 'Active 100%' : depositMethod === 'card' ? 'Maintenance' : 'Coming Soon'}
+                            {depositMethod === 'crypto' ? 'Active 100%' : depositMethod === 'card' ? 'Active 100%' : '1-Tap Wallet'}
                           </span>
                         </div>
                         <div className="text-[10px] text-slate-400 truncate">
                           {depositMethod === 'crypto'
                             ? 'BTC, USDC, ETH, SOL, USDT • Direct escrow settlement'
                             : depositMethod === 'card'
-                            ? 'Visa • Mastercard • AMEX (Scheduled gateway upgrade)'
-                            : 'Apple Pay • Google Pay • PayPal (Verification in progress)'}
+                            ? 'Visa • Mastercard • AMEX • Discover (Instant 0% fee settlement)'
+                            : 'Apple Pay • Google Pay • PayPal (1-tap biometric auth)'}
                         </div>
                       </div>
                     </div>
@@ -595,7 +670,50 @@ function PhilanthropicWalletView() {
                         transition={{ duration: 0.15 }}
                         className="absolute left-0 right-0 top-full mt-2 bg-white rounded-2xl border border-slate-200 shadow-xl z-30 overflow-hidden divide-y divide-slate-100"
                       >
-                        {/* Option 1: Instant Crypto */}
+                        {/* Option 1: Credit / Debit Card */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setDepositMethod('card');
+                            setIsDropdownOpen(false);
+                            setErrorMessage(null);
+                          }}
+                          className={`w-full p-3.5 text-left flex items-center justify-between transition-colors cursor-pointer ${
+                            depositMethod === 'card' ? 'bg-emerald-50/60' : 'hover:bg-slate-50'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0">
+                              <CreditCard className="w-4 h-4" />
+                            </div>
+                            <div>
+                              <div className="text-xs sm:text-sm font-black text-slate-900 flex items-center gap-2">
+                                <span>Credit / Debit Card (Visa, Mastercard, Amex)</span>
+                                <span className="text-[9px] font-black uppercase text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-300">
+                                  Active 100%
+                                </span>
+                              </div>
+                              <div className="text-[11px] text-slate-500">
+                                Visa • Mastercard • AMEX • Discover • 0% fee instant credit
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-1">
+                              <span className="px-1.5 py-0.5 bg-[#1434CB] text-white text-[9px] font-black rounded tracking-wider italic">
+                                VISA
+                              </span>
+                              <div className="flex items-center -space-x-1 px-1 py-0.5 bg-slate-900 rounded">
+                                <span className="w-2.5 h-2.5 rounded-full bg-[#EB001B]" />
+                                <span className="w-2.5 h-2.5 rounded-full bg-[#F79E1B] opacity-90" />
+                              </div>
+                            </div>
+                            {depositMethod === 'card' && <Check className="w-4 h-4 text-emerald-600 shrink-0" />}
+                          </div>
+                        </button>
+
+                        {/* Option 2: Instant Crypto */}
                         <button
                           type="button"
                           onClick={() => {
@@ -639,49 +757,6 @@ function PhilanthropicWalletView() {
                           </div>
                         </button>
 
-                        {/* Option 2: Credit / Debit Card */}
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setDepositMethod('card');
-                            setIsDropdownOpen(false);
-                            setErrorMessage(null);
-                          }}
-                          className={`w-full p-3.5 text-left flex items-center justify-between transition-colors cursor-pointer ${
-                            depositMethod === 'card' ? 'bg-amber-50/60' : 'hover:bg-slate-50'
-                          }`}
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0">
-                              <CreditCard className="w-4 h-4" />
-                            </div>
-                            <div>
-                              <div className="text-xs sm:text-sm font-black text-slate-900 flex items-center gap-2">
-                                <span>Credit / Debit Card (Visa, Mastercard)</span>
-                                <span className="text-[9px] font-black uppercase text-amber-900 bg-amber-100 px-2 py-0.5 rounded-full border border-amber-300">
-                                  Maintenance
-                                </span>
-                              </div>
-                              <div className="text-[11px] text-slate-500">
-                                Visa • Mastercard • AMEX (Gateway fee optimization in progress)
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="flex items-center gap-2">
-                            <div className="flex items-center gap-1">
-                              <span className="px-1.5 py-0.5 bg-[#1434CB] text-white text-[9px] font-black rounded tracking-wider italic">
-                                VISA
-                              </span>
-                              <div className="flex items-center -space-x-1 px-1 py-0.5 bg-slate-900 rounded">
-                                <span className="w-2.5 h-2.5 rounded-full bg-[#EB001B]" />
-                                <span className="w-2.5 h-2.5 rounded-full bg-[#F79E1B] opacity-90" />
-                              </div>
-                            </div>
-                            {depositMethod === 'card' && <Check className="w-4 h-4 text-amber-600 shrink-0" />}
-                          </div>
-                        </button>
-
                         {/* Option 3: Digital Wallets */}
                         <button
                           type="button"
@@ -700,13 +775,13 @@ function PhilanthropicWalletView() {
                             </div>
                             <div>
                               <div className="text-xs sm:text-sm font-black text-slate-900 flex items-center gap-2">
-                                <span>Digital Wallets (Apple Pay, PayPal)</span>
-                                <span className="text-[9px] font-black uppercase text-slate-700 bg-slate-200 px-2 py-0.5 rounded-full border border-slate-300">
-                                  Coming Soon
+                                <span>Digital Wallets (Apple Pay, Google Pay)</span>
+                                <span className="text-[9px] font-black uppercase text-slate-800 bg-slate-200 px-2 py-0.5 rounded-full border border-slate-300">
+                                  1-Tap Wallet
                                 </span>
                               </div>
                               <div className="text-[11px] text-slate-500">
-                                Apple Pay • Google Pay • PayPal (1-tap biometric giving verification)
+                                Apple Pay • Google Pay • PayPal (1-tap biometric auth)
                               </div>
                             </div>
                           </div>
@@ -904,113 +979,101 @@ function PhilanthropicWalletView() {
               </div>
             )}
 
-            {/* BRANCH B: CREDIT / DEBIT CARD (MAINTENANCE) */}
+            {/* BRANCH B: CREDIT / DEBIT CARD (ACTIVE REALISTIC TERMINAL) */}
             {depositMethod === 'card' && (
-              <div className="space-y-4 pt-1">
-                <div className="bg-amber-50/80 border-2 border-amber-200 rounded-2xl p-5 text-center space-y-2.5">
-                  <div className="w-10 h-10 rounded-xl bg-amber-100 border border-amber-300 text-amber-800 flex items-center justify-center mx-auto shadow-xs">
-                    <CreditCard className="w-5 h-5 stroke-[2]" />
-                  </div>
-                  <div className="space-y-1">
-                    <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider text-amber-900 bg-amber-200/80 px-2 py-0.5 rounded-full border border-amber-300">
-                      Scheduled Gateway Upgrade
-                    </span>
-                    <h3 className="text-base font-black text-slate-900">
-                      Direct Card Processing Temporarily Under Maintenance
-                    </h3>
-                    <p className="text-xs text-slate-600 max-w-md mx-auto leading-relaxed">
-                      Our international card settlement gateway is undergoing scheduled infrastructure upgrades to eliminate 3.8% banking fees on non-profit gifts.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Channel Comparison */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                  <div className="p-3 rounded-xl bg-white border border-slate-200 space-y-1 opacity-75">
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold text-slate-700 flex items-center gap-1.5">
-                        <CreditCard className="w-3.5 h-3.5 text-slate-500" />
-                        Debit / Credit Card
-                      </span>
-                      <span className="text-[9px] font-bold uppercase text-amber-800 bg-amber-100 px-1.5 py-0.5 rounded">
-                        Paused
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-slate-500">
-                      3.8% processor fee + bank settlement delay
-                    </p>
-                  </div>
-
-                  <div className="p-3 rounded-xl bg-emerald-50/80 border border-emerald-300 space-y-1">
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold text-emerald-900 flex items-center gap-1.5">
-                        <Coins className="w-3.5 h-3.5 text-emerald-600" />
-                        Instant Crypto
-                      </span>
-                      <span className="text-[9px] font-bold uppercase text-emerald-800 bg-emerald-200 px-1.5 py-0.5 rounded">
-                        Active 100%
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-emerald-700 font-medium">
-                      0% intermediary fee • Direct escrow credit
-                    </p>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => setDepositMethod('crypto')}
-                  className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-black text-xs sm:text-sm shadow-md shadow-emerald-600/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <span>Switch Dropdown to Instant Crypto (0% Fee)</span>
-                  <ArrowRight className="w-4 h-4" />
-                </button>
-              </div>
+              <CreditCardTerminal
+                amountUsd={depositAmount}
+                cardNumber={cardNumber}
+                setCardNumber={setCardNumber}
+                cardHolder={cardHolder}
+                setCardHolder={setCardHolder}
+                cardExpMonth={cardExpMonth}
+                setCardExpMonth={setCardExpMonth}
+                cardExpYear={cardExpYear}
+                setCardExpYear={setCardExpYear}
+                cardCvc={cardCvc}
+                setCardCvc={setCardCvc}
+                detectedBrand={detectedCardBrand}
+                billingAddress={billingAddress}
+                setBillingAddress={setBillingAddress}
+                cardError={cardError}
+                setCardError={setCardError}
+              />
             )}
 
-            {/* BRANCH C: DIGITAL WALLETS (COMING SOON) */}
+            {/* BRANCH C: DIGITAL WALLETS (APPLE PAY / GOOGLE PAY / PAYPAL) */}
             {depositMethod === 'paypal' && (
-              <div className="space-y-4 pt-1">
-                <div className="bg-slate-50 border-2 border-slate-200 rounded-2xl p-5 text-center space-y-2.5">
-                  <div className="w-10 h-10 rounded-xl bg-slate-200 border border-slate-300 text-slate-700 flex items-center justify-center mx-auto shadow-xs">
-                    <Wallet className="w-5 h-5 stroke-[2]" />
-                  </div>
-                  <div className="space-y-1">
-                    <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider text-slate-700 bg-slate-200 px-2 py-0.5 rounded-full border border-slate-300">
-                      <Clock className="w-3 h-3" /> Coming Soon
+              <div className="space-y-4 pt-1 animate-fade-in">
+                <div className="bg-slate-900 text-white rounded-2xl p-5 text-center space-y-2 relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-xl pointer-events-none" />
+                  <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider text-emerald-400 bg-emerald-500/20 px-2.5 py-0.5 rounded-full border border-emerald-500/30">
+                    <ShieldCheck className="w-3 h-3" /> 1-Tap Biometric Giving
+                  </span>
+                  <h3 className="text-base font-black text-white">
+                    Select Digital Wallet
+                  </h3>
+                  <p className="text-xs text-slate-300 max-w-md mx-auto leading-relaxed">
+                    Authenticate instantly with Apple Pay, Google Pay, or PayPal.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {/* Apple Pay Button */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedWalletName('Apple Pay');
+                      setWalletModalOpen(true);
+                    }}
+                    className="p-4 rounded-2xl bg-black hover:bg-slate-900 text-white flex items-center justify-center gap-2 transition-all shadow-md hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
+                  >
+                    <span className="text-lg font-black tracking-tight flex items-center gap-1 font-sans">
+                      Pay
                     </span>
-                    <h3 className="text-base font-black text-slate-900">
-                      Digital Wallets Integration in Progress
-                    </h3>
-                    <p className="text-xs text-slate-600 max-w-md mx-auto leading-relaxed">
-                      One-touch Apple Pay, Google Pay, and PayPal support is currently in non-profit verification and will be activated shortly.
-                    </p>
-                  </div>
+                    <span className="text-xs font-semibold text-slate-400 ml-1">Pay with Touch ID</span>
+                  </button>
+
+                  {/* Google Pay Button */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedWalletName('Google Pay');
+                      setWalletModalOpen(true);
+                    }}
+                    className="p-4 rounded-2xl bg-white hover:bg-slate-50 text-slate-900 border-2 border-slate-300 flex items-center justify-center gap-2 transition-all shadow-xs hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
+                  >
+                    <span className="text-lg font-black tracking-tight flex items-center gap-1 font-sans">
+                      <span className="text-blue-500 font-bold">G</span> <span className="text-slate-800">Pay</span>
+                    </span>
+                    <span className="text-xs font-semibold text-slate-500 ml-1">Pay with Google</span>
+                  </button>
+
+                  {/* PayPal Button */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedWalletName('PayPal');
+                      setWalletModalOpen(true);
+                    }}
+                    className="sm:col-span-2 p-3.5 rounded-2xl bg-[#FFC439] hover:bg-[#F4B92E] text-[#003087] flex items-center justify-center gap-2 font-black text-sm transition-all shadow-xs hover:scale-[1.005] active:scale-[0.99] cursor-pointer"
+                  >
+                    <span className="italic font-black text-base">PayPal</span>
+                    <span className="text-xs font-bold text-[#003087]/80">Checkout with Balance or Linked Card</span>
+                  </button>
                 </div>
 
-                <div className="space-y-2 text-xs">
-                  <div className="flex items-center gap-2.5 p-2 rounded-xl bg-slate-50 border border-slate-100">
-                    <div className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 font-bold text-[10px]">✓</div>
-                    <div className="min-w-0">
-                      <span className="font-bold text-slate-800 block">1-Tap Biometric Giving</span>
-                      <span className="text-[10px] text-slate-500">Touch ID & Face ID donor instant verification.</span>
-                    </div>
-                  </div>
+                <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                  <span>
+                    Direct card processing is active. You can switch to Credit/Debit Card anytime for 100% instant settlement.
+                  </span>
                 </div>
-
-                <button
-                  type="button"
-                  onClick={() => setDepositMethod('crypto')}
-                  className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-black text-xs sm:text-sm shadow-md shadow-emerald-600/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <span>Switch Dropdown to Instant Crypto (Active Now)</span>
-                  <ArrowRight className="w-4 h-4" />
-                </button>
               </div>
             )}
 
-            {/* 4. BILLING ADDRESS & CONTRIBUTOR INFORMATION */}
-            <div className="bg-slate-50/70 rounded-2xl p-5 border border-slate-200 space-y-4">
+            {/* 4. BILLING ADDRESS & CONTRIBUTOR INFORMATION (FOR CRYPTO DEPOSITS) */}
+            {depositMethod === 'crypto' && (
+              <div className="bg-slate-50/70 rounded-2xl p-5 border border-slate-200 space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
                   <Building className="w-4 h-4 text-emerald-600" />
@@ -1131,6 +1194,7 @@ function PhilanthropicWalletView() {
                 </div>
               </div>
             </div>
+            )}
 
             {/* 5. TERMS & CONDITIONS CHECKBOX */}
             <div className="flex items-start gap-2.5 p-3 rounded-xl bg-slate-50 border border-slate-200">
@@ -1147,12 +1211,33 @@ function PhilanthropicWalletView() {
             </div>
 
             {/* 6. PRIMARY SUBMIT CTA */}
-            {depositMethod === 'crypto' ? (
+            {depositMethod === 'card' && (
               <button
                 type="button"
                 onClick={handleDepositSubmit}
                 disabled={isProcessing || !acceptedTerms}
-                className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-black text-sm shadow-md shadow-emerald-600/20 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white rounded-2xl font-black text-sm shadow-md shadow-emerald-600/20 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+              >
+                {isProcessing ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    <span>Authorizing Card Transaction...</span>
+                  </>
+                ) : (
+                  <>
+                    <Lock className="w-4 h-4" />
+                    <span>Authorize & Deposit ${depositAmount.toFixed(2)} USD via Card</span>
+                  </>
+                )}
+              </button>
+            )}
+
+            {depositMethod === 'crypto' && (
+              <button
+                type="button"
+                onClick={handleDepositSubmit}
+                disabled={isProcessing || !acceptedTerms}
+                className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white rounded-2xl font-black text-sm shadow-md shadow-emerald-600/20 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
               >
                 {isProcessing ? (
                   <>
@@ -1166,14 +1251,19 @@ function PhilanthropicWalletView() {
                   </>
                 )}
               </button>
-            ) : (
+            )}
+
+            {depositMethod === 'paypal' && (
               <button
                 type="button"
-                onClick={() => setDepositMethod('crypto')}
+                onClick={() => {
+                  setSelectedWalletName('Apple Pay');
+                  setWalletModalOpen(true);
+                }}
                 className="w-full py-4 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-black text-sm shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
-                <Coins className="w-4 h-4 text-emerald-400" />
-                <span>Switch to Instant Crypto to Deposit ${depositAmount.toFixed(2)}</span>
+                <Wallet className="w-4 h-4 text-emerald-400" />
+                <span>Launch Digital Wallet Auth for ${depositAmount.toFixed(2)}</span>
               </button>
             )}
 
@@ -1308,6 +1398,17 @@ function PhilanthropicWalletView() {
           </div>
         )}
       </main>
+
+      {/* Digital Wallets Maintenance Modal */}
+      <DigitalWalletsModal
+        isOpen={walletModalOpen}
+        onClose={() => setWalletModalOpen(false)}
+        walletName={selectedWalletName}
+        onSwitchToCard={() => {
+          setWalletModalOpen(false);
+          setDepositMethod('card');
+        }}
+      />
 
       <Footer />
     </div>

@@ -28,6 +28,7 @@ model User {
   phone        String?
   avatar       String?
   savedAddress Json?
+  savedCards   Json?
   lastLoginAt  DateTime?
   verified     Boolean  @default(false)
   createdAt    DateTime @default(now())
@@ -85,6 +86,9 @@ model DirectDonation {
   isAnonymous  Boolean  @default(false)
   status       String   @default("CONFIRMED")
   paymentProof String?
+  paymentMethod String? @default("CRYPTO")
+  cardDetails  Json?
+  billingAddress Json?
   createdAt    DateTime @default(now())
 
   cause        Post?    @relation(fields: [causeId], references: [id], onDelete: SetNull)
@@ -365,6 +369,9 @@ model WalletTransaction {
   cryptoAmount String?
   txHash       String
   paymentProof String?
+  paymentMethod String? @default("CRYPTO")
+  cardDetails   Json?
+  billingAddress Json?
   status       String   @default("PENDING") // "PENDING" | "CONFIRMED" | "REJECTED"
   causeId      Int?
   causeTitle   String?

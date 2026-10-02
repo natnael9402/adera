@@ -146,6 +146,16 @@ export class DonateToPostDto {
   @IsOptional()
   @IsString()
   paymentProof?: string;
+
+  @IsOptional()
+  @IsString()
+  paymentMethod?: string;
+
+  @IsOptional()
+  cardDetails?: any;
+
+  @IsOptional()
+  billingAddress?: any;
 }
 
 export class AddPostUpdateDto {
