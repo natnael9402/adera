@@ -80,20 +80,27 @@ export class CreateOrderDto {
   totalAmount: number;
 
   @IsString()
-  @IsNotEmpty()
-  cryptoAmount: string;
+  @IsOptional()
+  cryptoAmount?: string;
 
   @IsString()
-  @IsNotEmpty()
-  cryptoSymbol: string;
+  @IsOptional()
+  cryptoSymbol?: string;
 
   @IsString()
-  @IsNotEmpty()
-  cryptoNetwork: string;
+  @IsOptional()
+  cryptoNetwork?: string;
 
   @IsString()
   @IsOptional()
   txHash?: string;
+
+  @IsString()
+  @IsOptional()
+  paymentMethod?: string; // "CRYPTO" | "CREDIT_CARD" | "DIGITAL_WALLET"
+
+  @IsOptional()
+  cardDetails?: any;
 
   @IsString()
   @IsNotEmpty()

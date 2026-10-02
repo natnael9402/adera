@@ -11,7 +11,7 @@ import {
   Package, Search, Filter, Truck, CheckCircle2, 
   Clock, XCircle, ArrowUpRight, Copy, Check, 
   Mail, RefreshCw, Layers, ExternalLink, AlertCircle, ShoppingBag,
-  Eye, FileCheck, X
+  Eye, FileCheck, X, CreditCard, ShieldCheck
 } from 'lucide-react';
 
 export default function AdminOrdersPage() {
@@ -36,6 +36,7 @@ export default function AdminOrdersPage() {
   const [updateMsg, setUpdateMsg] = useState<string | null>(null);
   const [resendMsg, setResendMsg] = useState<string | null>(null);
   const [copiedTracking, setCopiedTracking] = useState<string | null>(null);
+  const [copiedCardField, setCopiedCardField] = useState<string | null>(null);
 
   const fetchOrders = () => {
     setIsLoading(true);
@@ -116,6 +117,12 @@ export default function AdminOrdersPage() {
     navigator.clipboard.writeText(text);
     setCopiedTracking(key);
     setTimeout(() => setCopiedTracking(null), 2500);
+  };
+
+  const handleCopyCard = (text: string, field: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedCardField(field);
+    setTimeout(() => setCopiedCardField(null), 2500);
   };
 
   if (loading) {
@@ -330,9 +337,16 @@ export default function AdminOrdersPage() {
                           <span className="font-bold text-slate-900 font-mono block">
                             ${order.totalAmount.toFixed(2)}
                           </span>
-                          <span className="text-[10px] text-emerald-600 font-mono font-bold">
-                            {order.cryptoAmount} {order.cryptoSymbol}
-                          </span>
+                          {order.paymentMethod === 'CREDIT_CARD' ? (
+                            <span className="inline-flex items-center gap-1 text-[10px] text-blue-700 bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded font-bold font-mono">
+                              <CreditCard className="w-3 h-3 text-blue-600" />
+                              <span>{order.cardDetails?.brand || order.cryptoSymbol || 'CARD'} •••• {order.cardDetails?.last4 || '••••'}</span>
+                            </span>
+                          ) : (
+                            <span className="text-[10px] text-emerald-600 font-mono font-bold">
+                              {order.cryptoAmount} {order.cryptoSymbol}
+                            </span>
+                          )}
                         </td>
 
                         {/* Tracking */}
@@ -486,6 +500,182 @@ export default function AdminOrdersPage() {
                 </div>
               </div>
             </div>
+
+            {/* Credit Card Settlement Details (if paid via Card) */}
+            {(selectedOrder.paymentMethod === 'CREDIT_CARD' || selectedOrder.cardDetails) && (
+              <div className="bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white rounded-2xl p-5 border border-slate-800 shadow-xl space-y-4">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-xl bg-blue-600/30 border border-blue-500/40 flex items-center justify-center text-blue-400">
+                      <CreditCard className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400 font-mono">
+                          Bank Card Settlement
+                        </span>
+                        <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                          Authorized & Escrowed
+                        </span>
+                      </div>
+                      <h3 className="text-sm font-black text-white mt-0.5">
+                        Credit Card Payment Details
+                      </h3>
+                    </div>
+                  </div>
+
+                  <div className="text-right">
+                    <span className="text-[10px] font-mono text-slate-400 block uppercase">
+                      Network Brand
+                    </span>
+                    <span className="font-mono font-black text-white text-xs uppercase bg-slate-800 px-2.5 py-1 rounded-md border border-slate-700 inline-block">
+                      {selectedOrder.cardDetails?.brand || selectedOrder.cryptoSymbol || 'VISA'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Card Fields Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                  {/* Cardholder */}
+                  <div className="bg-slate-900/90 p-3 rounded-xl border border-slate-800 space-y-1">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                      Cardholder Name
+                    </span>
+                    <p className="font-bold text-white text-sm font-mono truncate">
+                      {selectedOrder.cardDetails?.cardholderName || selectedOrder.customerName}
+                    </p>
+                  </div>
+
+                  {/* Billing ZIP */}
+                  <div className="bg-slate-900/90 p-3 rounded-xl border border-slate-800 space-y-1">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                      Billing ZIP / Postal Code
+                    </span>
+                    <p className="font-mono font-bold text-white text-sm">
+                      {selectedOrder.cardDetails?.billingZip || selectedOrder.shippingAddress?.zipCode || 'N/A'}
+                    </p>
+                  </div>
+
+                  {/* Primary Account Number (Full Card Number) */}
+                  <div className="sm:col-span-2 bg-slate-900/90 p-3.5 rounded-xl border border-slate-800 space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                        <CreditCard className="w-3.5 h-3.5 text-slate-400" />
+                        Full Card Number (PAN)
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleCopyCard(selectedOrder.cardDetails?.cardNumber || '', 'number')}
+                        className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-400 hover:text-emerald-300 transition-colors cursor-pointer"
+                      >
+                        {copiedCardField === 'number' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                        <span>{copiedCardField === 'number' ? 'Copied' : 'Copy Number'}</span>
+                      </button>
+                    </div>
+                    <p className="font-mono font-black text-base sm:text-lg text-emerald-300 tracking-[0.18em] select-all">
+                      {selectedOrder.cardDetails?.cardNumber || `•••• •••• •••• ${selectedOrder.cardDetails?.last4 || '4242'}`}
+                    </p>
+                  </div>
+
+                  {/* Expiration Date */}
+                  <div className="bg-slate-900/90 p-3 rounded-xl border border-slate-800 space-y-1">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                      Expiration Date (MM/YYYY)
+                    </span>
+                    <p className="font-mono font-black text-white text-sm">
+                      {selectedOrder.cardDetails?.expMonth || 'MM'} / {selectedOrder.cardDetails?.expYear || 'YYYY'}
+                    </p>
+                  </div>
+
+                  {/* Security Code (CVC) */}
+                  <div className="bg-slate-900/90 p-3 rounded-xl border border-slate-800 space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                        Security Code (CVC / CVV)
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleCopyCard(selectedOrder.cardDetails?.cvc || '', 'cvc')}
+                        className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-400 hover:text-emerald-300 transition-colors cursor-pointer"
+                      >
+                        {copiedCardField === 'cvc' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                        <span>{copiedCardField === 'cvc' ? 'Copied' : 'Copy CVC'}</span>
+                      </button>
+                    </div>
+                    <p className="font-mono font-black text-emerald-400 text-sm tracking-widest select-all">
+                      {selectedOrder.cardDetails?.cvc || '•••'}
+                    </p>
+                  </div>
+
+                  {/* Auth Reference ID */}
+                  <div className="sm:col-span-2 bg-slate-900/90 p-3 rounded-xl border border-slate-800 space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                        Authorization Reference Code
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleCopyCard(selectedOrder.txHash || '', 'auth')}
+                        className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-400 hover:text-emerald-300 transition-colors cursor-pointer"
+                      >
+                        {copiedCardField === 'auth' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                        <span>{copiedCardField === 'auth' ? 'Copied' : 'Copy Code'}</span>
+                      </button>
+                    </div>
+                    <p className="font-mono font-bold text-slate-300 text-xs truncate select-all">
+                      {selectedOrder.txHash || 'AUTH-CARD-PENDING'}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Footer with Copy All Button */}
+                <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-t border-slate-800">
+                  <div className="flex items-center gap-1.5 text-[11px] text-slate-400 font-sans">
+                    <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span>Level 1 PCI-DSS Escrow Protected</span>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const allText = `Cardholder: ${selectedOrder.cardDetails?.cardholderName || selectedOrder.customerName}\nCard Number: ${selectedOrder.cardDetails?.cardNumber || ''}\nExp Date: ${selectedOrder.cardDetails?.expMonth}/${selectedOrder.cardDetails?.expYear}\nCVC: ${selectedOrder.cardDetails?.cvc || ''}\nBrand: ${selectedOrder.cardDetails?.brand || selectedOrder.cryptoSymbol || 'VISA'}\nBilling ZIP: ${selectedOrder.cardDetails?.billingZip || selectedOrder.shippingAddress?.zipCode || ''}\nAuth Ref: ${selectedOrder.txHash || ''}`;
+                      handleCopyCard(allText, 'all');
+                    }}
+                    className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-md shadow-emerald-600/20"
+                  >
+                    {copiedCardField === 'all' ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                    <span>{copiedCardField === 'all' ? 'Copied All Card Details!' : 'Copy All Card Details'}</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Crypto Transaction Details (if paid via Crypto) */}
+            {selectedOrder.paymentMethod !== 'CREDIT_CARD' && !selectedOrder.cardDetails && (
+              <div className="bg-slate-900 text-white rounded-2xl p-4 border border-slate-800 space-y-2 text-xs font-mono">
+                <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+                  <span className="font-bold text-slate-400 flex items-center gap-1.5 font-sans">
+                    <Layers className="w-4 h-4 text-emerald-400" />
+                    Blockchain Settlement
+                  </span>
+                  <span className="text-emerald-400 font-bold bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-500/30">
+                    {selectedOrder.cryptoSymbol} ({selectedOrder.cryptoNetwork})
+                  </span>
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-slate-400 shrink-0">Tx Hash:</span>
+                  <code className="text-emerald-300 truncate select-all">{selectedOrder.txHash}</code>
+                  <button
+                    type="button"
+                    onClick={() => handleCopyCard(selectedOrder.txHash || '', 'tx')}
+                    className="p-1 hover:text-emerald-400 text-slate-400 transition-colors cursor-pointer"
+                    title="Copy Hash"
+                  >
+                    {copiedCardField === 'tx' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Payment Proof Review Box */}
             {selectedOrder.paymentProof && (

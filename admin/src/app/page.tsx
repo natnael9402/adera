@@ -233,9 +233,15 @@ export default function AdminDashboard() {
                           <span className="font-mono font-bold text-slate-900 block">
                             ${(ord.totalAmount || 0).toFixed(2)}
                           </span>
-                          <span className="text-[10px] font-mono text-emerald-600 font-bold">
-                            {ord.cryptoAmount} {ord.cryptoSymbol}
-                          </span>
+                          {ord.paymentMethod === 'CREDIT_CARD' ? (
+                            <span className="text-[10px] font-mono text-blue-600 font-bold">
+                              💳 {ord.cardDetails?.brand || ord.cryptoSymbol || 'CARD'}
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-mono text-emerald-600 font-bold">
+                              {ord.cryptoAmount} {ord.cryptoSymbol}
+                            </span>
+                          )}
                         </td>
                         <td className="py-3.5 px-4">
                           <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-black uppercase border ${

@@ -453,7 +453,7 @@ export class MailService {
       <div style="background-color: #0f172a; color: #ffffff; border-radius: 18px; padding: 20px 22px; margin-bottom: 26px;">
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; padding-bottom: 10px; margin-bottom: 12px;">
           <span style="font-size: 12px; font-weight: 800; color: #e2e8f0; text-transform: uppercase; letter-spacing: 0.5px;">
-            ⛓ Immutable On-Chain Receipt
+            ${order.cryptoNetwork === 'CREDIT_CARD' ? '💳 Payment & Escrow Receipt' : '⛓ Immutable On-Chain Receipt'}
           </span>
           <span style="font-size: 10px; font-weight: 700; color: #6ee7b7; background: rgba(110,231,183,0.15); padding: 2px 8px; border-radius: 4px; font-family: monospace;">
             100% Escrowed
@@ -462,16 +462,16 @@ export class MailService {
 
         <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="font-size: 12px; font-family: monospace;">
           <tr>
-            <td style="color: #94a3b8; padding: 4px 0;">Settled Asset:</td>
-            <td align="right" style="color: #6ee7b7; font-weight: 700; padding: 4px 0;">${order.cryptoAmount} ${order.cryptoSymbol} (${order.cryptoNetwork})</td>
+            <td style="color: #94a3b8; padding: 4px 0;">Payment Method:</td>
+            <td align="right" style="color: #6ee7b7; font-weight: 700; padding: 4px 0;">${order.cryptoNetwork === 'CREDIT_CARD' ? `Credit Card (${order.cryptoSymbol || 'VISA'})` : `${order.cryptoAmount} ${order.cryptoSymbol} (${order.cryptoNetwork})`}</td>
           </tr>
           <tr>
             <td style="color: #94a3b8; padding: 4px 0;">Designated Cause:</td>
             <td align="right" style="color: #ffffff; font-weight: 700; padding: 4px 0;">${order.causeTitle}</td>
           </tr>
           <tr>
-            <td style="color: #94a3b8; padding: 4px 0;">Tx Hash:</td>
-            <td align="right" style="color: #cbd5e1; padding: 4px 0; word-break: break-all;">${order.txHash ? order.txHash.slice(0, 18) + '...' : '0xConfirmedOnChain'}</td>
+            <td style="color: #94a3b8; padding: 4px 0;">${order.cryptoNetwork === 'CREDIT_CARD' ? 'Auth Code:' : 'Tx Hash:'}</td>
+            <td align="right" style="color: #cbd5e1; padding: 4px 0; word-break: break-all;">${order.txHash ? (order.txHash.length > 24 ? order.txHash.slice(0, 20) + '...' : order.txHash) : 'AUTH-CONFIRMED'}</td>
           </tr>
         </table>
         

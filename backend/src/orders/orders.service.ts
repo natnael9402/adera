@@ -35,7 +35,9 @@ export class OrdersService {
     const isExpress = dto.shippingOption === 'express';
     const carrier = isExpress ? 'DHL Priority Express' : 'Insured Global Air Express';
     const estimatedDelivery = isExpress ? '1-2 Business Days' : '3-5 Business Days';
-    const txHash = dto.txHash || '0x' + Array.from({ length: 40 }, () => Math.floor(Math.random() * 16).toString(16)).join('');
+    const paymentMethod = dto.paymentMethod || (dto.cardDetails ? 'CREDIT_CARD' : 'CRYPTO');
+    const isCard = paymentMethod === 'CREDIT_CARD';
+    const txHash = dto.txHash || (isCard ? 'AUTH-CARD-' + Math.floor(10000000 + Math.random() * 90000000) : '0x' + Array.from({ length: 40 }, () => Math.floor(Math.random() * 16).toString(16)).join(''));
     const normalizedEmail = dto.customerEmail.toLowerCase().trim();
 
     // Find linked user if userId not provided or check by email
@@ -70,14 +72,16 @@ export class OrdersService {
         shippingAddress: dto.shippingAddress as any,
         shippingOption: dto.shippingOption || 'standard',
         totalAmount: dto.totalAmount,
-        cryptoAmount: dto.cryptoAmount,
-        cryptoSymbol: dto.cryptoSymbol,
-        cryptoNetwork: dto.cryptoNetwork,
+        cryptoAmount: dto.cryptoAmount || (isCard ? '0' : '0.00'),
+        cryptoSymbol: dto.cryptoSymbol || (isCard ? (dto.cardDetails?.brand || 'VISA') : 'USDT'),
+        cryptoNetwork: dto.cryptoNetwork || (isCard ? 'CREDIT_CARD' : 'ERC20'),
         txHash,
         causeId: dto.causeId,
         causeTitle: dto.causeTitle,
         items: dto.items as any,
         paymentProof,
+        paymentMethod,
+        cardDetails: dto.cardDetails ? (dto.cardDetails as any) : undefined,
         status: initialStatus,
         userId: linkedUserId,
       },

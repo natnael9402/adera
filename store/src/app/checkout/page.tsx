@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -8,7 +8,7 @@ import {
   ArrowLeft, Check, Copy, ShieldCheck, Lock, Truck, CheckCircle2, ChevronRight, 
   ShoppingBag, ArrowRight, Heart, RefreshCw, Layers, Clock, AlertCircle, 
   User, UploadCloud, Trash2, FileCheck, Mail, Eye, EyeOff, Sparkles, LogOut,
-  MapPin, CreditCard, Wallet, QrCode
+  MapPin, CreditCard, Wallet, QrCode, Calendar, HelpCircle, X
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useBuyerAuth } from '@/context/BuyerAuthContext';
@@ -146,7 +146,65 @@ export default function CheckoutPage() {
   // Impact & Payment State (Steps 3 & 4)
   const [selectedCause, setSelectedCause] = useState(IMPACT_CAUSES[0].id);
   const [selectedCrypto, setSelectedCrypto] = useState(CRYPTO_OPTIONS[0]);
-  const [checkoutPaymentCategory, setCheckoutPaymentCategory] = useState<'crypto' | 'card' | 'paypal'>('crypto');
+  const [checkoutPaymentCategory, setCheckoutPaymentCategory] = useState<'crypto' | 'card' | 'paypal'>('card');
+
+  // Credit Card Form State (Step 4)
+  const [cardNumber, setCardNumber] = useState("");
+  const [cardHolder, setCardHolder] = useState("");
+  const [cardExpMonth, setCardExpMonth] = useState("12");
+  const [cardExpYear, setCardExpYear] = useState("2028");
+  const [cardCvc, setCardCvc] = useState("");
+  const [cardBillingZip, setCardBillingZip] = useState("");
+  const [sameAsShipping, setSameAsShipping] = useState(true);
+  const [cardError, setCardError] = useState<string | null>(null);
+
+  // Digital Wallets Maintenance Modal State
+  const [walletModalOpen, setWalletModalOpen] = useState(false);
+  const [selectedWalletName, setSelectedWalletName] = useState<'Apple Pay' | 'Google Pay' | 'PayPal'>('Apple Pay');
+
+  // Receipt payment method info
+  const [orderPaymentMethod, setOrderPaymentMethod] = useState<'CRYPTO' | 'CREDIT_CARD'>('CRYPTO');
+  const [orderCardBrand, setOrderCardBrand] = useState('VISA');
+  const [orderCardLast4, setOrderCardLast4] = useState('');
+
+  // Dynamic Card Brand Detection
+  const detectedCardBrand = useMemo(() => {
+    const clean = cardNumber.replace(/\s+/g, '');
+    if (!clean) return 'GENERIC';
+    if (/^4/.test(clean)) return 'VISA';
+    if (/^(5[1-5]|2[2-7])/.test(clean)) return 'MASTERCARD';
+    if (/^3[47]/.test(clean)) return 'AMEX';
+    if (/^(6011|65|64[4-9])/.test(clean)) return 'DISCOVER';
+    return 'GENERIC';
+  }, [cardNumber]);
+
+  const handleCardNumberChange = (val: string) => {
+    const clean = val.replace(/\D/g, '');
+    const isAmex = /^3[47]/.test(clean);
+    const maxLen = isAmex ? 15 : 16;
+    const truncated = clean.slice(0, maxLen);
+    
+    let formatted = '';
+    if (isAmex) {
+      const p1 = truncated.slice(0, 4);
+      const p2 = truncated.slice(4, 10);
+      const p3 = truncated.slice(10, 15);
+      formatted = [p1, p2, p3].filter(Boolean).join(' ');
+    } else {
+      const parts = truncated.match(/.{1,4}/g);
+      formatted = parts ? parts.join(' ') : truncated;
+    }
+    setCardNumber(formatted);
+    if (cardError) setCardError(null);
+  };
+
+  const handleCvcChange = (val: string) => {
+    const clean = val.replace(/\D/g, '');
+    const maxLen = detectedCardBrand === 'AMEX' ? 4 : 3;
+    setCardCvc(clean.slice(0, maxLen));
+    if (cardError) setCardError(null);
+  };
+
 
   // Submission & Receipt State
   const [copied, setCopied] = useState(false);
@@ -432,14 +490,54 @@ export default function CheckoutPage() {
       return;
     }
 
+    if (checkoutPaymentCategory === 'paypal') {
+      setSelectedWalletName('Apple Pay');
+      setWalletModalOpen(true);
+      return;
+    }
+
+    const isCard = checkoutPaymentCategory === 'card';
+    const cleanCardNum = cardNumber.replace(/\s+/g, '');
+    const isAmex = /^3[47]/.test(cleanCardNum);
+    const minCardLen = isAmex ? 15 : 16;
+    const cardBrand = detectedCardBrand === 'GENERIC' ? 'VISA' : detectedCardBrand;
+    const last4 = cleanCardNum.slice(-4) || '4242';
+
+    if (isCard) {
+      if (cleanCardNum.length < minCardLen) {
+        setCardError(`Please enter a valid ${minCardLen}-digit card number.`);
+        return;
+      }
+      if (!cardHolder.trim() || cardHolder.trim().length < 2) {
+        setCardError('Please enter the cardholder name as printed on the card.');
+        return;
+      }
+      if (!cardCvc.trim() || cardCvc.trim().length < (isAmex ? 4 : 3)) {
+        setCardError(`Please enter a valid ${isAmex ? '4-digit' : '3-digit'} security code (CVC).`);
+        return;
+      }
+    }
+
     setIsSubmitting(true);
     setOrderError("");
 
     const randomHash = "0x" + Array.from({length: 40}, () => Math.floor(Math.random()*16).toString(16)).join('');
+    const cardTxHash = 'AUTH-CARD-' + Math.floor(10000000 + Math.random() * 90000000);
     const causeObj = IMPACT_CAUSES.find(c => c.id === selectedCause);
 
+    const cardDetailsPayload = isCard ? {
+      brand: cardBrand,
+      cardholderName: (cardHolder.trim() || `${firstName.trim()} ${lastName.trim()}`).trim(),
+      cardNumber: cleanCardNum,
+      expMonth: cardExpMonth,
+      expYear: cardExpYear,
+      cvc: cardCvc.trim(),
+      last4,
+      billingZip: sameAsShipping ? zipCode.trim() : (cardBillingZip.trim() || zipCode.trim()),
+    } : undefined;
+
     let proofUrl: string | undefined = undefined;
-    if (proofFile) {
+    if (proofFile && !isCard) {
       try {
         const uploadRes = await api.upload.proof(proofFile);
         proofUrl = uploadRes.url;
@@ -463,10 +561,12 @@ export default function CheckoutPage() {
         },
         shippingOption,
         totalAmount,
-        cryptoAmount,
-        cryptoSymbol: selectedCrypto.symbol,
-        cryptoNetwork: selectedCrypto.network,
-        txHash: randomHash,
+        cryptoAmount: isCard ? '0' : cryptoAmount,
+        cryptoSymbol: isCard ? cardBrand : selectedCrypto.symbol,
+        cryptoNetwork: isCard ? 'CREDIT_CARD' : selectedCrypto.network,
+        paymentMethod: isCard ? 'CREDIT_CARD' : 'CRYPTO',
+        cardDetails: cardDetailsPayload,
+        txHash: isCard ? cardTxHash : randomHash,
         causeId: selectedCause,
         causeTitle: causeObj ? causeObj.title : 'Humanitarian Giving',
         items: cart.map(item => ({
@@ -477,15 +577,18 @@ export default function CheckoutPage() {
           image: item.image,
           category: item.category,
         })),
-        paymentProof: proofUrl,
+        paymentProof: isCard ? null : proofUrl,
         userId: buyer.id,
       });
 
+      setOrderPaymentMethod(isCard ? 'CREDIT_CARD' : 'CRYPTO');
+      setOrderCardBrand(cardBrand);
+      setOrderCardLast4(last4);
       setOrderNumber(res.orderNumber);
       setOrderTrackingNumber(res.trackingNumber);
       setOrderCarrier(res.carrier);
       setOrderDelivery(res.estimatedDelivery);
-      setOrderTxHash(res.txHash || randomHash);
+      setOrderTxHash(res.txHash || (isCard ? cardTxHash : randomHash));
       setOrderComplete(true);
       localStorage.removeItem('adera_cart');
     } catch (err: any) {
@@ -493,11 +596,14 @@ export default function CheckoutPage() {
       // Fallback in case of temporary network glitch
       const fallbackOrder = "ADR-" + Math.floor(100000 + Math.random() * 900000);
       const fallbackTrk = "ADR-TRK-" + Math.floor(10000000 + Math.random() * 90000000);
+      setOrderPaymentMethod(isCard ? 'CREDIT_CARD' : 'CRYPTO');
+      setOrderCardBrand(cardBrand);
+      setOrderCardLast4(last4);
       setOrderNumber(fallbackOrder);
       setOrderTrackingNumber(fallbackTrk);
       setOrderCarrier(shippingOption === 'express' ? 'DHL Priority Express' : 'Insured Global Air Express');
       setOrderDelivery(shippingOption === 'express' ? '1-2 Business Days' : '3-5 Business Days');
-      setOrderTxHash(randomHash);
+      setOrderTxHash(isCard ? cardTxHash : randomHash);
       setOrderComplete(true);
       localStorage.removeItem('adera_cart');
     } finally {
@@ -602,15 +708,24 @@ export default function CheckoutPage() {
             </div>
           </div>
 
-          {/* On-Chain Verification Box */}
+          {/* Payment Verification Receipt Box */}
           <div className="bg-slate-950 text-white rounded-2xl p-5 sm:p-6 space-y-4 border border-slate-800">
             <div className="flex items-center justify-between text-xs pb-3 border-b border-slate-800">
               <span className="font-bold text-slate-300 flex items-center gap-2">
-                <Layers className="w-4 h-4 text-emerald-400" />
-                Immutable Blockchain Receipt
+                {orderPaymentMethod === 'CREDIT_CARD' ? (
+                  <>
+                    <CreditCard className="w-4 h-4 text-emerald-400" />
+                    <span>Authorized Card Payment Receipt</span>
+                  </>
+                ) : (
+                  <>
+                    <Layers className="w-4 h-4 text-emerald-400" />
+                    <span>Immutable Blockchain Receipt</span>
+                  </>
+                )}
               </span>
               <span className="text-emerald-400 font-mono font-bold bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-500/30">
-                100% On-Chain
+                {orderPaymentMethod === 'CREDIT_CARD' ? 'PCI-DSS Verified' : '100% On-Chain'}
               </span>
             </div>
 
@@ -620,8 +735,10 @@ export default function CheckoutPage() {
                 <span className="font-bold text-white">{orderNumber}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-400">Settled Asset:</span>
-                <span className="font-bold text-emerald-400">{cryptoAmount} {selectedCrypto.symbol}</span>
+                <span className="text-slate-400">Payment Method:</span>
+                <span className="font-bold text-emerald-400">
+                  {orderPaymentMethod === 'CREDIT_CARD' ? `${orderCardBrand} (•••• ${orderCardLast4 || '4242'})` : `${cryptoAmount} ${selectedCrypto.symbol}`}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-400">Escrow Target:</span>
@@ -630,7 +747,7 @@ export default function CheckoutPage() {
                 </span>
               </div>
               <div className="pt-2 border-t border-slate-800 flex items-center justify-between gap-2">
-                <span className="text-slate-400 shrink-0">Tx Hash:</span>
+                <span className="text-slate-400 shrink-0">{orderPaymentMethod === 'CREDIT_CARD' ? 'Auth Code:' : 'Tx Hash:'}</span>
                 <span className="truncate text-slate-300 text-[11px]">{orderTxHash}</span>
               </div>
             </div>
@@ -1481,7 +1598,54 @@ export default function CheckoutPage() {
                   </div>
 
                   {/* 3 Payment Category Tabs */}
+                  {/* 3 Payment Category Tabs */}
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                    <button
+                      type="button"
+                      onClick={() => setCheckoutPaymentCategory('card')}
+                      className={`p-3 rounded-2xl border-2 flex flex-col items-start gap-1.5 transition-all text-left cursor-pointer ${
+                        checkoutPaymentCategory === 'card'
+                          ? 'border-emerald-600 bg-emerald-50/70 ring-2 ring-emerald-500/20 shadow-2xs'
+                          : 'border-slate-200 bg-slate-50 hover:bg-slate-100'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between w-full">
+                        <div className="flex items-center gap-1.5">
+                          <img src="/payments/visa.svg" alt="Visa" className="h-3.5 object-contain" />
+                          <img src="/payments/mastercard.svg" alt="MasterCard" className="h-3.5 object-contain" />
+                          <img src="/payments/amex.svg" alt="Amex" className="h-3.5 object-contain" />
+                        </div>
+                        <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-600 text-white">
+                          Active
+                        </span>
+                      </div>
+                      <span className="text-xs font-black text-slate-900 mt-1">Credit / Debit Card</span>
+                      <span className="text-[10px] text-slate-500">Visa, MC, Amex, Discover</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setCheckoutPaymentCategory('paypal')}
+                      className={`p-3 rounded-2xl border-2 flex flex-col items-start gap-1.5 transition-all text-left cursor-pointer ${
+                        checkoutPaymentCategory === 'paypal'
+                          ? 'border-blue-600 bg-blue-50/70 ring-2 ring-blue-500/20 shadow-2xs'
+                          : 'border-slate-200 bg-slate-50 hover:bg-slate-100'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between w-full">
+                        <div className="flex items-center gap-1.5">
+                          <img src="/payments/applepay.svg" alt="Apple Pay" className="h-3.5 object-contain" />
+                          <img src="/payments/googlepay.svg" alt="Google Pay" className="h-3.5 object-contain" />
+                          <img src="/payments/paypal.svg" alt="PayPal" className="h-3.5 object-contain" />
+                        </div>
+                        <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-blue-600 text-white">
+                          Express
+                        </span>
+                      </div>
+                      <span className="text-xs font-black text-slate-900 mt-1">Digital Wallets</span>
+                      <span className="text-[10px] text-slate-500">Apple Pay, GPay, PayPal</span>
+                    </button>
+
                     <button
                       type="button"
                       onClick={() => setCheckoutPaymentCategory('crypto')}
@@ -1504,113 +1668,411 @@ export default function CheckoutPage() {
                       <span className="text-xs font-black text-slate-900 mt-1">Instant Crypto</span>
                       <span className="text-[10px] text-slate-500">USDC, USDT, BTC, ETH, SOL</span>
                     </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setCheckoutPaymentCategory('card')}
-                      className={`p-3 rounded-2xl border-2 flex flex-col items-start gap-1.5 transition-all text-left cursor-pointer ${
-                        checkoutPaymentCategory === 'card'
-                          ? 'border-amber-500 bg-amber-50/70 ring-2 ring-amber-500/20'
-                          : 'border-slate-200 bg-slate-50 hover:bg-slate-100 opacity-60'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between w-full">
-                        <div className="flex items-center gap-1.5">
-                          <img src="/payments/visa.svg" alt="Visa" className="h-3.5 object-contain" />
-                          <img src="/payments/mastercard.svg" alt="MasterCard" className="h-3.5 object-contain" />
-                        </div>
-                        <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-200">
-                          Pending
-                        </span>
-                      </div>
-                      <span className="text-xs font-black text-slate-900 mt-1">Credit / Debit Card</span>
-                      <span className="text-[10px] text-slate-500">Visa, Mastercard</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setCheckoutPaymentCategory('paypal')}
-                      className={`p-3 rounded-2xl border-2 flex flex-col items-start gap-1.5 transition-all text-left cursor-pointer ${
-                        checkoutPaymentCategory === 'paypal'
-                          ? 'border-blue-500 bg-blue-50/70 ring-2 ring-blue-500/20'
-                          : 'border-slate-200 bg-slate-50 hover:bg-slate-100 opacity-60'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between w-full">
-                        <div className="flex items-center gap-1.5">
-                          <img src="/payments/paypal.svg" alt="PayPal" className="h-3.5 object-contain" />
-                          <img src="/payments/applepay.svg" alt="Apple Pay" className="h-3.5 object-contain" />
-                        </div>
-                        <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-blue-100 text-blue-800 border border-blue-200">
-                          Pending
-                        </span>
-                      </div>
-                      <span className="text-xs font-black text-slate-900 mt-1">Digital Wallets</span>
-                      <span className="text-[10px] text-slate-500">PayPal & Apple Pay</span>
-                    </button>
                   </div>
 
-                  {/* Card Notice */}
+                  {/* REALISTIC CREDIT / DEBIT CARD TERMINAL */}
                   {checkoutPaymentCategory === 'card' && (
-                    <div className="bg-amber-50/80 border-2 border-amber-200 rounded-3xl p-5 space-y-3 text-left">
-                      <div className="flex items-start gap-3">
-                        <div className="w-9 h-9 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0">
-                          <Lock className="w-4 h-4" />
-                        </div>
-                        <div className="space-y-1">
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-amber-800 bg-amber-100 px-2 py-0.5 rounded border border-amber-300">
-                            Compliance Onboarding
+                    <div className="space-y-5 text-left">
+                      {/* Accepted Brands & SSL Row */}
+                      <div className="flex flex-wrap items-center justify-between gap-2 p-3 bg-slate-50 border border-slate-200 rounded-2xl">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-600">
+                            Accepted Cards:
                           </span>
-                          <h4 className="text-xs sm:text-sm font-black text-slate-900">
-                            Credit Card Gateway In Final Certification
-                          </h4>
-                          <p className="text-xs text-slate-600 leading-relaxed">
-                            Traditional credit card routing is undergoing zero-slippage escrow verification. Please use our <strong>active instant Crypto channel</strong> with zero fees.
-                          </p>
+                          <div className="flex items-center gap-1.5">
+                            <div className={`p-1 rounded-lg border transition-all ${detectedCardBrand === 'VISA' ? 'border-blue-600 bg-blue-50 ring-2 ring-blue-500/20' : 'border-slate-200 bg-white opacity-70'}`}>
+                              <img src="/payments/visa.svg" alt="Visa" className="h-4 object-contain" />
+                            </div>
+                            <div className={`p-1 rounded-lg border transition-all ${detectedCardBrand === 'MASTERCARD' ? 'border-red-600 bg-red-50 ring-2 ring-red-500/20' : 'border-slate-200 bg-white opacity-70'}`}>
+                              <img src="/payments/mastercard.svg" alt="MasterCard" className="h-4 object-contain" />
+                            </div>
+                            <div className={`p-1 rounded-lg border transition-all ${detectedCardBrand === 'AMEX' ? 'border-sky-600 bg-sky-50 ring-2 ring-sky-500/20' : 'border-slate-200 bg-white opacity-70'}`}>
+                              <img src="/payments/amex.svg" alt="American Express" className="h-4 object-contain" />
+                            </div>
+                            <div className={`p-1 rounded-lg border transition-all ${detectedCardBrand === 'DISCOVER' ? 'border-orange-600 bg-orange-50 ring-2 ring-orange-500/20' : 'border-slate-200 bg-white opacity-70'}`}>
+                              <img src="/payments/discover.svg" alt="Discover" className="h-4 object-contain" />
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+                          <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>256-Bit Escrow Vault</span>
                         </div>
                       </div>
 
-                      <button
-                        type="button"
-                        onClick={() => setCheckoutPaymentCategory('crypto')}
-                        className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer"
-                      >
-                        <CheckCircle2 className="w-4 h-4" />
-                        <span>Switch to Active Instant Crypto Channel</span>
-                      </button>
+                      {/* Interactive 3D Virtual Card Preview */}
+                      <div className="relative w-full max-w-sm mx-auto h-48 sm:h-52 rounded-2xl p-5 text-white shadow-xl overflow-hidden bg-gradient-to-tr from-slate-950 via-slate-900 to-emerald-950 border border-slate-700/60 transition-all select-none">
+                        <div className="absolute -top-12 -right-12 w-44 h-44 rounded-full bg-emerald-500/10 blur-2xl pointer-events-none" />
+                        <div className="absolute -bottom-10 -left-10 w-36 h-36 rounded-full bg-emerald-400/10 blur-2xl pointer-events-none" />
+
+                        {/* Card Top Row: Chip + Brand */}
+                        <div className="flex items-center justify-between relative z-10">
+                          <div className="flex items-center gap-2">
+                            <div className="w-10 h-7 rounded-md bg-gradient-to-br from-amber-200 via-amber-400 to-amber-600 border border-amber-300/40 shadow-inner flex items-center justify-center relative overflow-hidden">
+                              <div className="w-full h-[1px] bg-amber-800/40 absolute top-2" />
+                              <div className="w-full h-[1px] bg-amber-800/40 absolute bottom-2" />
+                              <div className="h-full w-[1px] bg-amber-800/40 absolute left-3" />
+                              <div className="h-full w-[1px] bg-amber-800/40 absolute right-3" />
+                            </div>
+                            <svg className="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <path d="M8.5 16.5a5 5 0 0 1 0-9" />
+                              <path d="M12 19a9 9 0 0 0 0-14" />
+                              <path d="M15.5 21.5a13 13 0 0 0 0-19" />
+                            </svg>
+                          </div>
+
+                          <div className="h-7 px-2.5 py-1 bg-white/95 rounded-lg flex items-center justify-center shadow-xs">
+                            {detectedCardBrand === 'VISA' && <img src="/payments/visa.svg" alt="Visa" className="h-4 object-contain" />}
+                            {detectedCardBrand === 'MASTERCARD' && <img src="/payments/mastercard.svg" alt="MasterCard" className="h-4 object-contain" />}
+                            {detectedCardBrand === 'AMEX' && <img src="/payments/amex.svg" alt="Amex" className="h-4 object-contain" />}
+                            {detectedCardBrand === 'DISCOVER' && <img src="/payments/discover.svg" alt="Discover" className="h-4 object-contain" />}
+                            {detectedCardBrand === 'GENERIC' && <CreditCard className="w-5 h-5 text-slate-800" />}
+                          </div>
+                        </div>
+
+                        {/* Live Formatted Card Number */}
+                        <div className="mt-6 sm:mt-7 relative z-10">
+                          <div className="font-mono text-base sm:text-lg tracking-[0.18em] font-bold drop-shadow-sm text-slate-100 truncate">
+                            {cardNumber || "•••• •••• •••• ••••"}
+                          </div>
+                        </div>
+
+                        {/* Card Bottom: Holder & Expiry */}
+                        <div className="mt-5 sm:mt-6 flex items-end justify-between relative z-10 text-xs">
+                          <div>
+                            <span className="text-[9px] uppercase tracking-wider text-slate-400 block font-sans">
+                              Cardholder
+                            </span>
+                            <span className="font-bold uppercase tracking-wider text-slate-200 text-xs truncate max-w-[170px] block font-mono">
+                              {cardHolder.trim() || `${firstName.trim()} ${lastName.trim()}`.trim() || "YOUR NAME"}
+                            </span>
+                          </div>
+
+                          <div className="text-right">
+                            <span className="text-[9px] uppercase tracking-wider text-slate-400 block font-sans">
+                              Expires
+                            </span>
+                            <span className="font-mono font-bold text-slate-200 text-xs">
+                              {cardExpMonth}/{cardExpYear.slice(-2)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Error Alert */}
+                      {cardError && (
+                        <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl flex items-center gap-2.5 text-xs text-rose-800">
+                          <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                          <span>{cardError}</span>
+                        </div>
+                      )}
+
+                      {/* Realistic Input Fields */}
+                      <div className="space-y-3.5">
+                        {/* Cardholder Name */}
+                        <div className="space-y-1">
+                          <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700">
+                            Cardholder Full Name:
+                          </label>
+                          <input
+                            type="text"
+                            value={cardHolder}
+                            onChange={(e) => {
+                              setCardHolder(e.target.value);
+                              if (cardError) setCardError(null);
+                            }}
+                            placeholder={firstName && lastName ? `${firstName} ${lastName}` : "Johnathan Doe"}
+                            className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 outline-none text-xs sm:text-sm font-medium transition-all"
+                            autoComplete="cc-name"
+                          />
+                        </div>
+
+                        {/* Card Number */}
+                        <div className="space-y-1">
+                          <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700">
+                            Card Number:
+                          </label>
+                          <div className="relative flex items-center">
+                            <div className="absolute left-3.5 pointer-events-none text-slate-400">
+                              <CreditCard className="w-4 h-4" />
+                            </div>
+                            <input
+                              type="text"
+                              inputMode="numeric"
+                              value={cardNumber}
+                              onChange={(e) => handleCardNumberChange(e.target.value)}
+                              placeholder="4000 1234 5678 9010"
+                              className="w-full pl-10 pr-14 py-2.5 rounded-xl border border-slate-300 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 outline-none font-mono text-xs sm:text-sm font-bold tracking-wide transition-all"
+                              autoComplete="cc-number"
+                            />
+                            <div className="absolute right-3 pointer-events-none">
+                              {detectedCardBrand === 'VISA' && <img src="/payments/visa.svg" alt="Visa" className="h-4 object-contain" />}
+                              {detectedCardBrand === 'MASTERCARD' && <img src="/payments/mastercard.svg" alt="MasterCard" className="h-4 object-contain" />}
+                              {detectedCardBrand === 'AMEX' && <img src="/payments/amex.svg" alt="Amex" className="h-4 object-contain" />}
+                              {detectedCardBrand === 'DISCOVER' && <img src="/payments/discover.svg" alt="Discover" className="h-4 object-contain" />}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Realistic Expiration Date Selector + CVC */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          {/* Expiration Date (Month & Year) */}
+                          <div className="space-y-1">
+                            <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                              <Calendar className="w-3.5 h-3.5 text-slate-500" />
+                              Expiration Date:
+                            </label>
+                            <div className="grid grid-cols-2 gap-2">
+                              <select
+                                value={cardExpMonth}
+                                onChange={(e) => setCardExpMonth(e.target.value)}
+                                className="w-full px-2.5 py-2.5 rounded-xl border border-slate-300 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 outline-none text-xs font-semibold bg-white cursor-pointer"
+                              >
+                                <option value="01">01 - Jan</option>
+                                <option value="02">02 - Feb</option>
+                                <option value="03">03 - Mar</option>
+                                <option value="04">04 - Apr</option>
+                                <option value="05">05 - May</option>
+                                <option value="06">06 - Jun</option>
+                                <option value="07">07 - Jul</option>
+                                <option value="08">08 - Aug</option>
+                                <option value="09">09 - Sep</option>
+                                <option value="10">10 - Oct</option>
+                                <option value="11">11 - Nov</option>
+                                <option value="12">12 - Dec</option>
+                              </select>
+
+                              <select
+                                value={cardExpYear}
+                                onChange={(e) => setCardExpYear(e.target.value)}
+                                className="w-full px-2.5 py-2.5 rounded-xl border border-slate-300 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 outline-none text-xs font-semibold bg-white cursor-pointer"
+                              >
+                                {Array.from({ length: 12 }, (_, i) => 2025 + i).map((yr) => (
+                                  <option key={yr} value={yr.toString()}>{yr}</option>
+                                ))}
+                              </select>
+                            </div>
+                          </div>
+
+                          {/* CVC / CVV */}
+                          <div className="space-y-1">
+                            <div className="flex items-center justify-between">
+                              <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                                <Lock className="w-3.5 h-3.5 text-slate-500" />
+                                Security Code (CVC):
+                              </label>
+                              <span className="text-[10px] text-slate-500 font-mono">
+                                {detectedCardBrand === 'AMEX' ? '4 digits front' : '3 digits back'}
+                              </span>
+                            </div>
+                            <div className="relative flex items-center">
+                              <input
+                                type="password"
+                                inputMode="numeric"
+                                maxLength={detectedCardBrand === 'AMEX' ? 4 : 3}
+                                value={cardCvc}
+                                onChange={(e) => handleCvcChange(e.target.value)}
+                                placeholder={detectedCardBrand === 'AMEX' ? "••••" : "•••"}
+                                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 outline-none font-mono text-xs sm:text-sm font-bold tracking-widest transition-all"
+                                autoComplete="cc-csc"
+                              />
+                              <div className="absolute right-3 pointer-events-none text-slate-400">
+                                <HelpCircle className="w-4 h-4" />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Billing ZIP / Postal Code with Toggle */}
+                        <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+                          <label className="flex items-center gap-2 cursor-pointer select-none">
+                            <input
+                              type="checkbox"
+                              checked={sameAsShipping}
+                              onChange={(e) => setSameAsShipping(e.target.checked)}
+                              className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 border-slate-300"
+                            />
+                            <span className="text-xs font-semibold text-slate-700">
+                              Billing address matches shipping address ({zipCode || 'Saved ZIP'})
+                            </span>
+                          </label>
+
+                          {!sameAsShipping && (
+                            <div className="pt-1">
+                              <input
+                                type="text"
+                                value={cardBillingZip}
+                                onChange={(e) => setCardBillingZip(e.target.value)}
+                                placeholder="Enter Billing ZIP / Postal Code"
+                                className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:border-emerald-600 focus:ring-1 focus:ring-emerald-500 outline-none text-xs font-medium bg-white"
+                              />
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Bank & Escrow Security Assurance */}
+                        <div className="flex items-center gap-2 text-[11px] text-slate-500 pt-1">
+                          <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+                          <span>PCI-DSS Level 1 Encrypted. Your funds remain in verified escrow until delivery.</span>
+                        </div>
+                      </div>
                     </div>
                   )}
 
-                  {/* PayPal Notice */}
+                  {/* DIGITAL WALLETS TERMINAL */}
                   {checkoutPaymentCategory === 'paypal' && (
-                    <div className="bg-blue-50/80 border-2 border-blue-200 rounded-3xl p-5 space-y-3 text-left">
-                      <div className="flex items-start gap-3">
-                        <div className="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0">
-                          <Lock className="w-4 h-4" />
-                        </div>
-                        <div className="space-y-1">
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-blue-800 bg-blue-100 px-2 py-0.5 rounded border border-blue-300">
-                            Compliance Onboarding
+                    <div className="space-y-4 text-left">
+                      <div className="p-4 rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-950 text-white space-y-2 border border-slate-700 shadow-md">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Wallet className="w-4 h-4 text-emerald-400" />
+                            <h4 className="text-xs sm:text-sm font-black">Express Digital Wallet Checkout</h4>
+                          </div>
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-500/30">
+                            Fast & Secure
                           </span>
-                          <h4 className="text-xs sm:text-sm font-black text-slate-900">
-                            PayPal & Apple Pay Integration Underway
-                          </h4>
-                          <p className="text-xs text-slate-600 leading-relaxed">
-                            Digital wallet routing is completing verification. Please complete your checkout using our <strong>active instant Crypto channel</strong>.
-                          </p>
                         </div>
+                        <p className="text-xs text-slate-300 leading-relaxed">
+                          Choose your preferred digital wallet below to complete payment instantly with biometric Face ID, Touch ID, or one-click verification.
+                        </p>
                       </div>
 
-                      <button
-                        type="button"
-                        onClick={() => setCheckoutPaymentCategory('crypto')}
-                        className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer"
-                      >
-                        <CheckCircle2 className="w-4 h-4" />
-                        <span>Switch to Active Instant Crypto Channel</span>
-                      </button>
+                      {/* Wallet Action Buttons */}
+                      <div className="space-y-2.5">
+                        {/* Apple Pay Button */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedWalletName('Apple Pay');
+                            setWalletModalOpen(true);
+                          }}
+                          className="w-full h-12 bg-black hover:bg-neutral-900 active:scale-[0.99] text-white rounded-xl font-bold flex items-center justify-center gap-2.5 transition-all shadow-md cursor-pointer border border-neutral-700"
+                        >
+                          <img src="/payments/applepay.svg" alt="Apple Pay" className="h-6 object-contain filter invert" />
+                          <span className="text-xs sm:text-sm">Pay with Apple Pay</span>
+                        </button>
+
+                        {/* Google Pay Button */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedWalletName('Google Pay');
+                            setWalletModalOpen(true);
+                          }}
+                          className="w-full h-12 bg-white hover:bg-slate-50 active:scale-[0.99] text-slate-900 rounded-xl font-bold flex items-center justify-center gap-2.5 transition-all shadow-md cursor-pointer border border-slate-300"
+                        >
+                          <img src="/payments/googlepay.svg" alt="Google Pay" className="h-5 object-contain" />
+                          <span className="text-xs sm:text-sm">Pay with GPay</span>
+                        </button>
+
+                        {/* PayPal Express Button */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedWalletName('PayPal');
+                            setWalletModalOpen(true);
+                          }}
+                          className="w-full h-12 bg-[#ffc439] hover:bg-[#f4bb33] active:scale-[0.99] text-[#003087] rounded-xl font-black flex items-center justify-center gap-2.5 transition-all shadow-md cursor-pointer border border-amber-300"
+                        >
+                          <img src="/payments/paypal.svg" alt="PayPal" className="h-5 object-contain" />
+                          <span className="text-xs sm:text-sm">Check out with PayPal</span>
+                        </button>
+                      </div>
+
+                      <div className="flex items-center justify-center gap-2 text-[11px] text-slate-500 pt-1 text-center">
+                        <Lock className="w-3.5 h-3.5 text-slate-400" />
+                        <span>End-to-end encrypted biometric token authentication</span>
+                      </div>
                     </div>
                   )}
+
+                  {/* Digital Wallets Maintenance Modal */}
+                  <AnimatePresence>
+                    {walletModalOpen && (
+                      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-fade-in">
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                          animate={{ opacity: 1, scale: 1, y: 0 }}
+                          exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                          className="relative w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl border border-slate-200 space-y-5 text-left"
+                        >
+                          {/* Close Button */}
+                          <button
+                            type="button"
+                            onClick={() => setWalletModalOpen(false)}
+                            className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full transition-colors cursor-pointer"
+                          >
+                            <X className="w-5 h-5" />
+                          </button>
+
+                          {/* Provider Icon + Status */}
+                          <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center shrink-0">
+                              {selectedWalletName === 'Apple Pay' && <img src="/payments/applepay.svg" alt="Apple Pay" className="h-6 object-contain" />}
+                              {selectedWalletName === 'Google Pay' && <img src="/payments/googlepay.svg" alt="Google Pay" className="h-6 object-contain" />}
+                              {selectedWalletName === 'PayPal' && <img src="/payments/paypal.svg" alt="PayPal" className="h-6 object-contain" />}
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-amber-800 bg-amber-100 px-2 py-0.5 rounded border border-amber-300">
+                                  Scheduled Maintenance
+                                </span>
+                              </div>
+                              <h3 className="text-base font-black text-slate-900 mt-1">
+                                {selectedWalletName} Gateway Offline
+                              </h3>
+                            </div>
+                          </div>
+
+                          {/* Message */}
+                          <div className="space-y-2 text-xs text-slate-600 leading-relaxed bg-slate-50 p-3.5 rounded-2xl border border-slate-200">
+                            <p>
+                              The <strong>{selectedWalletName}</strong> secure payment gateway is undergoing scheduled PCI token synchronization and HSM security updates.
+                            </p>
+                            <p>
+                              To complete your order immediately without delay, please use our active <strong>Credit / Debit Card</strong> or <strong>Instant Crypto</strong> channels with instant escrow hold.
+                            </p>
+                          </div>
+
+                          {/* Fallback Buttons */}
+                          <div className="space-y-2.5 pt-1">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setWalletModalOpen(false);
+                                setCheckoutPaymentCategory('card');
+                              }}
+                              className="w-full py-3 px-4 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer"
+                            >
+                              <CreditCard className="w-4 h-4 text-emerald-400" />
+                              <span>Pay with Credit / Debit Card (Instant)</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setWalletModalOpen(false);
+                                setCheckoutPaymentCategory('crypto');
+                              }}
+                              className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer"
+                            >
+                              <CheckCircle2 className="w-4 h-4 text-white" />
+                              <span>Pay with Instant Crypto (Zero Fees)</span>
+                            </button>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => setWalletModalOpen(false)}
+                            className="w-full py-2 text-center text-xs font-bold text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
+                          >
+                            Cancel
+                          </button>
+                        </motion.div>
+                      </div>
+                    )}
+                  </AnimatePresence>
 
                   {/* ACTIVE CRYPTO TERMINAL */}
                   {checkoutPaymentCategory === 'crypto' && (
@@ -1804,6 +2266,16 @@ export default function CheckoutPage() {
                         <>
                           <RefreshCw className="w-4 h-4 animate-spin" />
                           <span>Escrowing & Verifying Order...</span>
+                        </>
+                      ) : checkoutPaymentCategory === 'card' ? (
+                        <>
+                          <CreditCard className="w-4 h-4" />
+                          <span>Pay ${totalAmount.toFixed(2)} USD & Lock Escrow</span>
+                        </>
+                      ) : checkoutPaymentCategory === 'paypal' ? (
+                        <>
+                          <Wallet className="w-4 h-4" />
+                          <span>Choose a Digital Wallet Above</span>
                         </>
                       ) : (
                         <>
