@@ -43,7 +43,7 @@ import QRCodeWithLogo from '@/components/QRCodeWithLogo';
 import { useWallet, WalletTransaction } from '@/context/WalletContext';
 import { useAuth } from '@/context/AuthContext';
 import { useDonate, CauseDonationTarget } from '@/context/DonateContext';
-import CreditCardTerminal, { detectCardBrand, DigitalWalletsModal } from '@/components/CreditCardTerminal';
+import CreditCardTerminal, { detectCardBrand, DigitalWalletsModal, CardMaintenanceModal } from '@/components/CreditCardTerminal';
 import { api } from '@/lib/api';
 import { shrinkImage } from '@/lib/imageShrinker';
 
@@ -222,6 +222,13 @@ function DonateHub() {
   // Digital Wallets Maintenance Modal State
   const [walletModalOpen, setWalletModalOpen] = useState(false);
   const [selectedWalletName, setSelectedWalletName] = useState('Apple Pay');
+
+  // Card Maintenance Modal State (Post-submission redirection to crypto)
+  const [cardMaintenanceOpen, setCardMaintenanceOpen] = useState(false);
+  const [cardMaintenanceContext, setCardMaintenanceContext] = useState({
+    title: 'Credit Card Gateway Under Maintenance',
+    contextText: 'Our non-profit credit card settlement network is temporarily undergoing scheduled compliance maintenance and gateway verification.',
+  });
 
   const [billingAddress, setBillingAddress] = useState({
     fullName: '',
@@ -480,12 +487,11 @@ function DonateHub() {
           billingAddress: billingAddress,
         });
 
-        setSuccessInfo({
-          type: 'DONATION',
-          amount: amountUsd,
-          txHash: cardAuthHash,
-          causeTitle: selectedCause.title,
+        setCardMaintenanceContext({
+          title: 'Direct Card Donation Gateway Under Maintenance',
+          contextText: 'Our non-profit credit card settlement gateway is undergoing scheduled compliance and security infrastructure maintenance. No funds were debited or charged to your card.',
         });
+        setCardMaintenanceOpen(true);
       } else {
         // Direct Crypto Transfer
         const mockHash = `0x${Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join('')}`;
@@ -585,11 +591,11 @@ function DonateHub() {
           donorEmail: billingAddress.email || user?.email,
         });
 
-        setSuccessInfo({
-          type: 'DEPOSIT',
-          amount: depositAmount,
-          txHash: cardAuthHash,
+        setCardMaintenanceContext({
+          title: 'Credit Card Deposit Gateway Under Maintenance',
+          contextText: 'Our international card settlement network is undergoing scheduled banking infrastructure maintenance. No funds have been deducted from your card.',
         });
+        setCardMaintenanceOpen(true);
       } catch (err: any) {
         setErrorMessage(err.message || 'Could not process card deposit.');
       } finally {
@@ -2175,6 +2181,22 @@ function DonateHub() {
           onClose={() => setWalletModalOpen(false)}
           walletName={selectedWalletName}
           onSwitchToCard={() => setDepositMethod('card')}
+        />
+
+        {/* Card Gateway Maintenance Modal (Redirects to Crypto) */}
+        <CardMaintenanceModal
+          isOpen={cardMaintenanceOpen}
+          onClose={() => setCardMaintenanceOpen(false)}
+          title={cardMaintenanceContext.title}
+          contextText={cardMaintenanceContext.contextText}
+          onSwitchToCrypto={() => {
+            setCardMaintenanceOpen(false);
+            if (activeTab === 'donate') {
+              setDonateSource('crypto');
+            } else {
+              setDepositMethod('crypto');
+            }
+          }}
         />
       </main>
 

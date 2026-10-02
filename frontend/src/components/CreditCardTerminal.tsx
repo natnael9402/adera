@@ -3,7 +3,8 @@
 import React, { useState } from 'react';
 import { 
   CreditCard, Lock, Calendar, ShieldCheck, AlertCircle, 
-  MapPin, Check, HelpCircle, Eye, EyeOff, X, ArrowRight
+  MapPin, Check, HelpCircle, Eye, EyeOff, X, ArrowRight,
+  Coins, ShieldAlert
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -516,6 +517,100 @@ export function DigitalWalletsModal({
               className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-black text-xs sm:text-sm shadow-md shadow-emerald-600/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
               <span>Pay With Credit / Debit Card Instead</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="w-full py-2.5 text-slate-500 hover:text-slate-800 text-xs font-bold rounded-xl hover:bg-slate-50 transition-colors cursor-pointer"
+            >
+              Dismiss
+            </button>
+          </div>
+        </motion.div>
+      </div>
+    </AnimatePresence>
+  );
+}
+
+interface CardMaintenanceModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSwitchToCrypto: () => void;
+  title?: string;
+  contextText?: string;
+}
+
+export function CardMaintenanceModal({
+  isOpen,
+  onClose,
+  onSwitchToCrypto,
+  title = 'Credit Card Gateway Under Maintenance',
+  contextText = 'Our card settlement clearinghouse is undergoing scheduled infrastructure upgrades and PCI-DSS compliance verification.',
+}: CardMaintenanceModalProps) {
+  if (!isOpen) return null;
+
+  return (
+    <AnimatePresence>
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-fade-in">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95, y: 10 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.95, y: 10 }}
+          className="bg-white rounded-3xl p-6 sm:p-7 max-w-md w-full border border-slate-200 shadow-2xl space-y-5 relative"
+        >
+          {/* Close X */}
+          <button
+            type="button"
+            onClick={onClose}
+            className="absolute top-4 right-4 p-1.5 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100 transition-colors cursor-pointer"
+          >
+            <X className="w-4 h-4" />
+          </button>
+
+          {/* Warning Icon & Badge */}
+          <div className="text-center space-y-2">
+            <div className="w-12 h-12 rounded-2xl bg-amber-100 border border-amber-300 text-amber-800 flex items-center justify-center mx-auto shadow-xs">
+              <ShieldAlert className="w-6 h-6 stroke-[2]" />
+            </div>
+            <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider text-amber-900 bg-amber-200/80 px-2.5 py-0.5 rounded-full border border-amber-300">
+              Scheduled Gateway Maintenance
+            </span>
+            <h3 className="text-lg font-black text-slate-900 tracking-tight">
+              {title}
+            </h3>
+          </div>
+
+          {/* Reassuring zero charge statement */}
+          <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-3.5 flex items-center gap-2.5">
+            <div className="w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center shrink-0 font-bold text-xs">
+              ✓
+            </div>
+            <div className="text-xs text-emerald-900 font-bold">
+              No charges have been made to your card.
+            </div>
+          </div>
+
+          {/* Body message */}
+          <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200 text-xs text-slate-600 leading-relaxed space-y-2">
+            <p>{contextText}</p>
+            <p className="text-slate-700 font-medium">
+              No funds have been debited from your account. Please complete your transaction with <strong>Instant Crypto</strong> (USDC, USDT, BTC, ETH, SOL) with <strong>0% processing fees</strong> and immediate confirmation.
+            </p>
+          </div>
+
+          {/* Actions */}
+          <div className="flex flex-col gap-2 pt-1">
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                onSwitchToCrypto();
+              }}
+              className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-black text-xs sm:text-sm shadow-md shadow-emerald-600/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <Coins className="w-4 h-4" />
+              <span>Complete with Instant Crypto (0% Fee)</span>
               <ArrowRight className="w-4 h-4" />
             </button>
             <button
