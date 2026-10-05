@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { Menu, X, Heart, LayoutDashboard, LogOut, PlusCircle, Globe, ShoppingBag, ShieldCheck, Wallet } from 'lucide-react';
+import { ArrowLeft, Menu, X, Heart, LayoutDashboard, LogOut, PlusCircle, Globe, ShoppingBag, ShieldCheck, Wallet } from 'lucide-react';
 import { useAuth } from "@/context/AuthContext";
 import { useDonate } from "@/context/DonateContext";
 import { useWallet } from "@/context/WalletContext";
@@ -19,6 +20,9 @@ const navLinks = [
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const pathname = usePathname();
+  const router = useRouter();
+  const isHomePage = pathname === "/";
   const { user, logout } = useAuth();
   const { openDonateModal } = useDonate();
   const { balance } = useWallet();
@@ -38,16 +42,29 @@ export default function Navbar() {
       }`}>
         <div className="flex items-center justify-between gap-4">
           
-          {/* Brand Logo */}
-          <Link href="/" className="flex items-center gap-2.5 group shrink-0">
-            <div className="w-8 h-8 sm:w-9 sm:h-9 relative overflow-visible group-hover:scale-105 transition-transform">
-              <Image src="/logo.png" alt="Adera Logo" fill sizes="36px" className="object-contain" priority />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-base sm:text-lg font-black text-slate-900 tracking-tight leading-none">Adera</span>
-              <span className="text-[9px] font-bold text-emerald-700 uppercase tracking-widest leading-tight">Foundation</span>
-            </div>
-          </Link>
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Mobile Back Button */}
+            {!isHomePage && (
+              <button 
+                onClick={() => router.back()}
+                className="flex lg:hidden items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors shrink-0"
+                aria-label="Go back"
+              >
+                <ArrowLeft className="w-4 h-4" />
+              </button>
+            )}
+
+            {/* Brand Logo */}
+            <Link href="/" className="flex items-center gap-2.5 group shrink-0">
+              <div className="w-8 h-8 sm:w-9 sm:h-9 relative overflow-visible group-hover:scale-105 transition-transform">
+                <Image src="/logo.png" alt="Adera Logo" fill sizes="36px" className="object-contain" priority />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-base sm:text-lg font-black text-slate-900 tracking-tight leading-none">Adera</span>
+                <span className="text-[9px] font-bold text-emerald-700 uppercase tracking-widest leading-tight">Foundation</span>
+              </div>
+            </Link>
+          </div>
 
           {/* Desktop Navigation Links */}
           <div className="hidden lg:flex items-center gap-6">
