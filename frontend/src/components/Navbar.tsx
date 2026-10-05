@@ -59,7 +59,7 @@ export default function Navbar() {
               <div className="w-8 h-8 sm:w-9 sm:h-9 relative overflow-visible group-hover:scale-105 transition-transform">
                 <Image src="/logo.png" alt="Adera Logo" fill sizes="36px" className="object-contain" priority />
               </div>
-              <div className="hidden sm:flex flex-col">
+              <div className={`${!isHomePage ? 'hidden sm:flex' : 'flex'} flex-col`}>
                 <span className="text-base sm:text-lg font-black text-slate-900 tracking-tight leading-none">Adera</span>
                 <span className="text-[9px] font-bold text-emerald-700 uppercase tracking-widest leading-tight">Foundation</span>
               </div>
