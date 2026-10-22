@@ -8,6 +8,7 @@ import ShopTierBanner from '@/components/ShopTierBanner';
 import StoreAvatar from '@/components/StoreAvatar';
 import TierMedal from '@/components/TierMedal';
 import NotificationCenter from '@/components/NotificationCenter';
+import AuthModal from '@/components/AuthModal';
 import { api } from '@/lib/api';
 import { useBuyerAuth } from '@/context/BuyerAuthContext';
 
@@ -48,6 +49,8 @@ export default function StoreHome() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [resellerShops, setResellerShops] = useState<any[]>([]);
   const [displayLimit, setDisplayLimit] = useState<number>(48);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [authModalMode, setAuthModalMode] = useState<'login' | 'register'>('login');
 
   // Load cart from localStorage
   useEffect(() => {
@@ -322,20 +325,28 @@ export default function StoreHome() {
                 </Link>
               ) : (
                 <div className="flex items-center gap-1.5">
-                  <Link
-                    href="/login"
-                    className="inline-flex items-center gap-1 px-3 py-2 text-xs font-bold text-slate-700 hover:text-primary-700 hover:bg-slate-100 rounded-xl transition-colors"
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAuthModalMode('login');
+                      setAuthModalOpen(true);
+                    }}
+                    className="inline-flex items-center gap-1 px-3 py-2 text-xs font-bold text-slate-700 hover:text-primary-700 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
                   >
                     <User className="w-3.5 h-3.5 text-primary-600" />
                     <span>Sign In</span>
-                  </Link>
+                  </button>
 
-                  <Link
-                    href="/register"
-                    className="hidden sm:inline-flex items-center px-3 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl transition-colors shadow-xs"
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAuthModalMode('register');
+                      setAuthModalOpen(true);
+                    }}
+                    className="hidden sm:inline-flex items-center px-3 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl transition-colors shadow-xs cursor-pointer"
                   >
                     <span>Sign Up</span>
-                  </Link>
+                  </button>
                 </div>
               )}
 
@@ -1039,14 +1050,17 @@ export default function StoreHome() {
                       <p className="text-[11px] text-slate-500 leading-relaxed">
                         Create an account or sign in to verify delivery, receive live courier tracking, and access verified on-chain payment settlement.
                       </p>
-                      <Link
-                        href="/checkout"
-                        onClick={() => setIsCartOpen(false)}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAuthModalMode('login');
+                          setAuthModalOpen(true);
+                        }}
                         className="w-full py-3.5 bg-slate-950 hover:bg-slate-800 active:scale-[0.99] text-white font-black text-xs sm:text-sm rounded-xl transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
                       >
                         <span>Sign Up / Sign In & Checkout</span>
                         <ArrowRight className="w-4 h-4" />
-                      </Link>
+                      </button>
                     </div>
                   )}
 
@@ -1140,6 +1154,13 @@ export default function StoreHome() {
           </div>
         </div>
       </footer>
+
+      {/* Modern Multi-Step Auth Modal */}
+      <AuthModal
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+        initialMode={authModalMode}
+      />
 
     </div>
   );

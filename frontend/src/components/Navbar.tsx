@@ -23,9 +23,19 @@ export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
   const isHomePage = pathname === "/";
-  const { user, logout } = useAuth();
+  const { user, token, logout } = useAuth();
   const { openDonateModal } = useDonate();
   const { balance } = useWallet();
+
+  const getStoreUrl = (subpath: string = '') => {
+    const base = (process.env.NEXT_PUBLIC_STORE_URL || 'https://shop.aderafoundation.com').replace(/\/$/, '');
+    const url = subpath ? `${base}${subpath.startsWith('/') ? subpath : `/${subpath}`}` : base;
+    if (token) {
+      const sep = url.includes('?') ? '&' : '?';
+      return `${url}${sep}auth_token=${encodeURIComponent(token)}`;
+    }
+    return url;
+  };
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -84,7 +94,7 @@ export default function Navbar() {
             
             {/* Dedicated Shop Button */}
             <a
-              href={process.env.NEXT_PUBLIC_STORE_URL || "https://shop.aderafoundation.com"}
+              href={getStoreUrl()}
               target="_blank"
               rel="noreferrer"
               className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-slate-700 hover:text-slate-950 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-xl transition-all"
@@ -219,7 +229,7 @@ export default function Navbar() {
               </Link>
 
               <a
-                href={process.env.NEXT_PUBLIC_STORE_URL || "https://shop.aderafoundation.com"}
+                href={getStoreUrl()}
                 target="_blank"
                 rel="noreferrer"
                 onClick={() => setMobileOpen(false)}

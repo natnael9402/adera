@@ -314,7 +314,11 @@ export default function DonateModal() {
       removeProof();
 
       // Check if user is already signed up / logged in
-      const storedToken = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+      let storedToken = typeof window !== 'undefined' ? (localStorage.getItem('token') || localStorage.getItem('adera_buyer_token')) : null;
+      if (!storedToken && typeof document !== 'undefined') {
+        const match = document.cookie.match(/(?:^|;\s*)adera_auth_token=([^;]+)/);
+        if (match && match[1]) storedToken = decodeURIComponent(match[1]);
+      }
       const storedUser = typeof window !== 'undefined' ? localStorage.getItem('user') : null;
       let active = authUser;
 

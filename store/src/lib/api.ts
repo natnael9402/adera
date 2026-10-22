@@ -1,7 +1,25 @@
 const API = process.env.NEXT_PUBLIC_API_URL || 'https://api.aderafoundation.com/api';
 
+export function getStoredToken(): string | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const urlToken = params.get('auth_token') || params.get('token');
+    if (urlToken) return urlToken;
+  } catch (e) {}
+
+  const local = localStorage.getItem('adera_buyer_token') || localStorage.getItem('token');
+  if (local) return local;
+
+  if (typeof document !== 'undefined') {
+    const match = document.cookie.match(/(?:^|;\s*)adera_auth_token=([^;]+)/);
+    if (match && match[1]) return decodeURIComponent(match[1]);
+  }
+  return null;
+}
+
 async function request(path: string, options: RequestInit = {}) {
-  const buyerToken = typeof window !== 'undefined' ? localStorage.getItem('adera_buyer_token') : null;
+  const buyerToken = getStoredToken();
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(buyerToken ? { Authorization: `Bearer ${buyerToken}` } : {}),

@@ -105,7 +105,7 @@ const IMPACT_CAUSES = [
 ];
 
 export default function CheckoutPage() {
-  const { buyer, login, signup, verifyCode, resendVerification, logout } = useBuyerAuth();
+  const { buyer, isLoading: isBuyerLoading, login, signup, verifyCode, resendVerification, logout } = useBuyerAuth();
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
@@ -335,7 +335,7 @@ export default function CheckoutPage() {
     setStepError(null);
 
     // Guard: Cannot bypass Step 1 without authentication
-    if (step >= 2 && !buyer) {
+    if (step >= 2 && !buyer && !isBuyerLoading) {
       setStepError("Please create an account or sign in to continue with checkout.");
       setCurrentStep(1);
       return;
@@ -1276,121 +1276,168 @@ export default function CheckoutPage() {
                     </div>
                   )}
 
-                  {/* Form Fields */}
-                  <div className="space-y-4 pt-1">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
-                          First Name <span className="text-rose-500">*</span>
-                        </label>
-                        <input 
-                          type="text"
-                          required
-                          placeholder="Alex"
-                          value={firstName}
-                          onChange={(e) => setFirstName(e.target.value)}
-                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-600 focus:bg-white transition-all font-medium"
-                        />
+                  {/* Form Fields: Separated Into 3 Clear Cards */}
+                  <div className="space-y-6 pt-1">
+                    
+                    {/* SECTION 1: RECIPIENT IDENTITY */}
+                    <div className="p-4 sm:p-5 rounded-2xl bg-slate-50/80 border border-slate-200/80 space-y-3.5">
+                      <div className="flex items-center gap-2 text-xs font-bold text-slate-800 uppercase tracking-wider">
+                        <User className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>1. Recipient Contact Details</span>
                       </div>
 
-                      <div>
-                        <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
-                          Last Name <span className="text-rose-500">*</span>
-                        </label>
-                        <input 
-                          type="text"
-                          required
-                          placeholder="Vance"
-                          value={lastName}
-                          onChange={(e) => setLastName(e.target.value)}
-                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-600 focus:bg-white transition-all font-medium"
-                        />
-                      </div>
-                    </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-700 mb-1 uppercase tracking-wider">
+                            First Name <span className="text-rose-500">*</span>
+                          </label>
+                          <input 
+                            type="text"
+                            required
+                            placeholder="Alex"
+                            value={firstName}
+                            onChange={(e) => setFirstName(e.target.value)}
+                            className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-600 transition-all font-medium"
+                          />
+                        </div>
 
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
-                        Street Address <span className="text-rose-500">*</span>
-                      </label>
-                      <input 
-                        type="text"
-                        required
-                        placeholder="742 Evergreen Terrace"
-                        value={address}
-                        onChange={(e) => setAddress(e.target.value)}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-600 focus:bg-white transition-all font-medium"
-                      />
-                    </div>
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-700 mb-1 uppercase tracking-wider">
+                            Last Name <span className="text-rose-500">*</span>
+                          </label>
+                          <input 
+                            type="text"
+                            required
+                            placeholder="Vance"
+                            value={lastName}
+                            onChange={(e) => setLastName(e.target.value)}
+                            className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-600 transition-all font-medium"
+                          />
+                        </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                      <div>
-                        <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
-                          Apt / Suite
-                        </label>
-                        <input 
-                          type="text"
-                          placeholder="Apt 4B (Optional)"
-                          value={apartment}
-                          onChange={(e) => setApartment(e.target.value)}
-                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-600 focus:bg-white transition-all font-medium"
-                        />
-                      </div>
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-700 mb-1 uppercase tracking-wider">
+                            Email for Delivery Updates <span className="text-rose-500">*</span>
+                          </label>
+                          <input 
+                            type="email"
+                            required
+                            placeholder="alex@domain.com"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-600 transition-all font-medium"
+                          />
+                        </div>
 
-                      <div>
-                        <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
-                          City <span className="text-rose-500">*</span>
-                        </label>
-                        <input 
-                          type="text"
-                          required
-                          placeholder="Springfield"
-                          value={city}
-                          onChange={(e) => setCity(e.target.value)}
-                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-600 focus:bg-white transition-all font-medium"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
-                          State / Postal <span className="text-rose-500">*</span>
-                        </label>
-                        <input 
-                          type="text"
-                          required
-                          placeholder="OR 97477"
-                          value={zipCode}
-                          onChange={(e) => setZipCode(e.target.value)}
-                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-600 focus:bg-white transition-all font-medium"
-                        />
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-700 mb-1 uppercase tracking-wider">
+                            Phone for Courier SMS
+                          </label>
+                          <input 
+                            type="tel"
+                            placeholder="+1 (555) 019-2831"
+                            value={phone}
+                            onChange={(e) => setPhone(e.target.value)}
+                            className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-600 transition-all font-medium"
+                          />
+                        </div>
                       </div>
                     </div>
 
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
-                        Country / Region <span className="text-rose-500">*</span>
-                      </label>
-                      <select 
-                        value={country}
-                        onChange={(e) => setCountry(e.target.value)}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 font-bold focus:outline-none focus:border-emerald-600 focus:bg-white transition-all cursor-pointer"
-                      >
-                        <option value="United States">United States</option>
-                        <option value="Canada">Canada</option>
-                        <option value="United Kingdom">United Kingdom</option>
-                        <option value="Germany">Germany</option>
-                        <option value="Ethiopia">Ethiopia</option>
-                        <option value="Australia">Australia</option>
-                        <option value="Singapore">Singapore</option>
-                        <option value="Switzerland">Switzerland</option>
-                        <option value="Japan">Japan</option>
-                      </select>
+                    {/* SECTION 2: PHYSICAL DESTINATION */}
+                    <div className="p-4 sm:p-5 rounded-2xl bg-slate-50/80 border border-slate-200/80 space-y-3.5">
+                      <div className="flex items-center gap-2 text-xs font-bold text-slate-800 uppercase tracking-wider">
+                        <MapPin className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>2. Delivery Address</span>
+                      </div>
+
+                      <div className="space-y-3.5">
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-700 mb-1 uppercase tracking-wider">
+                            Street Address <span className="text-rose-500">*</span>
+                          </label>
+                          <input 
+                            type="text"
+                            required
+                            placeholder="742 Evergreen Terrace"
+                            value={address}
+                            onChange={(e) => setAddress(e.target.value)}
+                            className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-600 transition-all font-medium"
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                          <div>
+                            <label className="block text-[11px] font-bold text-slate-700 mb-1 uppercase tracking-wider">
+                              Apt / Suite
+                            </label>
+                            <input 
+                              type="text"
+                              placeholder="Apt 4B (Optional)"
+                              value={apartment}
+                              onChange={(e) => setApartment(e.target.value)}
+                              className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-600 transition-all font-medium"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-[11px] font-bold text-slate-700 mb-1 uppercase tracking-wider">
+                              City <span className="text-rose-500">*</span>
+                            </label>
+                            <input 
+                              type="text"
+                              required
+                              placeholder="Springfield"
+                              value={city}
+                              onChange={(e) => setCity(e.target.value)}
+                              className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-600 transition-all font-medium"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-[11px] font-bold text-slate-700 mb-1 uppercase tracking-wider">
+                              State / Postal <span className="text-rose-500">*</span>
+                            </label>
+                            <input 
+                              type="text"
+                              required
+                              placeholder="OR 97477"
+                              value={zipCode}
+                              onChange={(e) => setZipCode(e.target.value)}
+                              className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-600 transition-all font-medium"
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-700 mb-1 uppercase tracking-wider">
+                            Country / Region <span className="text-rose-500">*</span>
+                          </label>
+                          <select 
+                            value={country}
+                            onChange={(e) => setCountry(e.target.value)}
+                            className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 font-bold focus:outline-none focus:border-emerald-600 transition-all cursor-pointer"
+                          >
+                            <option value="United States">United States</option>
+                            <option value="Canada">Canada</option>
+                            <option value="United Kingdom">United Kingdom</option>
+                            <option value="Germany">Germany</option>
+                            <option value="Ethiopia">Ethiopia</option>
+                            <option value="Australia">Australia</option>
+                            <option value="Singapore">Singapore</option>
+                            <option value="Switzerland">Switzerland</option>
+                            <option value="Japan">Japan</option>
+                          </select>
+                        </div>
+                      </div>
                     </div>
 
-                    {/* Shipping Method Selector */}
-                    <div className="pt-2 border-t border-slate-100 space-y-2.5">
-                      <span className="block text-xs font-bold text-slate-900 uppercase tracking-wider">
-                        Select Shipping Speed:
-                      </span>
+                    {/* SECTION 3: SHIPPING SPEED */}
+                    <div className="p-4 sm:p-5 rounded-2xl bg-slate-50/80 border border-slate-200/80 space-y-3">
+                      <div className="flex items-center gap-2 text-xs font-bold text-slate-800 uppercase tracking-wider">
+                        <Truck className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>3. Select Shipping Speed</span>
+                      </div>
                       
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div 
