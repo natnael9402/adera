@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, Suspense } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -39,7 +39,14 @@ function RegisterContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectUrl = searchParams.get('redirect') || '/account';
-  const { signup, verifyCode, resendVerification } = useBuyerAuth();
+  const { buyer, signup, verifyCode, resendVerification } = useBuyerAuth();
+
+  // If already authenticated, redirect immediately
+  useEffect(() => {
+    if (buyer) {
+      router.replace(redirectUrl);
+    }
+  }, [buyer, redirectUrl, router]);
 
   // Step 1: Credentials
   const [step, setStep] = useState<1 | 2 | 3>(1);
@@ -73,7 +80,8 @@ function RegisterContent() {
       setError('Please provide your full name.');
       return;
     }
-    if (!email.trim() || !email.includes('@')) {
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail || !cleanEmail.includes('@')) {
       setError('Please provide a valid email address.');
       return;
     }
@@ -98,21 +106,27 @@ function RegisterContent() {
     setIsLoading(true);
 
     try {
+      const cleanEmail = email.trim().toLowerCase();
       const res = await signup({
         name: name.trim(),
-        email: email.trim(),
+        email: cleanEmail,
         password,
         phone: phone.trim() || undefined,
         savedAddress: addressData,
       });
 
-      if (res?.token && res?.user?.verified) {
+      if (res?.token || res?.user) {
         router.push(redirectUrl);
       } else {
         setStep(3);
       }
     } catch (err: any) {
-      setError(err.message || 'Registration failed. Please try again.');
+      const msg = err.message || '';
+      if (msg.toLowerCase().includes('already exists')) {
+        setError('An account with this email already exists. Please sign in instead.');
+      } else {
+        setError(msg || 'Registration failed. Please try again.');
+      }
     } finally {
       setIsLoading(false);
     }

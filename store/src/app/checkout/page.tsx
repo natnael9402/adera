@@ -378,9 +378,10 @@ export default function CheckoutPage() {
     }
 
     setAuthLoading(true);
+    const cleanEmail = authEmail.trim().toLowerCase();
     try {
       if (authMode === 'login') {
-        const res = await login(authEmail.trim(), authPassword);
+        const res = await login(cleanEmail, authPassword);
         if (res?.user) {
           setEmail(res.user.email);
           if (res.user.name) {
@@ -398,7 +399,7 @@ export default function CheckoutPage() {
         }
         const res = await signup({
           name: authName.trim(),
-          email: authEmail.trim(),
+          email: cleanEmail,
           password: authPassword,
           phone: authPhone.trim() || undefined,
         });
@@ -412,7 +413,7 @@ export default function CheckoutPage() {
           goToStep(2);
         } else {
           // Auto-login fallback
-          const loginRes = await login(authEmail.trim(), authPassword);
+          const loginRes = await login(cleanEmail, authPassword);
           if (loginRes?.user) {
             setEmail(loginRes.user.email);
             if (loginRes.user.name) {

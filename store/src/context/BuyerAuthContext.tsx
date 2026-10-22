@@ -111,7 +111,7 @@ export function BuyerAuthProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
-    if (!savedToken) {
+    if (!savedToken || savedToken === 'undefined' || savedToken === 'null' || savedToken.trim().length < 10) {
       setBuyer(null);
       setToken(null);
       setIsLoading(false);
@@ -122,13 +122,16 @@ export function BuyerAuthProvider({ children }: { children: React.ReactNode }) {
       setToken(savedToken);
       const user = await api.buyer.getProfile();
       setBuyer(user);
-    } catch (err) {
+    } catch (err: any) {
       console.warn('Failed to load buyer session:', err);
-      localStorage.removeItem('adera_buyer_token');
-      localStorage.removeItem('token');
-      clearCrossDomainCookie();
-      setBuyer(null);
-      setToken(null);
+      // Only clear credentials if token was explicitly rejected with 401 Unauthorized
+      if (err?.status === 401 || err?.message?.toLowerCase().includes('unauthorized') || err?.message?.toLowerCase().includes('session expired')) {
+        localStorage.removeItem('adera_buyer_token');
+        localStorage.removeItem('token');
+        clearCrossDomainCookie();
+        setBuyer(null);
+        setToken(null);
+      }
     } finally {
       setIsLoading(false);
     }

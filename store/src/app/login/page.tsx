@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, Suspense } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -12,7 +12,14 @@ function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectUrl = searchParams.get('redirect') || '/account';
-  const { login, verifyCode, resendVerification } = useBuyerAuth();
+  const { buyer, login, verifyCode, resendVerification } = useBuyerAuth();
+
+  // If already authenticated, redirect immediately
+  useEffect(() => {
+    if (buyer) {
+      router.replace(redirectUrl);
+    }
+  }, [buyer, redirectUrl, router]);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -28,13 +35,14 @@ function LoginContent() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) return;
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail || !password) return;
 
     setError(null);
     setIsLoading(true);
 
     try {
-      await login(email.trim(), password);
+      await login(cleanEmail, password);
       router.push(redirectUrl);
     } catch (err: any) {
       const msg = err.message || '';

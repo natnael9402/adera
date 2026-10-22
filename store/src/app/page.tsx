@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { Search, ShoppingCart, User, Menu, X, ChevronRight, Star, Zap, ShieldCheck, Truck, HeadphonesIcon, Smartphone, Laptop, Shirt, Watch, Home, Heart, ArrowRight, Check, Copy, ExternalLink, Filter, ShoppingBag, Lock, RefreshCw, Eye, Layers, CheckCircle2, ArrowUpRight, Award, Compass, Store, Plus } from 'lucide-react';
 import ShopTierBanner from '@/components/ShopTierBanner';
 import StoreAvatar from '@/components/StoreAvatar';
@@ -49,8 +50,10 @@ export default function StoreHome() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [resellerShops, setResellerShops] = useState<any[]>([]);
   const [displayLimit, setDisplayLimit] = useState<number>(48);
+  const router = useRouter();
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authModalMode, setAuthModalMode] = useState<'login' | 'register'>('login');
+  const [authRedirectToCheckout, setAuthRedirectToCheckout] = useState(false);
 
   // Load cart from localStorage
   useEffect(() => {
@@ -1054,6 +1057,7 @@ export default function StoreHome() {
                         type="button"
                         onClick={() => {
                           setAuthModalMode('login');
+                          setAuthRedirectToCheckout(true);
                           setAuthModalOpen(true);
                         }}
                         className="w-full py-3.5 bg-slate-950 hover:bg-slate-800 active:scale-[0.99] text-white font-black text-xs sm:text-sm rounded-xl transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
@@ -1158,8 +1162,19 @@ export default function StoreHome() {
       {/* Modern Multi-Step Auth Modal */}
       <AuthModal
         isOpen={authModalOpen}
-        onClose={() => setAuthModalOpen(false)}
+        onClose={() => {
+          setAuthModalOpen(false);
+          setAuthRedirectToCheckout(false);
+        }}
         initialMode={authModalMode}
+        onSuccess={() => {
+          setAuthModalOpen(false);
+          if (authRedirectToCheckout) {
+            setIsCartOpen(false);
+            setAuthRedirectToCheckout(false);
+            router.push('/checkout');
+          }
+        }}
       />
 
     </div>

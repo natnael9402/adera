@@ -5,15 +5,18 @@ export function getStoredToken(): string | null {
   try {
     const params = new URLSearchParams(window.location.search);
     const urlToken = params.get('auth_token') || params.get('token');
-    if (urlToken) return urlToken;
+    if (urlToken && urlToken !== 'undefined' && urlToken !== 'null' && urlToken.trim().length > 10) return urlToken;
   } catch (e) {}
 
   const local = localStorage.getItem('adera_buyer_token') || localStorage.getItem('token');
-  if (local) return local;
+  if (local && local !== 'undefined' && local !== 'null' && local.trim().length > 10) return local;
 
   if (typeof document !== 'undefined') {
     const match = document.cookie.match(/(?:^|;\s*)adera_auth_token=([^;]+)/);
-    if (match && match[1]) return decodeURIComponent(match[1]);
+    if (match && match[1]) {
+      const decoded = decodeURIComponent(match[1]);
+      if (decoded && decoded !== 'undefined' && decoded !== 'null' && decoded.trim().length > 10) return decoded;
+    }
   }
   return null;
 }
@@ -27,10 +30,14 @@ async function request(path: string, options: RequestInit = {}) {
   };
 
   const res = await fetch(API + path, { ...options, headers });
-  const data = await res.json();
+  const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    const errorMsg = Array.isArray(data.message) ? data.message.join(', ') : (data.message || 'Something went wrong');
-    throw new Error(errorMsg);
+    const errorMsg = Array.isArray(data.message) 
+      ? data.message.join(', ') 
+      : (data.message || (res.status === 401 ? 'Session expired. Please sign in again.' : 'Something went wrong'));
+    const err: any = new Error(errorMsg);
+    err.status = res.status;
+    throw err;
   }
   return data;
 }

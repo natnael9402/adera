@@ -89,6 +89,7 @@ export class AuthService {
         phone: user.phone,
         avatar: user.avatar,
         savedAddress: user.savedAddress,
+        verified: user.verified,
       },
     };
   }
@@ -170,6 +171,7 @@ export class AuthService {
         phone: user.phone,
         avatar: user.avatar,
         savedAddress: user.savedAddress,
+        verified: user.verified,
       },
     };
   }
@@ -351,6 +353,7 @@ export class AuthService {
         phone: user.phone,
         avatar: user.avatar,
         savedAddress: user.savedAddress,
+        verified: user.verified,
       },
     };
   }
