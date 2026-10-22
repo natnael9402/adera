@@ -29,17 +29,43 @@ async function request(path: string, options: RequestInit = {}) {
     ...(options.headers as Record<string, string>),
   };
 
-  const res = await fetch(API + path, { ...options, headers });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    const errorMsg = Array.isArray(data.message) 
-      ? data.message.join(', ') 
-      : (data.message || (res.status === 401 ? 'Session expired. Please sign in again.' : 'Something went wrong'));
-    const err: any = new Error(errorMsg);
-    err.status = res.status;
+  const controller = new AbortController();
+  const timeoutMs = 15000;
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const res = await fetch(API + path, {
+      ...options,
+      headers,
+      signal: options.signal || controller.signal,
+    });
+    clearTimeout(timeoutId);
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      const errorMsg = Array.isArray(data.message) 
+        ? data.message.join(', ') 
+        : (data.message || (
+            res.status === 401 
+              ? 'Session expired or invalid credentials.' 
+              : res.status === 504 
+              ? 'Server gateway timed out. Please check if backend API service is running.' 
+              : res.status === 502 
+              ? 'API service is currently unavailable or restarting (502 Bad Gateway).' 
+              : 'Something went wrong. Please try again.'
+          ));
+      const err: any = new Error(errorMsg);
+      err.status = res.status;
+      throw err;
+    }
+    return data;
+  } catch (err: any) {
+    clearTimeout(timeoutId);
+    if (err.name === 'AbortError') {
+      throw new Error('Connection timed out. The backend server (api.aderafoundation.com) did not respond within 15 seconds. Please ensure the backend container is running.');
+    }
     throw err;
   }
-  return data;
 }
 
 export const api = {

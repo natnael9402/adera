@@ -19,6 +19,7 @@ async function bootstrap() {
   }
   app.use('/uploads', expressStatic(uploadsDir));
 
+  // Comprehensive CORS handler for all environments & subdomains
   app.use((req: any, res: any, next: any) => {
     const origin = req.headers.origin;
     if (origin) {
@@ -27,19 +28,31 @@ async function bootstrap() {
     } else {
       res.setHeader('Access-Control-Allow-Origin', '*');
     }
-    res.setHeader('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept, Authorization, X-Requested-With, Origin, Access-Control-Request-Method, Access-Control-Request-Headers, *');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, PUT, PATCH, POST, DELETE, OPTIONS');
+    const reqHeaders = req.headers['access-control-request-headers'];
+    if (reqHeaders) {
+      res.setHeader('Access-Control-Allow-Headers', reqHeaders);
+    } else {
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, X-Requested-With, Origin, *');
+    }
+    res.setHeader('Access-Control-Max-Age', '86400');
+
     if (req.method === 'OPTIONS') {
-      return res.sendStatus(204);
+      return res.status(204).end();
     }
     next();
   });
 
   app.enableCors({
-    origin: true,
+    origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+      // Allow all origins (reflection)
+      callback(null, true);
+    },
     credentials: true,
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
-    allowedHeaders: '*',
+    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With', 'Origin', '*'],
+    exposedHeaders: ['Content-Range', 'X-Content-Range'],
+    optionsSuccessStatus: 204,
   });
 
   app.setGlobalPrefix('api');
