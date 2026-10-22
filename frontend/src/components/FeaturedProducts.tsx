@@ -14,25 +14,70 @@ interface Product {
   category: string;
 }
 
+const FALLBACK_PRODUCTS: Product[] = [
+  {
+    id: 1,
+    name: "Adera Philanthropic Eco Cotton Hoodie",
+    description: "Handcrafted 100% sustainable organic cotton hoodie. Proceeds support African clean water initiatives.",
+    price: 65.00,
+    originalPrice: 85.00,
+    image: "/causes/cause_water_1786200462466.jpg",
+    category: "Apparel",
+  },
+  {
+    id: 2,
+    name: "Solar Micro-Grid Power Pack (Portable 100W)",
+    description: "Compact foldable solar kit providing emergency renewable light and charging for rural households.",
+    price: 145.00,
+    originalPrice: 190.00,
+    image: "/causes/cause_farming_1786200495727.jpg",
+    category: "Electronics",
+  },
+  {
+    id: 3,
+    name: "Rural STEM Classroom Robotics & Code Kit",
+    description: "STEM educational kit funded by verified purchases to empower rural junior school computing labs.",
+    price: 110.00,
+    originalPrice: 140.00,
+    image: "/causes/cause_school_1786200448807.jpg",
+    category: "Education",
+  },
+  {
+    id: 4,
+    name: "Artisanal Highland Single-Origin Coffee (1kg)",
+    description: "Direct-trade organic Yirgacheffe specialty beans. 100% of reseller profits fund regional maternal healthcare.",
+    price: 32.00,
+    originalPrice: 42.00,
+    image: "/causes/cause_clinic_1786200473696.jpg",
+    category: "Provisions",
+  },
+];
+
 async function getProducts(): Promise<Product[]> {
   try {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "https://api.aderafoundation.com/api";
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 2500);
+
     const res = await fetch(`${apiUrl}/products`, {
       next: { revalidate: 60 },
-    });
+      signal: controller.signal,
+    }).finally(() => clearTimeout(timeoutId));
+
     if (!res.ok) {
-      throw new Error("Failed to fetch products");
+      return FALLBACK_PRODUCTS;
     }
-    return res.json();
+    const data = await res.json();
+    const items = Array.isArray(data) ? data : data?.items || [];
+    return items.length > 0 ? items : FALLBACK_PRODUCTS;
   } catch (error) {
-    console.error("Error fetching products:", error);
-    return [];
+    return FALLBACK_PRODUCTS;
   }
 }
 
 export default async function FeaturedProducts() {
   const products = await getProducts();
-  const topProducts = products.slice(0, 4);
+  const topProducts = (products && products.length > 0 ? products : FALLBACK_PRODUCTS).slice(0, 4);
 
   if (topProducts.length === 0) {
     return null;
