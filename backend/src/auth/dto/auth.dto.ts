@@ -18,6 +18,9 @@ export class SignupDto {
 
   @IsOptional()
   role?: 'USER' | 'BUYER' | 'ADMIN';
+
+  @IsOptional()
+  savedAddress?: any;
 }
 
 export class LoginDto {

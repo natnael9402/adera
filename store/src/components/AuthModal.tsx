@@ -4,9 +4,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  X, Mail, Lock, User, Phone, ArrowRight, ShieldCheck, 
+  X, Mail, Lock, User, Phone, ArrowRight, ArrowLeft, ShieldCheck, 
   AlertCircle, RefreshCw, Eye, EyeOff, CheckCircle2, 
-  Sparkles, KeyRound, Edit3
+  MapPin, Building, Globe, Edit3, Sparkles
 } from 'lucide-react';
 import { useBuyerAuth } from '@/context/BuyerAuthContext';
 
@@ -17,6 +17,29 @@ interface AuthModalProps {
   onSuccess?: () => void;
 }
 
+const COUNTRIES = [
+  'United States',
+  'Canada',
+  'United Kingdom',
+  'Ethiopia',
+  'Australia',
+  'Germany',
+  'France',
+  'Netherlands',
+  'Sweden',
+  'Switzerland',
+  'Norway',
+  'Italy',
+  'Spain',
+  'Japan',
+  'United Arab Emirates',
+  'Singapore',
+  'South Africa',
+  'Kenya',
+  'Nigeria',
+  'Other',
+];
+
 export default function AuthModal({
   isOpen,
   onClose,
@@ -26,16 +49,24 @@ export default function AuthModal({
   const { login, signup, verifyCode, resendVerification } = useBuyerAuth();
 
   const [mode, setMode] = useState<'login' | 'register'>(initialMode);
-  const [registerStep, setRegisterStep] = useState<1 | 2>(1);
+  const [registerStep, setRegisterStep] = useState<1 | 2 | 3>(1);
 
-  // Form State
+  // Form State - Step 1 (Account Credentials)
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [phone, setPhone] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
-  // Verification state (6-digit OTP)
+  // Form State - Step 2 (Shipping Address)
+  const [address, setAddress] = useState('');
+  const [apartment, setApartment] = useState('');
+  const [city, setCity] = useState('');
+  const [stateProvince, setStateProvince] = useState('');
+  const [zipCode, setZipCode] = useState('');
+  const [country, setCountry] = useState('United States');
+
+  // Verification state - Step 3 (6-digit OTP)
   const [digits, setDigits] = useState<string[]>(['', '', '', '', '', '']);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const [resendCooldown, setResendCooldown] = useState(0);
@@ -66,9 +97,9 @@ export default function AuthModal({
     return () => clearTimeout(timer);
   }, [resendCooldown]);
 
-  // Focus first digit box when step 2 opens
+  // Focus first digit box when step 3 opens
   useEffect(() => {
-    if (registerStep === 2 && inputRefs.current[0]) {
+    if (registerStep === 3 && inputRefs.current[0]) {
       inputRefs.current[0].focus();
     }
   }, [registerStep]);
@@ -89,7 +120,7 @@ export default function AuthModal({
 
   const strength = getPasswordStrength();
 
-  // Handlers
+  // Handlers: Sign In
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) return;
@@ -108,7 +139,7 @@ export default function AuthModal({
       const msg = err.message || '';
       if (msg.toLowerCase().includes('verify your email') || msg.toLowerCase().includes('6-digit code')) {
         setMode('register');
-        setRegisterStep(2);
+        setRegisterStep(3);
         setResendCooldown(45);
       } else {
         setError(msg || 'Sign in failed. Please check your credentials.');
@@ -118,15 +149,35 @@ export default function AuthModal({
     }
   };
 
-  const handleRegisterStep1Submit = async (e: React.FormEvent) => {
+  // Handlers: Step 1 Validation -> Proceed to Shipping Address
+  const handleStep1Submit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !email.trim() || !password) return;
-
-    if (password.length < 6) {
+    if (!name.trim()) {
+      setError('Please provide your full name.');
+      return;
+    }
+    if (!email.trim() || !email.includes('@')) {
+      setError('Please enter a valid email address.');
+      return;
+    }
+    if (!password || password.length < 6) {
       setError('Password must be at least 6 characters.');
       return;
     }
 
+    setError(null);
+    setRegisterStep(2);
+  };
+
+  // Handlers: Execute signup API call
+  const executeSignup = async (addressData?: {
+    address?: string;
+    apartment?: string;
+    city?: string;
+    stateProvince?: string;
+    zipCode?: string;
+    country?: string;
+  }) => {
     setError(null);
     setIsLoading(true);
 
@@ -136,9 +187,10 @@ export default function AuthModal({
         email: email.trim(),
         password,
         phone: phone.trim() || undefined,
+        savedAddress: addressData,
       });
 
-      // If backend returns a direct token, complete immediately
+      // If backend marks verified directly
       if (res?.token && res?.user?.verified) {
         setSuccessMsg('Account created successfully!');
         setTimeout(() => {
@@ -146,17 +198,48 @@ export default function AuthModal({
           onClose();
         }, 700);
       } else {
-        // Move to step 2: 6-digit code verification
-        setRegisterStep(2);
+        // Move to Step 3: 6-digit email confirmation
+        setRegisterStep(3);
         setResendCooldown(60);
       }
     } catch (err: any) {
-      setError(err.message || 'Registration failed. Please try again.');
+      setError(err.message || 'Registration failed. Please check your details.');
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Handlers: Step 2 Address Submit
+  const handleStep2Submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!address.trim()) {
+      setError('Please enter your street address.');
+      return;
+    }
+    if (!city.trim()) {
+      setError('Please enter your city.');
+      return;
+    }
+    if (!zipCode.trim()) {
+      setError('Please enter your ZIP or postal code.');
+      return;
+    }
+
+    executeSignup({
+      address: address.trim(),
+      apartment: apartment.trim() || undefined,
+      city: city.trim(),
+      stateProvince: stateProvince.trim() || undefined,
+      zipCode: zipCode.trim(),
+      country: country.trim() || 'United States',
+    });
+  };
+
+  const handleSkipAddress = () => {
+    executeSignup(undefined);
+  };
+
+  // Handlers: Step 3 Verification OTP
   const handleDigitChange = (index: number, val: string) => {
     setError(null);
     const clean = val.replace(/\D/g, '');
@@ -342,13 +425,32 @@ export default function AuthModal({
 
         {/* Separated Step Dots for Registration */}
         {mode === 'register' && (
-          <div className="px-6 pt-3 flex items-center justify-between text-[11px] font-bold">
-            <span className="text-slate-500">
-              {registerStep === 1 ? 'Step 1 of 2: Personal Details' : 'Step 2 of 2: Email Verification'}
+          <div className="px-5 sm:px-6 pt-3 flex items-center justify-between text-[11px] font-bold">
+            <span className="text-slate-600">
+              {registerStep === 1 && '1. Account Credentials'}
+              {registerStep === 2 && '2. Permanent Shipping Address'}
+              {registerStep === 3 && '3. Email Verification'}
             </span>
             <div className="flex items-center gap-1.5">
-              <div className={`h-1.5 rounded-full transition-all ${registerStep === 1 ? 'w-6 bg-emerald-600' : 'w-2 bg-emerald-400'}`} />
-              <div className={`h-1.5 rounded-full transition-all ${registerStep === 2 ? 'w-6 bg-emerald-600' : 'w-2 bg-slate-200'}`} />
+              <div
+                className={`h-1.5 rounded-full transition-all duration-300 ${
+                  registerStep === 1 ? 'w-6 bg-emerald-600' : 'w-2 bg-emerald-400'
+                }`}
+              />
+              <div
+                className={`h-1.5 rounded-full transition-all duration-300 ${
+                  registerStep === 2
+                    ? 'w-6 bg-emerald-600'
+                    : registerStep > 2
+                    ? 'w-2 bg-emerald-400'
+                    : 'w-2 bg-slate-200'
+                }`}
+              />
+              <div
+                className={`h-1.5 rounded-full transition-all duration-300 ${
+                  registerStep === 3 ? 'w-6 bg-emerald-600' : 'w-2 bg-slate-200'
+                }`}
+              />
             </div>
           </div>
         )}
@@ -462,10 +564,17 @@ export default function AuthModal({
           )}
 
           {/* ============================================================= */}
-          {/* 2. REGISTRATION STEP 1: CREDENTIALS */}
+          {/* 2. REGISTRATION STEP 1: ACCOUNT CREDENTIALS */}
           {/* ============================================================= */}
           {mode === 'register' && registerStep === 1 && (
-            <form onSubmit={handleRegisterStep1Submit} className="space-y-3.5">
+            <motion.form
+              key="step1"
+              initial={{ opacity: 0, x: -8 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 8 }}
+              onSubmit={handleStep1Submit}
+              className="space-y-3.5"
+            >
               <div>
                 <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">
                   Full Name *
@@ -556,20 +665,10 @@ export default function AuthModal({
 
               <button
                 type="submit"
-                disabled={isLoading}
-                className="w-full py-3 bg-slate-950 hover:bg-slate-800 text-white font-black text-xs sm:text-sm rounded-xl transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 mt-2"
+                className="w-full py-3 bg-slate-950 hover:bg-slate-800 text-white font-black text-xs sm:text-sm rounded-xl transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer mt-2"
               >
-                {isLoading ? (
-                  <>
-                    <RefreshCw className="w-4 h-4 animate-spin" />
-                    <span>Preparing Account...</span>
-                  </>
-                ) : (
-                  <>
-                    <span>Continue to Verification</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </>
-                )}
+                <span>Continue to Shipping Address</span>
+                <ArrowRight className="w-4 h-4" />
               </button>
 
               <div className="pt-1 text-center text-xs text-slate-500">
@@ -582,14 +681,179 @@ export default function AuthModal({
                   Sign in here →
                 </button>
               </div>
-            </form>
+            </motion.form>
           )}
 
           {/* ============================================================= */}
-          {/* 3. REGISTRATION STEP 2: 6-DIGIT EMAIL CODE */}
+          {/* 3. REGISTRATION STEP 2: DEDICATED SHIPPING ADDRESS FORM */}
           {/* ============================================================= */}
           {mode === 'register' && registerStep === 2 && (
-            <div className="space-y-4">
+            <motion.form
+              key="step2"
+              initial={{ opacity: 0, x: 8 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -8 }}
+              onSubmit={handleStep2Submit}
+              className="space-y-3.5"
+            >
+              <div className="p-3 bg-emerald-50/70 border border-emerald-200/80 rounded-2xl flex items-start gap-2.5">
+                <Sparkles className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                <div className="text-[11px] text-emerald-900 leading-relaxed">
+                  <strong className="block text-emerald-950 font-bold">Permanent Shipping Address</strong>
+                  Enter once to speed up all future checkouts. You can always edit it at checkout.
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">
+                  Street Address *
+                </label>
+                <div className="relative">
+                  <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <input
+                    required
+                    type="text"
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                    placeholder="123 Philanthropy Way"
+                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:outline-none focus:border-emerald-600 transition-colors"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">
+                  Apt, Suite, Unit <span className="text-slate-400 font-normal lowercase">(optional)</span>
+                </label>
+                <div className="relative">
+                  <Building className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <input
+                    type="text"
+                    value={apartment}
+                    onChange={(e) => setApartment(e.target.value)}
+                    placeholder="Apt 4B / Suite 200"
+                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:outline-none focus:border-emerald-600 transition-colors"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2.5">
+                <div>
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">
+                    City *
+                  </label>
+                  <input
+                    required
+                    type="text"
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    placeholder="Seattle"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:outline-none focus:border-emerald-600 transition-colors"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">
+                    State / Province
+                  </label>
+                  <input
+                    type="text"
+                    value={stateProvince}
+                    onChange={(e) => setStateProvince(e.target.value)}
+                    placeholder="WA"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:outline-none focus:border-emerald-600 transition-colors"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2.5">
+                <div>
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">
+                    ZIP / Postal Code *
+                  </label>
+                  <input
+                    required
+                    type="text"
+                    value={zipCode}
+                    onChange={(e) => setZipCode(e.target.value)}
+                    placeholder="98101"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:outline-none focus:border-emerald-600 transition-colors"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">
+                    Country *
+                  </label>
+                  <div className="relative">
+                    <select
+                      value={country}
+                      onChange={(e) => setCountry(e.target.value)}
+                      className="w-full pl-3 pr-8 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:outline-none focus:border-emerald-600 transition-colors appearance-none cursor-pointer"
+                    >
+                      {COUNTRIES.map((c) => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
+                    </select>
+                    <Globe className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setError(null);
+                    setRegisterStep(1);
+                  }}
+                  className="px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  <span>Back</span>
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs sm:text-sm rounded-xl transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                >
+                  {isLoading ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      <span>Saving Address...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Save Address & Continue</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </>
+                  )}
+                </button>
+              </div>
+
+              <div className="text-center pt-1">
+                <button
+                  type="button"
+                  onClick={handleSkipAddress}
+                  disabled={isLoading}
+                  className="text-slate-400 hover:text-slate-600 text-xs font-medium underline underline-offset-4 cursor-pointer"
+                >
+                  Skip address for now
+                </button>
+              </div>
+            </motion.form>
+          )}
+
+          {/* ============================================================= */}
+          {/* 4. REGISTRATION STEP 3: 6-DIGIT EMAIL CODE */}
+          {/* ============================================================= */}
+          {mode === 'register' && registerStep === 3 && (
+            <motion.div
+              key="step3"
+              initial={{ opacity: 0, x: 8 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -8 }}
+              className="space-y-4"
+            >
               <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-2xl text-xs space-y-1 text-center">
                 <span className="font-bold text-emerald-950 block">6-Digit Code Dispatched</span>
                 <p className="text-emerald-800 text-[11px]">
@@ -671,7 +935,7 @@ export default function AuthModal({
                   </button>
                 )}
               </div>
-            </div>
+            </motion.div>
           )}
 
           {/* Secure note */}

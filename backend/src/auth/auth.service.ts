@@ -46,6 +46,7 @@ export class AuthService {
         phone: dto.phone ? dto.phone.trim() : null,
         role: role as any,
         verified: true,
+        savedAddress: dto.savedAddress ? (dto.savedAddress as any) : undefined,
       },
     });
 

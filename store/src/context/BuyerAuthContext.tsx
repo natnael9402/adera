@@ -26,7 +26,20 @@ interface BuyerAuthContextType {
   token: string | null;
   isLoading: boolean;
   login: (email: string, pass: string) => Promise<{ user: BuyerUser; token: string }>;
-  signup: (data: { name: string; email: string; password: string; phone?: string }) => Promise<any>;
+  signup: (data: {
+    name: string;
+    email: string;
+    password: string;
+    phone?: string;
+    savedAddress?: {
+      address?: string;
+      apartment?: string;
+      city?: string;
+      stateProvince?: string;
+      zipCode?: string;
+      country?: string;
+    };
+  }) => Promise<any>;
   verifyCode: (email: string, code: string) => Promise<{ user: BuyerUser; token: string }>;
   resendVerification: (email: string) => Promise<any>;
   logout: () => void;
@@ -142,7 +155,20 @@ export function BuyerAuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const signup = async (data: { name: string; email: string; password: string; phone?: string }) => {
+  const signup = async (data: {
+    name: string;
+    email: string;
+    password: string;
+    phone?: string;
+    savedAddress?: {
+      address?: string;
+      apartment?: string;
+      city?: string;
+      stateProvince?: string;
+      zipCode?: string;
+      country?: string;
+    };
+  }) => {
     setIsLoading(true);
     try {
       const res = await api.buyer.signup(data);

@@ -5,8 +5,35 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useBuyerAuth } from '@/context/BuyerAuthContext';
-import { Mail, Lock, User, Phone, ArrowRight, ShieldCheck, AlertCircle, RefreshCw, ShoppingBag, Eye, EyeOff } from 'lucide-react';
+import { 
+  Mail, Lock, User, Phone, ArrowRight, ArrowLeft, ShieldCheck, 
+  AlertCircle, RefreshCw, ShoppingBag, Eye, EyeOff, MapPin, 
+  Building, Globe, Sparkles, CheckCircle2 
+} from 'lucide-react';
 import AuthImpactSidebar from '@/components/AuthImpactSidebar';
+
+const COUNTRIES = [
+  'United States',
+  'Canada',
+  'United Kingdom',
+  'Ethiopia',
+  'Australia',
+  'Germany',
+  'France',
+  'Netherlands',
+  'Sweden',
+  'Switzerland',
+  'Norway',
+  'Italy',
+  'Spain',
+  'Japan',
+  'United Arab Emirates',
+  'Singapore',
+  'South Africa',
+  'Kenya',
+  'Nigeria',
+  'Other',
+];
 
 function RegisterContent() {
   const router = useRouter();
@@ -14,35 +41,76 @@ function RegisterContent() {
   const redirectUrl = searchParams.get('redirect') || '/account';
   const { signup, verifyCode, resendVerification } = useBuyerAuth();
 
+  // Step 1: Credentials
+  const [step, setStep] = useState<1 | 2 | 3>(1);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [phone, setPhone] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  // Step 2: Verification code screen
-  const [isVerifying, setIsVerifying] = useState(false);
+  // Step 2: Shipping Destination
+  const [address, setAddress] = useState('');
+  const [apartment, setApartment] = useState('');
+  const [city, setCity] = useState('');
+  const [stateProvince, setStateProvince] = useState('');
+  const [zipCode, setZipCode] = useState('');
+  const [country, setCountry] = useState('United States');
+
+  // Step 3: Verification code screen
   const [verificationCode, setVerificationCode] = useState('');
   const [verifyLoading, setVerifyLoading] = useState(false);
   const [resendStatus, setResendStatus] = useState<string | null>(null);
 
-  const handleSignup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name || !email || !password) return;
+  // General UI state
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
+  // Step 1 handler
+  const handleStep1Continue = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim()) {
+      setError('Please provide your full name.');
+      return;
+    }
+    if (!email.trim() || !email.includes('@')) {
+      setError('Please provide a valid email address.');
+      return;
+    }
+    if (!password || password.length < 6) {
+      setError('Password must be at least 6 characters.');
+      return;
+    }
+    setError(null);
+    setStep(2);
+  };
+
+  // Helper to execute signup with or without address
+  const executeSignup = async (addressData?: {
+    address?: string;
+    apartment?: string;
+    city?: string;
+    stateProvince?: string;
+    zipCode?: string;
+    country?: string;
+  }) => {
     setError(null);
     setIsLoading(true);
 
     try {
-      await signup({
+      const res = await signup({
         name: name.trim(),
         email: email.trim(),
         password,
         phone: phone.trim() || undefined,
+        savedAddress: addressData,
       });
-      setIsVerifying(true);
+
+      if (res?.token && res?.user?.verified) {
+        router.push(redirectUrl);
+      } else {
+        setStep(3);
+      }
     } catch (err: any) {
       setError(err.message || 'Registration failed. Please try again.');
     } finally {
@@ -50,9 +118,43 @@ function RegisterContent() {
     }
   };
 
+  // Step 2 handler
+  const handleStep2Submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!address.trim()) {
+      setError('Please enter your street address.');
+      return;
+    }
+    if (!city.trim()) {
+      setError('Please enter your city.');
+      return;
+    }
+    if (!zipCode.trim()) {
+      setError('Please enter your ZIP or postal code.');
+      return;
+    }
+
+    executeSignup({
+      address: address.trim(),
+      apartment: apartment.trim() || undefined,
+      city: city.trim(),
+      stateProvince: stateProvince.trim() || undefined,
+      zipCode: zipCode.trim(),
+      country: country.trim() || 'United States',
+    });
+  };
+
+  const handleSkipAddress = () => {
+    executeSignup(undefined);
+  };
+
+  // Step 3: Verification
   const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!verificationCode || verificationCode.length < 6) return;
+    if (!verificationCode || verificationCode.length < 6) {
+      setError('Please enter the complete 6-digit verification code.');
+      return;
+    }
 
     setError(null);
     setVerifyLoading(true);
@@ -82,7 +184,7 @@ function RegisterContent() {
     <div className="min-h-screen lg:h-screen lg:overflow-hidden bg-slate-50 flex flex-col lg:grid lg:grid-cols-12 font-sans">
       
       {/* LEFT COLUMN: MINIMALIST REGISTRATION FORM */}
-      <div className="lg:col-span-7 xl:col-span-7 flex flex-col justify-between p-6 sm:p-8 lg:p-10 h-full">
+      <div className="lg:col-span-7 xl:col-span-7 flex flex-col justify-between p-6 sm:p-8 lg:p-10 h-full overflow-y-auto">
         
         {/* Top Navigation */}
         <div className="flex items-center justify-between">
@@ -133,14 +235,30 @@ function RegisterContent() {
             </div>
           </div>
 
+          {/* Step Progress Pill */}
+          <div className="flex items-center justify-between text-[11px] font-bold text-slate-500 px-0.5">
+            <span>
+              {step === 1 && 'Step 1 of 3: Account Credentials'}
+              {step === 2 && 'Step 2 of 3: Permanent Shipping Address'}
+              {step === 3 && 'Step 3 of 3: Email Verification'}
+            </span>
+            <div className="flex items-center gap-1.5">
+              <div className={`h-1.5 rounded-full transition-all duration-300 ${step === 1 ? 'w-6 bg-emerald-600' : 'w-2 bg-emerald-400'}`} />
+              <div className={`h-1.5 rounded-full transition-all duration-300 ${step === 2 ? 'w-6 bg-emerald-600' : step > 2 ? 'w-2 bg-emerald-400' : 'w-2 bg-slate-200'}`} />
+              <div className={`h-1.5 rounded-full transition-all duration-300 ${step === 3 ? 'w-6 bg-emerald-600' : 'w-2 bg-slate-200'}`} />
+            </div>
+          </div>
+
           <div className="space-y-1">
             <h1 className="text-2xl font-black text-slate-900 tracking-tight">
-              {isVerifying ? 'Verify Your Email' : 'Create Account'}
+              {step === 1 && 'Create Buyer Account'}
+              {step === 2 && 'Shipping Destination'}
+              {step === 3 && 'Verify Your Email'}
             </h1>
             <p className="text-xs text-slate-500 font-normal">
-              {isVerifying 
-                ? `Enter the 6-digit confirmation code sent to ${email}`
-                : '100% of profits from every purchase fund verified humanitarian causes.'}
+              {step === 1 && '100% of profits from every purchase fund verified humanitarian causes.'}
+              {step === 2 && 'Saved permanently so you never have to re-type it. Always editable at checkout.'}
+              {step === 3 && `Enter the 6-digit confirmation code sent to ${email}`}
             </p>
           </div>
 
@@ -157,11 +275,14 @@ function RegisterContent() {
             </div>
           )}
 
-          {!isVerifying ? (
-            <form onSubmit={handleSignup} className="space-y-3.5">
+          {/* ======================================================== */}
+          {/* STEP 1: CREDENTIALS */}
+          {/* ======================================================== */}
+          {step === 1 && (
+            <form onSubmit={handleStep1Continue} className="space-y-3.5">
               <div>
                 <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">
-                  Full Name
+                  Full Name *
                 </label>
                 <div className="relative">
                   <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -178,7 +299,7 @@ function RegisterContent() {
 
               <div>
                 <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">
-                  Email Address
+                  Email Address *
                 </label>
                 <div className="relative">
                   <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -196,7 +317,7 @@ function RegisterContent() {
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <label className="text-[11px] font-bold uppercase tracking-wider text-slate-700">
-                    Password
+                    Password *
                   </label>
                   <button
                     type="button"
@@ -250,24 +371,171 @@ function RegisterContent() {
               <div className="pt-2">
                 <button 
                   type="submit"
+                  className="w-full py-3.5 bg-slate-950 hover:bg-slate-800 text-white font-bold text-xs sm:text-sm rounded-xl transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+                >
+                  <span>Continue to Shipping Address</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              </div>
+            </form>
+          )}
+
+          {/* ======================================================== */}
+          {/* STEP 2: PERMANENT SHIPPING ADDRESS */}
+          {/* ======================================================== */}
+          {step === 2 && (
+            <form onSubmit={handleStep2Submit} className="space-y-3.5">
+              <div className="p-3 bg-emerald-50/70 border border-emerald-200/80 rounded-2xl flex items-start gap-2.5">
+                <Sparkles className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                <div className="text-[11px] text-emerald-900 leading-relaxed">
+                  <strong className="block text-emerald-950 font-bold">One-Time Setup</strong>
+                  Your delivery address is saved once to your account and automatically populated on every checkout. You can modify it anytime.
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">
+                  Street Address *
+                </label>
+                <div className="relative">
+                  <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <input 
+                    type="text"
+                    required
+                    placeholder="123 Philanthropy Way"
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2.5 sm:py-3 bg-white border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-600 transition-colors shadow-2xs"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">
+                  Apt, Suite, Unit <span className="text-slate-400 font-normal lowercase">(optional)</span>
+                </label>
+                <div className="relative">
+                  <Building className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <input 
+                    type="text"
+                    placeholder="Apt 4B / Suite 200"
+                    value={apartment}
+                    onChange={(e) => setApartment(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2.5 sm:py-3 bg-white border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-600 transition-colors shadow-2xs"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2.5">
+                <div>
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">
+                    City *
+                  </label>
+                  <input 
+                    type="text"
+                    required
+                    placeholder="Seattle"
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    className="w-full px-3.5 py-2.5 sm:py-3 bg-white border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-600 transition-colors shadow-2xs"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">
+                    State / Province
+                  </label>
+                  <input 
+                    type="text"
+                    placeholder="WA"
+                    value={stateProvince}
+                    onChange={(e) => setStateProvince(e.target.value)}
+                    className="w-full px-3.5 py-2.5 sm:py-3 bg-white border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-600 transition-colors shadow-2xs"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2.5">
+                <div>
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">
+                    ZIP / Postal Code *
+                  </label>
+                  <input 
+                    type="text"
+                    required
+                    placeholder="98101"
+                    value={zipCode}
+                    onChange={(e) => setZipCode(e.target.value)}
+                    className="w-full px-3.5 py-2.5 sm:py-3 bg-white border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-600 transition-colors shadow-2xs"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">
+                    Country *
+                  </label>
+                  <div className="relative">
+                    <select
+                      value={country}
+                      onChange={(e) => setCountry(e.target.value)}
+                      className="w-full pl-3.5 pr-8 py-2.5 sm:py-3 bg-white border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-900 focus:outline-none focus:border-emerald-600 transition-colors shadow-2xs appearance-none cursor-pointer"
+                    >
+                      {COUNTRIES.map((c) => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
+                    </select>
+                    <Globe className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setError(null);
+                    setStep(1);
+                  }}
+                  className="px-4 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs sm:text-sm rounded-xl transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  <span>Back</span>
+                </button>
+
+                <button 
+                  type="submit"
                   disabled={isLoading}
-                  className="w-full py-3.5 bg-slate-950 hover:bg-slate-800 disabled:opacity-50 text-white font-bold text-xs sm:text-sm rounded-xl transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+                  className="flex-1 py-3.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold text-xs sm:text-sm rounded-xl transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer active:scale-98"
                 >
                   {isLoading ? (
                     <>
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      <span>Creating Account...</span>
+                      <span>Saving Address...</span>
                     </>
                   ) : (
                     <>
-                      <span>Create Free Buyer Account</span>
+                      <span>Save Address & Continue</span>
                       <ArrowRight className="w-4 h-4" />
                     </>
                   )}
                 </button>
               </div>
+
+              <div className="text-center pt-1">
+                <button
+                  type="button"
+                  onClick={handleSkipAddress}
+                  disabled={isLoading}
+                  className="text-slate-400 hover:text-slate-600 text-xs font-medium underline underline-offset-4 cursor-pointer"
+                >
+                  Skip address for now
+                </button>
+              </div>
             </form>
-          ) : (
+          )}
+
+          {/* ======================================================== */}
+          {/* STEP 3: 6-DIGIT EMAIL VERIFICATION */}
+          {/* ======================================================== */}
+          {step === 3 && (
             <div className="space-y-5 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
               <form onSubmit={handleVerify} className="space-y-4">
                 <div>
@@ -297,6 +565,7 @@ function RegisterContent() {
 
               <div className="text-center pt-1 border-t border-slate-100 flex items-center justify-between text-xs">
                 <button 
+                  type="button"
                   onClick={handleResend}
                   className="font-bold text-emerald-700 hover:text-emerald-800 transition-colors inline-flex items-center gap-1 cursor-pointer"
                 >
@@ -305,10 +574,11 @@ function RegisterContent() {
                 </button>
 
                 <button 
-                  onClick={() => setIsVerifying(false)}
+                  type="button"
+                  onClick={() => setStep(1)}
                   className="text-slate-400 hover:text-slate-600 font-medium cursor-pointer"
                 >
-                  Change Email
+                  Edit Details
                 </button>
               </div>
             </div>

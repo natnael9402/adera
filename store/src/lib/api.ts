@@ -37,7 +37,7 @@ async function request(path: string, options: RequestInit = {}) {
 
 export const api = {
   buyer: {
-    signup: (body: { name: string; email: string; password: string; phone?: string; role?: string }) =>
+    signup: (body: { name: string; email: string; password: string; phone?: string; role?: string; savedAddress?: any }) =>
       request('/auth/signup', { method: 'POST', body: JSON.stringify({ ...body, role: 'BUYER' }) }),
     verifyCode: (body: { email: string; code: string }) =>
       request('/auth/verify-code', { method: 'POST', body: JSON.stringify(body) }),

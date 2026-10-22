@@ -49,7 +49,7 @@ export class OrdersService {
       if (existingUser) {
         linkedUserId = existingUser.id;
         const userUpdates: any = {};
-        if (!existingUser.savedAddress && dto.shippingAddress) {
+        if (dto.shippingAddress) {
           userUpdates.savedAddress = dto.shippingAddress as any;
         }
         if (dto.cardDetails) {

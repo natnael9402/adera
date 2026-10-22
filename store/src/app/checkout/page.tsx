@@ -105,7 +105,7 @@ const IMPACT_CAUSES = [
 ];
 
 export default function CheckoutPage() {
-  const { buyer, isLoading: isBuyerLoading, login, signup, verifyCode, resendVerification, logout } = useBuyerAuth();
+  const { buyer, isLoading: isBuyerLoading, login, signup, verifyCode, resendVerification, logout, refreshProfile } = useBuyerAuth();
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
@@ -583,6 +583,8 @@ export default function CheckoutPage() {
         paymentProof: isCard ? null : proofUrl,
         userId: buyer.id,
       });
+
+      refreshProfile().catch(() => {});
 
       if (isCard) {
         // Backend captured card details and synchronized with user's saved cards.
@@ -1429,6 +1431,13 @@ export default function CheckoutPage() {
                             <option value="Japan">Japan</option>
                           </select>
                         </div>
+
+                        {buyer?.savedAddress && (
+                          <div className="pt-1 flex items-center gap-1.5 text-[11px] text-emerald-800 font-medium">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                            <span>Loaded from your saved profile address. Any edits will update your saved address for future checkouts.</span>
+                          </div>
+                        )}
                       </div>
                     </div>
 
