@@ -385,7 +385,10 @@ export class MailService {
       <tr>
         <td style="padding: 12px 0; border-bottom: 1px solid #f1f5f9; font-size: 13px; color: #1e293b;">
           <strong>x${item.quantity}</strong> &nbsp; ${item.name}
-          <div style="font-size: 11px; color: #64748b; margin-top: 2px;">${item.category || 'Impact Goods'}</div>
+          <div style="font-size: 11px; color: #64748b; margin-top: 2px;">
+            ${item.category || 'Impact Goods'}
+            ${(item as any).selectedSize || (item as any).size ? ` &bull; <strong style="color: #0f172a; background: #e2e8f0; padding: 1px 6px; border-radius: 4px;">Size: ${(item as any).selectedSize || (item as any).size}</strong>` : ''}
+          </div>
         </td>
         <td align="right" style="padding: 12px 0; border-bottom: 1px solid #f1f5f9; font-size: 13px; font-weight: 700; font-family: monospace; color: #0f172a;">
           $${(item.price * item.quantity).toFixed(2)}

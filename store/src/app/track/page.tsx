@@ -292,9 +292,14 @@ function TrackOrderContent() {
                 <div className="divide-y divide-slate-100 border-y border-slate-100 text-xs">
                   {order.items.map((item: any, i: number) => (
                     <div key={i} className="py-2.5 flex items-center justify-between">
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2.5 min-w-0 pr-2">
                         <span className="font-mono font-bold text-slate-900">x{item.quantity || 1}</span>
-                        <span className="font-medium text-slate-700">{item.name}</span>
+                        <span className="font-medium text-slate-700 truncate">{item.name}</span>
+                        {(item.selectedSize || item.size) && (
+                          <span className="font-extrabold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 text-[10px] shrink-0 font-mono">
+                            Size: {item.selectedSize || item.size}
+                          </span>
+                        )}
                       </div>
                       <span className="font-bold font-mono text-slate-900">${(Number(item.price) * Number(item.quantity || 1)).toFixed(2)}</span>
                     </div>

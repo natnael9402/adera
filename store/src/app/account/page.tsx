@@ -416,9 +416,14 @@ export default function BuyerAccountPage() {
                                   <span className="font-bold text-slate-900 truncate max-w-sm block">
                                     {item.name}
                                   </span>
-                                  <span className="text-[11px] text-slate-400">
-                                    Qty: {item.quantity} • ${item.price?.toFixed(2)} each
-                                  </span>
+                                  <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-slate-400 mt-0.5">
+                                    <span>Qty: {item.quantity} • ${item.price?.toFixed(2)} each</span>
+                                    {(item.selectedSize || item.size) && (
+                                      <span className="font-extrabold text-emerald-800 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200 text-[10px] font-mono">
+                                        Size: {item.selectedSize || item.size}
+                                      </span>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
 

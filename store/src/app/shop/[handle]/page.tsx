@@ -9,6 +9,7 @@ import { api } from '@/lib/api';
 import ShopTierBanner from '@/components/ShopTierBanner';
 import TierMedal from '@/components/TierMedal';
 import StoreAvatar from '@/components/StoreAvatar';
+import { getProductSizeType, getDefaultSize } from '@/lib/size-utils';
 
 export default function ResellerStorefrontPage() {
   const params = useParams();
@@ -84,21 +85,25 @@ export default function ResellerStorefrontPage() {
     setTimeout(() => setToastMsg(null), 3000);
   };
 
-  const addToCart = (product: any, customPrice: number) => {
+  const addToCart = (product: any, customPrice: number, chosenSize?: string) => {
+    const sizeType = getProductSizeType(product);
+    const sizeToUse = chosenSize || (sizeType ? getDefaultSize(sizeType) : undefined);
+
     setCart((prev) => {
-      const existing = prev.find((item) => item.id === product.id);
+      const existing = prev.find((item) => item.id === product.id && item.selectedSize === sizeToUse);
       let updated;
       if (existing) {
         updated = prev.map((item) =>
-          item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
+          (item.id === product.id && item.selectedSize === sizeToUse) ? { ...item, quantity: item.quantity + 1 } : item
         );
       } else {
-        updated = [...prev, { ...product, price: customPrice, resellerShop: shop?.name, quantity: 1 }];
+        updated = [...prev, { ...product, price: customPrice, resellerShop: shop?.name, quantity: 1, selectedSize: sizeToUse }];
       }
       localStorage.setItem('adera_store_cart', JSON.stringify(updated));
+      localStorage.setItem('adera_cart', JSON.stringify(updated));
       return updated;
     });
-    showToast(`Added ${product.name} to cart!`);
+    showToast(`Added ${product.name}${sizeToUse ? ` (${sizeToUse})` : ''} to cart!`);
   };
 
   const cartSubtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);

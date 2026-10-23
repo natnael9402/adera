@@ -10,6 +10,8 @@ import StoreAvatar from '@/components/StoreAvatar';
 import TierMedal from '@/components/TierMedal';
 import NotificationCenter from '@/components/NotificationCenter';
 import AuthModal from '@/components/AuthModal';
+import SizeSelector from '@/components/SizeSelector';
+import { getProductSizeType, getDefaultSize } from '@/lib/size-utils';
 import { api } from '@/lib/api';
 import { useBuyerAuth } from '@/context/BuyerAuthContext';
 
@@ -32,6 +34,7 @@ interface Product {
 
 interface CartItem extends Product {
   quantity: number;
+  selectedSize?: string;
 }
 
 import { MASTER_CATALOG_PRODUCTS } from '@/lib/products-catalog';
@@ -47,6 +50,8 @@ export default function StoreHome() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [wishlist, setWishlist] = useState<number[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [quickViewSize, setQuickViewSize] = useState<string>('');
+  const [quickViewSizeError, setQuickViewSizeError] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [resellerShops, setResellerShops] = useState<any[]>([]);
   const [displayLimit, setDisplayLimit] = useState<number>(48);
@@ -54,6 +59,14 @@ export default function StoreHome() {
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authModalMode, setAuthModalMode] = useState<'login' | 'register'>('login');
   const [authRedirectToCheckout, setAuthRedirectToCheckout] = useState(false);
+
+  useEffect(() => {
+    if (selectedProduct) {
+      const st = getProductSizeType(selectedProduct);
+      setQuickViewSize(st ? (getDefaultSize(st) || '') : '');
+      setQuickViewSizeError(false);
+    }
+  }, [selectedProduct]);
 
   // Load cart from localStorage
   useEffect(() => {
@@ -171,26 +184,29 @@ export default function StoreHome() {
   }, [products, selectedCategory, selectedSource, searchQuery, sortBy]);
 
   // Cart operations
-  const addToCart = (product: Product, quantity = 1) => {
+  const addToCart = (product: Product, quantity = 1, chosenSize?: string) => {
+    const sizeType = getProductSizeType(product);
+    const sizeToUse = chosenSize || (sizeType ? getDefaultSize(sizeType) : undefined);
+
     setCart(prev => {
-      const existing = prev.find(item => item.id === product.id);
+      const existing = prev.find(item => item.id === product.id && item.selectedSize === sizeToUse);
       if (existing) {
         return prev.map(item => 
-          item.id === product.id 
+          (item.id === product.id && item.selectedSize === sizeToUse)
             ? { ...item, quantity: item.quantity + quantity }
             : item
         );
       }
-      return [...prev, { ...product, quantity }];
+      return [...prev, { ...product, quantity, selectedSize: sizeToUse }];
     });
-    showToast(`Added "${product.name.slice(0, 24)}..." to cart`);
+    showToast(`Added "${product.name.slice(0, 20)}..."${sizeToUse ? ` (${sizeToUse})` : ''} to cart`);
   };
 
-  const updateQuantity = (id: number, delta: number) => {
+  const updateQuantity = (id: number, delta: number, size?: string) => {
     setCart(prev => 
       prev
         .map(item => {
-          if (item.id === id) {
+          if (item.id === id && item.selectedSize === size) {
             const newQty = item.quantity + delta;
             return newQty > 0 ? { ...item, quantity: newQty } : null;
           }
@@ -200,8 +216,8 @@ export default function StoreHome() {
     );
   };
 
-  const removeFromCart = (id: number) => {
-    setCart(prev => prev.filter(item => item.id !== id));
+  const removeFromCart = (id: number, size?: string) => {
+    setCart(prev => prev.filter(item => !(item.id === id && item.selectedSize === size)));
   };
 
   const toggleWishlist = (id: number) => {
@@ -691,16 +707,31 @@ export default function StoreHome() {
                         )}
                       </div>
 
-                      <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
-                        100% Impact
-                      </span>
+                      <div className="flex items-center gap-1.5">
+                        {getProductSizeType(product) && (
+                          <span className="text-[9px] font-bold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200 uppercase font-mono">
+                            {getProductSizeType(product) === 'shoe' ? 'Shoe Sizes' : 'Sizes'}
+                          </span>
+                        )}
+                        <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                          100% Impact
+                        </span>
+                      </div>
                     </div>
 
                     <button 
-                      onClick={() => addToCart(product)}
-                      className="w-full py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-xs font-bold transition-colors shadow-sm flex items-center justify-center gap-1.5"
+                      onClick={() => {
+                        const st = getProductSizeType(product);
+                        if (st) {
+                          setSelectedProduct(product);
+                        } else {
+                          addToCart(product);
+                        }
+                      }}
+                      className="w-full py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-1.5 active:scale-95"
                     >
-                      <ShoppingCart className="w-3.5 h-3.5" /> Add to Cart
+                      <ShoppingCart className="w-3.5 h-3.5" />
+                      <span>{getProductSizeType(product) ? 'Select Size & Add' : 'Add to Cart'}</span>
                     </button>
                   </div>
 
@@ -854,6 +885,22 @@ export default function StoreHome() {
                   </div>
                 )}
 
+                {/* Size Selection (for Footwear and Apparel) */}
+                {getProductSizeType(selectedProduct) && (
+                  <div className="pt-1 pb-1">
+                    <SizeSelector
+                      sizeType={getProductSizeType(selectedProduct)}
+                      selectedSize={quickViewSize}
+                      onSelectSize={(s) => {
+                        setQuickViewSize(s);
+                        setQuickViewSizeError(false);
+                      }}
+                      compact={true}
+                      error={quickViewSizeError}
+                    />
+                  </div>
+                )}
+
                 <div className="flex items-baseline gap-3 pt-1">
                   <span className="text-2xl font-black text-slate-900 font-mono">
                     ${selectedProduct.price.toFixed(2)}
@@ -871,9 +918,14 @@ export default function StoreHome() {
                 <div className="pt-2 flex gap-3">
                   <button 
                     onClick={() => {
-                      addToCart(selectedProduct);
+                      const st = getProductSizeType(selectedProduct);
+                      if (st && !quickViewSize) {
+                        setQuickViewSizeError(true);
+                        showToast("Please choose a size first");
+                        return;
+                      }
+                      addToCart(selectedProduct, 1, quickViewSize);
                       setSelectedProduct(null);
-                      showToast(`${selectedProduct.name} added to cart!`);
                     }}
                     className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs sm:text-sm rounded-xl transition-all flex items-center justify-center gap-2 border border-slate-200 cursor-pointer"
                   >
@@ -881,8 +933,15 @@ export default function StoreHome() {
                   </button>
                   <Link 
                     href="/checkout"
-                    onClick={() => {
-                      addToCart(selectedProduct);
+                    onClick={(e) => {
+                      const st = getProductSizeType(selectedProduct);
+                      if (st && !quickViewSize) {
+                        e.preventDefault();
+                        setQuickViewSizeError(true);
+                        showToast("Please choose a size first");
+                        return;
+                      }
+                      addToCart(selectedProduct, 1, quickViewSize);
                       setSelectedProduct(null);
                     }}
                     className="flex-1 py-3 bg-primary-600 hover:bg-primary-700 text-white font-bold text-xs sm:text-sm rounded-xl transition-all shadow-md shadow-primary-600/20 flex items-center justify-center gap-2 cursor-pointer"
@@ -952,7 +1011,7 @@ export default function StoreHome() {
               ) : (
                 cart.map((item) => (
                   <div 
-                    key={item.id}
+                    key={`${item.id}-${item.selectedSize || 'default'}`}
                     className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 flex items-center gap-3.5"
                   >
                     <img 
@@ -965,21 +1024,28 @@ export default function StoreHome() {
                       <h4 className="text-xs font-bold text-slate-900 truncate">
                         {item.name}
                       </h4>
-                      <p className="text-xs font-black text-slate-900 font-mono mt-0.5">
+                      {item.selectedSize && (
+                        <div className="mt-1">
+                          <span className="inline-flex items-center text-[10px] font-extrabold px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 uppercase font-mono">
+                            Size: {item.selectedSize}
+                          </span>
+                        </div>
+                      )}
+                      <p className="text-xs font-black text-slate-900 font-mono mt-1">
                         ${(item.price * item.quantity).toFixed(2)}
                       </p>
                       
                       <div className="flex items-center gap-2 mt-2">
                         <div className="flex items-center border border-slate-200 rounded-lg bg-white overflow-hidden text-xs">
                           <button 
-                            onClick={() => updateQuantity(item.id, -1)}
+                            onClick={() => updateQuantity(item.id, -1, item.selectedSize)}
                             className="px-2 py-0.5 hover:bg-slate-100 font-bold text-slate-600"
                           >
                             -
                           </button>
                           <span className="px-2 font-mono font-bold text-slate-900">{item.quantity}</span>
                           <button 
-                            onClick={() => updateQuantity(item.id, 1)}
+                            onClick={() => updateQuantity(item.id, 1, item.selectedSize)}
                             className="px-2 py-0.5 hover:bg-slate-100 font-bold text-slate-600"
                           >
                             +
@@ -987,7 +1053,7 @@ export default function StoreHome() {
                         </div>
 
                         <button 
-                          onClick={() => removeFromCart(item.id)}
+                          onClick={() => removeFromCart(item.id, item.selectedSize)}
                           className="text-[11px] text-rose-600 hover:text-rose-800 font-semibold"
                         >
                           Remove

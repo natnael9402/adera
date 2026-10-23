@@ -23,6 +23,14 @@ export class OrderItemDto {
   @IsOptional()
   category?: string;
 
+  @IsString()
+  @IsOptional()
+  selectedSize?: string;
+
+  @IsString()
+  @IsOptional()
+  size?: string;
+
   @IsOptional()
   wholesalePrice?: number;
 

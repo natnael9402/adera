@@ -23,6 +23,8 @@ interface CartItem {
   image: string;
   category: string;
   quantity: number;
+  selectedSize?: string;
+  size?: string;
 }
 
 const DEFAULT_SAMPLE_CART: CartItem[] = [
@@ -580,6 +582,8 @@ export default function CheckoutPage() {
           quantity: item.quantity,
           image: item.image,
           category: item.category,
+          selectedSize: item.selectedSize || item.size || undefined,
+          size: item.selectedSize || item.size || undefined,
         })),
         paymentProof: isCard ? null : proofUrl,
         userId: buyer.id,
@@ -774,10 +778,15 @@ export default function CheckoutPage() {
             
             <div className="divide-y divide-slate-100 border-y border-slate-100">
               {cart.map((item) => (
-                <div key={item.id} className="py-3 flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-3 min-w-0 pr-2">
+                <div key={`${item.id}-${item.selectedSize || ''}`} className="py-3 flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2.5 min-w-0 pr-2">
                     <span className="font-bold text-slate-900 font-mono">x{item.quantity}</span>
                     <span className="font-medium text-slate-700 truncate">{item.name}</span>
+                    {(item.selectedSize || item.size) && (
+                      <span className="px-1.5 py-0.5 bg-slate-100 text-slate-800 rounded font-bold text-[10px] border border-slate-200 shrink-0">
+                        Size: {item.selectedSize || item.size}
+                      </span>
+                    )}
                   </div>
                   <span className="font-bold text-slate-900 font-mono shrink-0">${(item.price * item.quantity).toFixed(2)}</span>
                 </div>
@@ -2460,7 +2469,7 @@ export default function CheckoutPage() {
               {/* Items List */}
               <div className="divide-y divide-slate-100 max-h-60 overflow-y-auto pr-1">
                 {cart.map((item) => (
-                  <div key={item.id} className="py-3 flex items-center gap-3">
+                  <div key={`${item.id}-${item.selectedSize || ''}`} className="py-3 flex items-center gap-3">
                     <div className="w-12 h-12 rounded-xl bg-slate-100 border border-slate-200 overflow-hidden relative shrink-0">
                       <Image 
                         src={item.image} 
@@ -2474,10 +2483,18 @@ export default function CheckoutPage() {
                       <h4 className="text-xs font-bold text-slate-900 truncate">
                         {item.name}
                       </h4>
-                      <div className="text-[10px] text-slate-500 flex items-center gap-2 mt-0.5">
+                      <div className="text-[10px] text-slate-500 flex flex-wrap items-center gap-1.5 mt-0.5">
                         <span className="font-bold text-slate-700">Qty: {item.quantity}</span>
                         <span>•</span>
                         <span className="font-mono text-slate-600">${item.price.toFixed(2)}</span>
+                        {(item.selectedSize || item.size) && (
+                          <>
+                            <span>•</span>
+                            <span className="font-extrabold text-emerald-800 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200">
+                              Size: {item.selectedSize || item.size}
+                            </span>
+                          </>
+                        )}
                       </div>
                     </div>
                     <div className="text-right font-mono font-bold text-xs text-slate-900 shrink-0">

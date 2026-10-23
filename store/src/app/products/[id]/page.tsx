@@ -9,10 +9,13 @@ import {
   Share2, ArrowUpRight
 } from 'lucide-react';
 import ShopTierBanner from '@/components/ShopTierBanner';
+import SizeSelector from '@/components/SizeSelector';
+import { getProductSizeType, getDefaultSize } from '@/lib/size-utils';
 import { MASTER_CATALOG_PRODUCTS, Product } from '@/lib/products-catalog';
 
 interface CartItem extends Product {
   quantity: number;
+  selectedSize?: string;
 }
 
 interface CausePreview {
@@ -74,6 +77,22 @@ export default function ProductDetailPage() {
   const [featuredCauses, setFeaturedCauses] = useState<CausePreview[]>(FEATURED_CAUSES_SAMPLE);
   const [portalUrl, setPortalUrl] = useState(process.env.NEXT_PUBLIC_APP_URL || 'https://aderafoundation.com');
 
+  const sizeType = getProductSizeType(product);
+  const [selectedSize, setSelectedSize] = useState<string>('');
+  const [sizeError, setSizeError] = useState(false);
+
+  useEffect(() => {
+    if (product) {
+      const type = getProductSizeType(product);
+      if (type) {
+        setSelectedSize(getDefaultSize(type) || '');
+      } else {
+        setSelectedSize('');
+      }
+      setSizeError(false);
+    }
+  }, [product]);
+
   useEffect(() => {
     if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
       setPortalUrl('http://localhost:3005');
@@ -130,7 +149,7 @@ export default function ProductDetailPage() {
 
     // 2. Sync cart count from localStorage
     try {
-      const savedCart = localStorage.getItem('reseller_cart');
+      const savedCart = localStorage.getItem('adera_cart') || localStorage.getItem('reseller_cart');
       if (savedCart) {
         const parsed: CartItem[] = JSON.parse(savedCart);
         const total = parsed.reduce((sum, item) => sum + item.quantity, 0);
@@ -157,21 +176,31 @@ export default function ProductDetailPage() {
 
   const handleAddToCart = () => {
     if (!product) return;
+    const currentSizeType = getProductSizeType(product);
+    if (currentSizeType && !selectedSize) {
+      setSizeError(true);
+      showToast('Please select a size to proceed');
+      return;
+    }
+    setSizeError(false);
+
     try {
-      const existing = localStorage.getItem('reseller_cart');
+      const existing = localStorage.getItem('adera_cart') || localStorage.getItem('reseller_cart');
       let cart: CartItem[] = existing ? JSON.parse(existing) : [];
-      const index = cart.findIndex((i) => i.id === product.id);
+      const sizeToStore = currentSizeType ? selectedSize : undefined;
+      const index = cart.findIndex((i) => i.id === product.id && i.selectedSize === sizeToStore);
 
       if (index > -1) {
         cart[index].quantity += quantity;
       } else {
-        cart.push({ ...product, quantity });
+        cart.push({ ...product, quantity, selectedSize: sizeToStore });
       }
 
+      localStorage.setItem('adera_cart', JSON.stringify(cart));
       localStorage.setItem('reseller_cart', JSON.stringify(cart));
       const total = cart.reduce((sum, item) => sum + item.quantity, 0);
       setCartCount(total);
-      showToast(`${product.name} added to cart!`);
+      showToast(`${product.name}${sizeToStore ? ` (${sizeToStore})` : ''} added to cart!`);
     } catch (e) {
       console.error(e);
     }
@@ -406,6 +435,21 @@ export default function ProductDetailPage() {
                 {product.description}
               </p>
             </div>
+
+            {/* Size Selection (for Footwear and Apparel) */}
+            {sizeType && (
+              <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-2xs">
+                <SizeSelector
+                  sizeType={sizeType}
+                  selectedSize={selectedSize}
+                  onSelectSize={(s) => {
+                    setSelectedSize(s);
+                    setSizeError(false);
+                  }}
+                  error={sizeError}
+                />
+              </div>
+            )}
 
             {/* Quantity Selector & Action Buttons */}
             <div className="space-y-3 pt-2">
