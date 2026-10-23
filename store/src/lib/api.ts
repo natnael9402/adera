@@ -1,4 +1,5 @@
 const API = process.env.NEXT_PUBLIC_API_URL || 'https://api.aderafoundation.com/api';
+let activeApiBase = API;
 
 export function getStoredToken(): string | null {
   if (typeof window === 'undefined') return null;
@@ -34,11 +35,33 @@ async function request(path: string, options: RequestInit = {}) {
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
-    const res = await fetch(API + path, {
-      ...options,
-      headers,
-      signal: options.signal || controller.signal,
-    });
+    let res: Response;
+    const targetUrl = `${activeApiBase}${path}`;
+    
+    try {
+      res = await fetch(targetUrl, {
+        ...options,
+        headers,
+        signal: options.signal || controller.signal,
+      });
+    } catch (fetchErr: any) {
+      // If external domain fails (CORS blocked, network refused, timeout), fall back to same-origin /api rewrite
+      if (
+        typeof window !== 'undefined' &&
+        activeApiBase.startsWith('http') &&
+        !activeApiBase.startsWith(window.location.origin)
+      ) {
+        const fallbackUrl = `/api${path}`;
+        res = await fetch(fallbackUrl, {
+          ...options,
+          headers,
+          signal: options.signal || controller.signal,
+        });
+        activeApiBase = '/api'; // Switch to reliable same-origin rewrite
+      } else {
+        throw fetchErr;
+      }
+    }
     clearTimeout(timeoutId);
 
     const data = await res.json().catch(() => ({}));
